@@ -102,10 +102,6 @@ public class StackFrame {
         return funcId;
     }
 
-    int localCount() {
-        return this.localTypes.length;
-    }
-
     ValType localType(int i) {
         return this.localTypes[i];
     }

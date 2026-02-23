@@ -1,13 +1,19 @@
 package com.dylibso.chicory.runtime.internal;
 
+import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 /**
  * A strong-value map keyed by auto-assigned integers.
  * Values are held with strong references to prevent premature GC collection.
- * Unreachable entries can be removed via {@link #retainAll(Set)}.
+ * Unreachable entries can be removed via {@link #sweep}.
  */
 public class IntWeakValueMap<V> {
     private final Map<Integer, V> map = new HashMap<>();
@@ -57,13 +63,42 @@ public class IntWeakValueMap<V> {
         map.clear();
     }
 
-    /** Removes all entries whose keys are NOT in the given set. */
-    public void retainAll(Set<Integer> keysToKeep) {
-        map.keySet().retainAll(keysToKeep);
-    }
+    /**
+     * Mark-sweep collection of unreachable entries.
+     *
+     * @param rootCollector receives an {@link IntConsumer} that the caller uses
+     *                      to report all root keys (e.g. from globals, tables)
+     * @param tracer        given a value and an {@link IntConsumer}, reports the keys
+     *                      of all entries directly referenced by that value
+     */
+    public void sweep(Consumer<IntConsumer> rootCollector, BiConsumer<V, IntConsumer> tracer) {
+        if (map.isEmpty()) {
+            return;
+        }
 
-    /** Returns the key set for iteration during sweep. */
-    public Set<Integer> keySet() {
-        return map.keySet();
+        Set<Integer> reachable = new HashSet<>();
+        Queue<Integer> worklist = new ArrayDeque<>();
+
+        IntConsumer collector =
+                id -> {
+                    if (reachable.add(id) && map.containsKey(id)) {
+                        worklist.add(id);
+                    }
+                };
+
+        // Mark phase: collect roots
+        rootCollector.accept(collector);
+
+        // Trace phase: BFS through object graph
+        while (!worklist.isEmpty()) {
+            int id = worklist.poll();
+            V value = map.get(id);
+            if (value != null) {
+                tracer.accept(value, collector);
+            }
+        }
+
+        // Sweep phase: remove unreachable entries
+        map.keySet().retainAll(reachable);
     }
 }
