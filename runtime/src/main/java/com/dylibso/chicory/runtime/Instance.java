@@ -124,8 +124,7 @@ public class Instance {
         this.gcRefs = new IntWeakValueMap<>(GC_REF_ID_OFFSET);
 
         for (int i = 0; i < tables.length; i++) {
-            long rawValue = computeConstantValue(this, tables[i].initialize())[0];
-            var initValue = OpcodeImpl.boxForTable(rawValue, this);
+            var initValue = (int) computeConstantValue(this, tables[i].initialize())[0];
             this.tables[i] = new TableInstance(tables[i], initValue);
         }
 

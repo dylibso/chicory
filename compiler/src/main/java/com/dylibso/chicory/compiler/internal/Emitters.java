@@ -237,6 +237,11 @@ final class Emitters {
         emitInvokeStatic(asm, ShadedRefs.REF_EQ);
     }
 
+    public static void REF_AS_NON_NULL(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitInvokeStatic(asm, ShadedRefs.REF_AS_NON_NULL);
+    }
+
     public static void LOCAL_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         var loadIndex = (int) ins.operand(0);
         var localType = localType(ctx.getType(), ctx.getBody(), loadIndex);

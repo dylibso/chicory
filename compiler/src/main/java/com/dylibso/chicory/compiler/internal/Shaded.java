@@ -51,6 +51,13 @@ public final class Shaded {
         return ref == REF_NULL_VALUE;
     }
 
+    public static int refAsNonNull(int ref) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null reference");
+        }
+        return ref;
+    }
+
     public static int tableGet(int index, int tableIndex, Instance instance) {
         return OpcodeImpl.TABLE_GET(instance, tableIndex, index);
     }

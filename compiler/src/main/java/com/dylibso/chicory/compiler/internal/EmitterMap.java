@@ -35,7 +35,7 @@ final class EmitterMap {
                     .intrinsic(CompilerOpCode.REF_NULL, Emitters::REF_NULL)
                     .intrinsic(CompilerOpCode.REF_IS_NULL, Emitters::REF_IS_NULL)
                     .intrinsic(CompilerOpCode.REF_EQ, Emitters::REF_EQ)
-                    .shared(CompilerOpCode.REF_AS_NON_NULL, OpcodeImpl.class)
+                    .intrinsic(CompilerOpCode.REF_AS_NON_NULL, Emitters::REF_AS_NON_NULL)
 
                     // ====== Locals & Globals ======
                     .intrinsic(CompilerOpCode.LOCAL_GET, Emitters::LOCAL_GET)
