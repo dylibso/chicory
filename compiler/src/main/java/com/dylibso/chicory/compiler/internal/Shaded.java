@@ -1128,10 +1128,6 @@ public final class Shaded {
     }
 
     public static void dataDrop(int segment, Instance instance) {
-        if (instance.memory() != null) {
-            instance.memory().drop(segment);
-        } else {
-            instance.dropDataSegment(segment);
-        }
+        instance.dropDataSegment(segment);
     }
 }

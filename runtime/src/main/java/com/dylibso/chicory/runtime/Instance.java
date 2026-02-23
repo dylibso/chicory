@@ -63,7 +63,7 @@ public class Instance {
     private final WasmModule module;
     private final Machine machine;
     private final FunctionBody[] functions;
-    private final Memory memory;
+    private final Memory[] memories;
     private final DataSegment[] dataSegments;
     private final Global[] globalInitializers;
     private final GlobalInstance[] globals;
@@ -84,7 +84,7 @@ public class Instance {
     Instance(
             WasmModule module,
             Global[] globalInitializers,
-            Memory memory,
+            Memory[] memories,
             DataSegment[] dataSegments,
             FunctionBody[] functions,
             FunctionType[] types,
@@ -101,7 +101,7 @@ public class Instance {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length];
-        this.memory = memory;
+        this.memories = memories;
         this.dataSegments = dataSegments;
         this.functions = functions.clone();
         this.types = types.clone();
@@ -172,16 +172,23 @@ public class Instance {
             }
         }
 
-        if (memory != null && imports.memories().length == 0) {
-            memory.zero();
-            memory.initialize(this, dataSegments);
-        } else if (imports.memories().length > 0) {
-            imports.memories()[0].memory().initialize(this, dataSegments);
+        int importedMemCount = imports.memoryCount();
+        int definedMemCount = memories.length;
+        int totalMemCount = importedMemCount + definedMemCount;
+
+        if (totalMemCount > 0) {
+            for (int i = 0; i < definedMemCount; i++) {
+                memories[i].zero();
+                memories[i].initialize(this, dataSegments, importedMemCount + i);
+            }
+            for (int i = 0; i < importedMemCount; i++) {
+                imports.memory(i).memory().initialize(this, dataSegments, i);
+            }
         } else if (Arrays.stream(dataSegments).anyMatch(ds -> ds instanceof ActiveDataSegment)) {
             for (var ds : dataSegments) {
                 if (ds instanceof ActiveDataSegment) {
-                    var memory = (ActiveDataSegment) ds;
-                    throw new InvalidException("unknown memory " + memory.index());
+                    var seg = (ActiveDataSegment) ds;
+                    throw new InvalidException("unknown memory " + seg.index());
                 }
             }
             throw new InvalidException("unknown memory");
@@ -252,8 +259,7 @@ public class Instance {
 
         public Memory memory(String name) {
             var export = getExport(MEMORY, name);
-            assert (export.index() == 0);
-            return instance.memory();
+            return instance.memory(export.index());
         }
     }
 
@@ -279,7 +285,24 @@ public class Instance {
     }
 
     public Memory memory() {
-        return memory;
+        if (imports.memoryCount() > 0) {
+            return imports.memory(0).memory();
+        }
+        if (memories.length > 0) {
+            return memories[0];
+        }
+        return null;
+    }
+
+    public Memory memory(int index) {
+        int totalMemories = memories.length + imports.memoryCount();
+        if (index < 0 || index >= totalMemories) {
+            throw new InvalidException("unknown memory " + index);
+        }
+        if (index < imports.memoryCount()) {
+            return imports.memory(index).memory();
+        }
+        return memories[index - imports.memoryCount()];
     }
 
     public byte[] dataSegmentData(int idx) {
@@ -744,8 +767,7 @@ public class Instance {
             }
         }
 
-        private ImportValues mapHostImports(
-                Import[] imports, ImportValues importValues, int memoryCount) {
+        private ImportValues mapHostImports(Import[] imports, ImportValues importValues) {
             Function<ExternalType, Integer> count =
                     t -> (int) Arrays.stream(imports).filter(i -> i.importType() == t).count();
 
@@ -758,9 +780,6 @@ public class Instance {
             var hostMemIdx = 0;
             var hostTags = new ImportTag[count.apply(TAG)];
             var hostTagIdx = 0;
-            if (hostMems.length + memoryCount > 1) {
-                throw new InvalidException("multiple memories");
-            }
             var hostTables = new ImportTable[count.apply(TABLE)];
             var hostTableIdx = 0;
             int cnt;
@@ -926,9 +945,7 @@ public class Instance {
 
             var mappedHostImports =
                     mapHostImports(
-                            imports,
-                            requireNonNullElseGet(importValues, ImportValues::empty),
-                            module.memorySection().map(MemorySection::memoryCount).orElse(0));
+                            imports, requireNonNullElseGet(importValues, ImportValues::empty));
 
             for (int i = 0; i < module.functionSection().functionCount(); i++) {
                 functionTypes[funcIdx++] = module.functionSection().getFunctionType(i);
@@ -942,26 +959,21 @@ public class Instance {
 
             Element[] elements = module.elementSection().elements();
 
-            Memory memory = null;
+            Memory[] memories = new Memory[0];
             if (module.memorySection().isPresent()) {
-                var memories = module.memorySection().get();
-                if (memories.memoryCount() > 0) {
-                    var defaultLimits = memories.getMemory(0).limits();
-                    memory =
-                            requireNonNullElse(memoryFactory, ByteBufferMemory::new)
-                                    .apply(requireNonNullElse(memoryLimits, defaultLimits));
-                }
-            } else {
-                if (mappedHostImports != null && mappedHostImports.memoryCount() > 0) {
-                    if (mappedHostImports.memory(0) == null
-                            || mappedHostImports.memory(0).memory() == null) {
-                        throw new InvalidException(
-                                "unknown memory, imported memory not defined, cannot run the"
-                                        + " program");
+                var memSection = module.memorySection().get();
+                memories = new Memory[memSection.memoryCount()];
+                for (int i = 0; i < memSection.memoryCount(); i++) {
+                    var limits = memSection.getMemory(i).limits();
+                    if (i == 0) {
+                        memories[i] =
+                                requireNonNullElse(memoryFactory, ByteBufferMemory::new)
+                                        .apply(requireNonNullElse(memoryLimits, limits));
+                    } else {
+                        memories[i] =
+                                requireNonNullElse(memoryFactory, ByteBufferMemory::new)
+                                        .apply(limits);
                     }
-                    memory = mappedHostImports.memory(0).memory();
-                } else {
-                    // No memory defined
                 }
             }
 
@@ -1015,7 +1027,7 @@ public class Instance {
             return new Instance(
                     module,
                     globalInitializers,
-                    memory,
+                    memories,
                     dataSegments,
                     functions,
                     types,

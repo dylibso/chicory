@@ -1281,15 +1281,6 @@ public final class Parser {
         var signature = OpCode.signature(op);
 
         switch (op) {
-            case MEMORY_GROW:
-            case MEMORY_SIZE:
-                {
-                    var zero = readByte(buffer);
-                    if (zero != 0x00) {
-                        throw new MalformedException("zero byte expected");
-                    }
-                    break;
-                }
             default:
                 break;
         }
@@ -1301,6 +1292,162 @@ public final class Parser {
             case SELECT:
                 return new Instruction(address, op, new long[] {0});
         }
+
+        // Multi-memory memarg parsing for load/store instructions.
+        // In multi-memory, bit 6 of the alignment flags indicates a memory index follows.
+        switch (op) {
+            case I32_LOAD:
+            case I64_LOAD:
+            case F32_LOAD:
+            case F64_LOAD:
+            case I32_LOAD8_S:
+            case I32_LOAD8_U:
+            case I32_LOAD16_S:
+            case I32_LOAD16_U:
+            case I64_LOAD8_S:
+            case I64_LOAD8_U:
+            case I64_LOAD16_S:
+            case I64_LOAD16_U:
+            case I64_LOAD32_S:
+            case I64_LOAD32_U:
+            case I32_STORE:
+            case I64_STORE:
+            case F32_STORE:
+            case F64_STORE:
+            case I32_STORE8:
+            case I32_STORE16:
+            case I64_STORE8:
+            case I64_STORE16:
+            case I64_STORE32:
+            case V128_LOAD:
+            case V128_LOAD8x8_S:
+            case V128_LOAD8x8_U:
+            case V128_LOAD16x4_S:
+            case V128_LOAD16x4_U:
+            case V128_LOAD32x2_S:
+            case V128_LOAD32x2_U:
+            case V128_LOAD8_SPLAT:
+            case V128_LOAD16_SPLAT:
+            case V128_LOAD32_SPLAT:
+            case V128_LOAD64_SPLAT:
+            case V128_STORE:
+            case V128_LOAD32_ZERO:
+            case V128_LOAD64_ZERO:
+                {
+                    var flags = readVarUInt32(buffer);
+                    var align = flags & 0x3F;
+                    long memidx = 0;
+                    if ((flags >> 6) != 0) {
+                        memidx = readVarUInt32(buffer);
+                    }
+                    var offset = readVarUInt32(buffer);
+                    var operandsArray = new long[] {align, offset, memidx};
+                    verifyAlignment(op, operandsArray);
+                    return new Instruction(address, op, operandsArray);
+                }
+            case V128_LOAD8_LANE:
+            case V128_LOAD16_LANE:
+            case V128_LOAD32_LANE:
+            case V128_LOAD64_LANE:
+            case V128_STORE8_LANE:
+            case V128_STORE16_LANE:
+            case V128_STORE32_LANE:
+            case V128_STORE64_LANE:
+                {
+                    var flags = readVarUInt32(buffer);
+                    var align = flags & 0x3F;
+                    long memidx = 0;
+                    if ((flags >> 6) != 0) {
+                        memidx = readVarUInt32(buffer);
+                    }
+                    var offset = readVarUInt32(buffer);
+                    var laneidx = readVarUInt32(buffer);
+                    var operandsArray = new long[] {align, offset, memidx, laneidx};
+                    verifyAlignment(op, operandsArray);
+                    return new Instruction(address, op, operandsArray);
+                }
+            case MEM_ATOMIC_NOTIFY:
+            case MEM_ATOMIC_WAIT32:
+            case MEM_ATOMIC_WAIT64:
+            case I32_ATOMIC_LOAD:
+            case I64_ATOMIC_LOAD:
+            case I32_ATOMIC_LOAD8_U:
+            case I32_ATOMIC_LOAD16_U:
+            case I64_ATOMIC_LOAD8_U:
+            case I64_ATOMIC_LOAD16_U:
+            case I64_ATOMIC_LOAD32_U:
+            case I32_ATOMIC_STORE:
+            case I64_ATOMIC_STORE:
+            case I32_ATOMIC_STORE8:
+            case I32_ATOMIC_STORE16:
+            case I64_ATOMIC_STORE8:
+            case I64_ATOMIC_STORE16:
+            case I64_ATOMIC_STORE32:
+            case I32_ATOMIC_RMW_ADD:
+            case I64_ATOMIC_RMW_ADD:
+            case I32_ATOMIC_RMW8_ADD_U:
+            case I32_ATOMIC_RMW16_ADD_U:
+            case I64_ATOMIC_RMW8_ADD_U:
+            case I64_ATOMIC_RMW16_ADD_U:
+            case I64_ATOMIC_RMW32_ADD_U:
+            case I32_ATOMIC_RMW_SUB:
+            case I64_ATOMIC_RMW_SUB:
+            case I32_ATOMIC_RMW8_SUB_U:
+            case I32_ATOMIC_RMW16_SUB_U:
+            case I64_ATOMIC_RMW8_SUB_U:
+            case I64_ATOMIC_RMW16_SUB_U:
+            case I64_ATOMIC_RMW32_SUB_U:
+            case I32_ATOMIC_RMW_AND:
+            case I64_ATOMIC_RMW_AND:
+            case I32_ATOMIC_RMW8_AND_U:
+            case I32_ATOMIC_RMW16_AND_U:
+            case I64_ATOMIC_RMW8_AND_U:
+            case I64_ATOMIC_RMW16_AND_U:
+            case I64_ATOMIC_RMW32_AND_U:
+            case I32_ATOMIC_RMW_OR:
+            case I64_ATOMIC_RMW_OR:
+            case I32_ATOMIC_RMW8_OR_U:
+            case I32_ATOMIC_RMW16_OR_U:
+            case I64_ATOMIC_RMW8_OR_U:
+            case I64_ATOMIC_RMW16_OR_U:
+            case I64_ATOMIC_RMW32_OR_U:
+            case I32_ATOMIC_RMW_XOR:
+            case I64_ATOMIC_RMW_XOR:
+            case I32_ATOMIC_RMW8_XOR_U:
+            case I32_ATOMIC_RMW16_XOR_U:
+            case I64_ATOMIC_RMW8_XOR_U:
+            case I64_ATOMIC_RMW16_XOR_U:
+            case I64_ATOMIC_RMW32_XOR_U:
+            case I32_ATOMIC_RMW_XCHG:
+            case I64_ATOMIC_RMW_XCHG:
+            case I32_ATOMIC_RMW8_XCHG_U:
+            case I32_ATOMIC_RMW16_XCHG_U:
+            case I64_ATOMIC_RMW8_XCHG_U:
+            case I64_ATOMIC_RMW16_XCHG_U:
+            case I64_ATOMIC_RMW32_XCHG_U:
+            case I32_ATOMIC_RMW_CMPXCHG:
+            case I64_ATOMIC_RMW_CMPXCHG:
+            case I32_ATOMIC_RMW8_CMPXCHG_U:
+            case I32_ATOMIC_RMW16_CMPXCHG_U:
+            case I64_ATOMIC_RMW8_CMPXCHG_U:
+            case I64_ATOMIC_RMW16_CMPXCHG_U:
+            case I64_ATOMIC_RMW32_CMPXCHG_U:
+                {
+                    var flags = readVarUInt32(buffer);
+                    var align = flags & 0x3F;
+                    long memidx = 0;
+                    if ((flags >> 6) != 0) {
+                        memidx = readVarUInt32(buffer);
+                    }
+                    var offset = readVarUInt32(buffer);
+                    var operandsArray = new long[] {align, offset, memidx};
+                    verifyAlignment(op, operandsArray);
+                    return new Instruction(address, op, operandsArray);
+                }
+            default:
+                break;
+        }
+
         if (signature.isEmpty()) {
             return new Instruction(address, op, EMPTY_OPERANDS);
         }

@@ -259,7 +259,7 @@ public final class ByteBufferMemory implements Memory {
     }
 
     @Override
-    public void initialize(Instance instance, DataSegment[] dataSegments) {
+    public void initialize(Instance instance, DataSegment[] dataSegments, int memoryIndex) {
         this.dataSegments = dataSegments;
         if (dataSegments == null) {
             return;
@@ -268,6 +268,9 @@ public final class ByteBufferMemory implements Memory {
         for (var s : dataSegments) {
             if (s instanceof ActiveDataSegment) {
                 var segment = (ActiveDataSegment) s;
+                if (segment.index() != memoryIndex) {
+                    continue;
+                }
                 var offsetExpr = segment.offsetInstructions();
                 var data = segment.data();
                 var offset = (int) computeConstantValue(instance, offsetExpr)[0];

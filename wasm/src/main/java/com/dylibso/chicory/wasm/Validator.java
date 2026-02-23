@@ -311,7 +311,9 @@ final class Validator {
     }
 
     private void validateMemory(int id) {
-        if ((module.memorySection().isEmpty() && memoryImports == 0) || id != 0) {
+        int totalMemories =
+                module.memorySection().map(s -> s.memoryCount()).orElse(0) + memoryImports;
+        if (id < 0 || id >= totalMemories) {
             throw new InvalidException("unknown memory " + id);
         }
     }
@@ -1179,31 +1181,46 @@ final class Validator {
                     break;
                 case MEMORY_SIZE:
                 case MEMORY_GROW:
+                    validateMemory((int) op.operand(0));
+                    break;
                 case I32_LOAD:
                 case I32_LOAD8_U:
-                case I32_ATOMIC_LOAD8_U:
                 case I32_LOAD8_S:
                 case I32_LOAD16_U:
-                case I32_ATOMIC_LOAD16_U:
                 case I32_LOAD16_S:
                 case I64_LOAD:
                 case I64_LOAD8_S:
                 case I64_LOAD8_U:
-                case I64_ATOMIC_LOAD8_U:
-                case I64_ATOMIC_LOAD16_U:
                 case I64_LOAD16_S:
                 case I64_LOAD16_U:
                 case I64_LOAD32_S:
                 case I64_LOAD32_U:
-                case I64_ATOMIC_LOAD32_U:
                 case F32_LOAD:
                 case F64_LOAD:
                 case I32_STORE:
-                case I32_ATOMIC_STORE:
                 case I32_STORE8:
-                case I32_ATOMIC_STORE8:
                 case I32_STORE16:
+                case I64_STORE:
+                case I64_STORE8:
+                case I64_STORE16:
+                case I64_STORE32:
+                case F32_STORE:
+                case F64_STORE:
+                case V128_STORE:
+                case I32_ATOMIC_LOAD8_U:
+                case I32_ATOMIC_LOAD16_U:
+                case I64_ATOMIC_LOAD8_U:
+                case I64_ATOMIC_LOAD16_U:
+                case I64_ATOMIC_LOAD32_U:
+                case I32_ATOMIC_STORE:
+                case I32_ATOMIC_STORE8:
                 case I32_ATOMIC_STORE16:
+                case I64_ATOMIC_STORE:
+                case I64_ATOMIC_STORE8:
+                case I64_ATOMIC_STORE16:
+                case I64_ATOMIC_STORE32:
+                case I32_ATOMIC_LOAD:
+                case I64_ATOMIC_LOAD:
                 case I32_ATOMIC_RMW_ADD:
                 case I32_ATOMIC_RMW_CMPXCHG:
                 case I32_ATOMIC_RMW8_CMPXCHG_U:
@@ -1229,16 +1246,6 @@ final class Validator {
                 case I32_ATOMIC_RMW16_XOR_U:
                 case I32_ATOMIC_RMW16_AND_U:
                 case I32_ATOMIC_RMW16_SUB_U:
-                case I64_STORE:
-                case I64_ATOMIC_STORE:
-                case I64_STORE8:
-                case I64_ATOMIC_STORE8:
-                case I64_STORE16:
-                case I64_ATOMIC_STORE16:
-                case I64_STORE32:
-                case I64_ATOMIC_STORE32:
-                case F32_STORE:
-                case F64_STORE:
                 case I64_ATOMIC_RMW_ADD:
                 case I64_ATOMIC_RMW_XCHG:
                 case I64_ATOMIC_RMW_OR:
@@ -1263,13 +1270,10 @@ final class Validator {
                 case I64_ATOMIC_RMW32_XOR_U:
                 case I64_ATOMIC_RMW32_AND_U:
                 case I64_ATOMIC_RMW32_SUB_U:
-                case V128_STORE:
                 case MEM_ATOMIC_NOTIFY:
                 case MEM_ATOMIC_WAIT32:
                 case MEM_ATOMIC_WAIT64:
-                case I32_ATOMIC_LOAD:
-                case I64_ATOMIC_LOAD:
-                    validateMemory(0);
+                    validateMemory((int) op.operand(2));
                     break;
                 default:
                     break;

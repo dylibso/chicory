@@ -197,6 +197,53 @@
             <wast>proposals/gc/type-subtyping.wast</wast>
             <wast>proposals/gc/unreached-invalid.wast</wast>
             <wast>proposals/gc/unreached-valid.wast</wast>
+            <wast>proposals/multi-memory/address0.wast</wast>
+            <wast>proposals/multi-memory/address1.wast</wast>
+            <wast>proposals/multi-memory/align.wast</wast>
+            <wast>proposals/multi-memory/align0.wast</wast>
+            <wast>proposals/multi-memory/binary.wast</wast>
+            <wast>proposals/multi-memory/binary0.wast</wast>
+            <wast>proposals/multi-memory/data.wast</wast>
+            <wast>proposals/multi-memory/data0.wast</wast>
+            <wast>proposals/multi-memory/data1.wast</wast>
+            <wast>proposals/multi-memory/data_drop0.wast</wast>
+            <wast>proposals/multi-memory/exports0.wast</wast>
+            <wast>proposals/multi-memory/float_exprs0.wast</wast>
+            <wast>proposals/multi-memory/float_exprs1.wast</wast>
+            <wast>proposals/multi-memory/float_memory0.wast</wast>
+            <wast>proposals/multi-memory/imports.wast</wast>
+            <wast>proposals/multi-memory/imports0.wast</wast>
+            <wast>proposals/multi-memory/imports1.wast</wast>
+            <wast>proposals/multi-memory/imports2.wast</wast>
+            <wast>proposals/multi-memory/imports3.wast</wast>
+            <wast>proposals/multi-memory/imports4.wast</wast>
+            <wast>proposals/multi-memory/linking0.wast</wast>
+            <wast>proposals/multi-memory/linking1.wast</wast>
+            <wast>proposals/multi-memory/linking2.wast</wast>
+            <wast>proposals/multi-memory/linking3.wast</wast>
+            <wast>proposals/multi-memory/load.wast</wast>
+            <wast>proposals/multi-memory/load0.wast</wast>
+            <wast>proposals/multi-memory/load1.wast</wast>
+            <wast>proposals/multi-memory/load2.wast</wast>
+            <wast>proposals/multi-memory/memory-multi.wast</wast>
+            <wast>proposals/multi-memory/memory.wast</wast>
+            <wast>proposals/multi-memory/memory_copy0.wast</wast>
+            <wast>proposals/multi-memory/memory_copy1.wast</wast>
+            <wast>proposals/multi-memory/memory_fill0.wast</wast>
+            <wast>proposals/multi-memory/memory_grow.wast</wast>
+            <wast>proposals/multi-memory/memory_init0.wast</wast>
+            <wast>proposals/multi-memory/memory_size.wast</wast>
+            <wast>proposals/multi-memory/memory_size0.wast</wast>
+            <wast>proposals/multi-memory/memory_size1.wast</wast>
+            <wast>proposals/multi-memory/memory_size2.wast</wast>
+            <wast>proposals/multi-memory/memory_size3.wast</wast>
+            <wast>proposals/multi-memory/memory_trap0.wast</wast>
+            <wast>proposals/multi-memory/memory_trap1.wast</wast>
+            <wast>proposals/multi-memory/start0.wast</wast>
+            <wast>proposals/multi-memory/store.wast</wast>
+            <wast>proposals/multi-memory/store0.wast</wast>
+            <wast>proposals/multi-memory/store1.wast</wast>
+            <wast>proposals/multi-memory/traps0.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>proposals/threads/atomic.wast</wast>
@@ -520,6 +567,53 @@
                 <wast>proposals/gc/type-subtyping.wast</wast>
                 <wast>proposals/gc/unreached-invalid.wast</wast>
                 <wast>proposals/gc/unreached-valid.wast</wast>
+                <wast>proposals/multi-memory/address0.wast</wast>
+                <wast>proposals/multi-memory/address1.wast</wast>
+                <wast>proposals/multi-memory/align.wast</wast>
+                <wast>proposals/multi-memory/align0.wast</wast>
+                <wast>proposals/multi-memory/binary.wast</wast>
+                <wast>proposals/multi-memory/binary0.wast</wast>
+                <wast>proposals/multi-memory/data.wast</wast>
+                <wast>proposals/multi-memory/data0.wast</wast>
+                <wast>proposals/multi-memory/data1.wast</wast>
+                <wast>proposals/multi-memory/data_drop0.wast</wast>
+                <wast>proposals/multi-memory/exports0.wast</wast>
+                <wast>proposals/multi-memory/float_exprs0.wast</wast>
+                <wast>proposals/multi-memory/float_exprs1.wast</wast>
+                <wast>proposals/multi-memory/float_memory0.wast</wast>
+                <wast>proposals/multi-memory/imports.wast</wast>
+                <wast>proposals/multi-memory/imports0.wast</wast>
+                <wast>proposals/multi-memory/imports1.wast</wast>
+                <wast>proposals/multi-memory/imports2.wast</wast>
+                <wast>proposals/multi-memory/imports3.wast</wast>
+                <wast>proposals/multi-memory/imports4.wast</wast>
+                <wast>proposals/multi-memory/linking0.wast</wast>
+                <wast>proposals/multi-memory/linking1.wast</wast>
+                <wast>proposals/multi-memory/linking2.wast</wast>
+                <wast>proposals/multi-memory/linking3.wast</wast>
+                <wast>proposals/multi-memory/load.wast</wast>
+                <wast>proposals/multi-memory/load0.wast</wast>
+                <wast>proposals/multi-memory/load1.wast</wast>
+                <wast>proposals/multi-memory/load2.wast</wast>
+                <wast>proposals/multi-memory/memory-multi.wast</wast>
+                <wast>proposals/multi-memory/memory.wast</wast>
+                <wast>proposals/multi-memory/memory_copy0.wast</wast>
+                <wast>proposals/multi-memory/memory_copy1.wast</wast>
+                <wast>proposals/multi-memory/memory_fill0.wast</wast>
+                <wast>proposals/multi-memory/memory_grow.wast</wast>
+                <wast>proposals/multi-memory/memory_init0.wast</wast>
+                <wast>proposals/multi-memory/memory_size.wast</wast>
+                <wast>proposals/multi-memory/memory_size0.wast</wast>
+                <wast>proposals/multi-memory/memory_size1.wast</wast>
+                <wast>proposals/multi-memory/memory_size2.wast</wast>
+                <wast>proposals/multi-memory/memory_size3.wast</wast>
+                <wast>proposals/multi-memory/memory_trap0.wast</wast>
+                <wast>proposals/multi-memory/memory_trap1.wast</wast>
+                <wast>proposals/multi-memory/start0.wast</wast>
+                <wast>proposals/multi-memory/store.wast</wast>
+                <wast>proposals/multi-memory/store0.wast</wast>
+                <wast>proposals/multi-memory/store1.wast</wast>
+                <wast>proposals/multi-memory/traps0.wast</wast>
                 <wast>proposals/tail-call/return_call.wast</wast>
                 <wast>proposals/tail-call/return_call_indirect.wast</wast>
                 <wast>proposals/threads/atomic.wast</wast>
