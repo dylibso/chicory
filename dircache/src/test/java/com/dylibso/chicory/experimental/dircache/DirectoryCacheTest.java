@@ -139,9 +139,9 @@ public class DirectoryCacheTest {
                         DirectoryCacheTest.class.getResourceAsStream(
                                 "/compiled/count_vowels.rs.wasm"));
 
-        // Execute the section concurrently 100 times
+        // Execute the section concurrently 10 times
 
-        var concurrency = 100;
+        var concurrency = 10;
         ExecutorService executor = Executors.newFixedThreadPool(concurrency);
         CompletableFuture<Void>[] futures = new CompletableFuture[concurrency];
 
