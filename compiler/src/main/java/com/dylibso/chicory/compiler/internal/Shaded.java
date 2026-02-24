@@ -121,6 +121,15 @@ public final class Shaded {
         }
     }
 
+    public static void memoryCopy(
+            int destination, int offset, int size, Memory dstMemory, Memory srcMemory) {
+        if (dstMemory == srcMemory) {
+            memoryCopy(destination, offset, size, dstMemory);
+        } else {
+            dstMemory.write(destination, srcMemory.readBytes(offset, size));
+        }
+    }
+
     public static void memoryFill(int offset, byte value, int size, Memory memory) {
         int end = size + offset;
         memory.fill(value, offset, end);
