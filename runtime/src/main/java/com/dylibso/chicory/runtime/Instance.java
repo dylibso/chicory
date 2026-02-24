@@ -72,8 +72,6 @@ public class Instance {
     private final Exports fluentExports;
 
     private final Map<Integer, WasmException> exnRefs;
-    private final Map<Integer, long[]> arrayRefs;
-    private int nextArrayId;
     private final GcRefStore gcRefs;
 
     Instance(
@@ -115,7 +113,6 @@ public class Instance {
         this.fluentExports = new Exports(this);
 
         this.exnRefs = new HashMap<>();
-        this.arrayRefs = new HashMap<>();
         this.gcRefs = new GcRefStore(this);
 
         for (int i = 0; i < tables.length; i++) {
@@ -363,17 +360,7 @@ public class Instance {
         return exnRefs.get(idx);
     }
 
-    public int registerArray(long[] arr) {
-        int id = nextArrayId++;
-        arrayRefs.put(id, arr);
-        return id;
-    }
-
     public long[] array(int idx) {
-        var legacy = arrayRefs.get(idx);
-        if (legacy != null) {
-            return legacy;
-        }
         var gcRef = gcRefs.get(idx);
         if (gcRef instanceof WasmArray) {
             return ((WasmArray) gcRef).elements();
