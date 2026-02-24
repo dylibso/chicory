@@ -1611,11 +1611,11 @@ public final class Parser {
 
         if (align > 0) {
             var operand0 = ((int) operands[0]);
-            var offset = 1 << operand0;
+            // Maximum allowed alignment exponent: log2(naturalAlignment)
+            // where naturalAlignment = align / 8 (align is in bits)
+            var maxAlignExp = Integer.numberOfTrailingZeros(align >> 3);
 
-            if (operand0 >= align) {
-                throw new MalformedException("malformed memop flags");
-            } else if (offset < 0 || offset > (align >> 3)) {
+            if (operand0 > maxAlignExp) {
                 throw new InvalidException(
                         "alignment must not be larger than natural alignment (" + operand0 + ")");
             }

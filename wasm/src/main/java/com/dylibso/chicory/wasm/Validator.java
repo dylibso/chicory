@@ -535,9 +535,7 @@ final class Validator {
         for (var ds : module.dataSection().dataSegments()) {
             if (ds instanceof ActiveDataSegment) {
                 var ads = (ActiveDataSegment) ds;
-                if (ads.index() != 0) {
-                    throw new InvalidException("unknown memory " + ads.index());
-                }
+                validateMemory((int) ads.index());
                 validateConstantExpression(ads.offsetInstructions(), ValType.I32, allGlobals);
             }
         }
@@ -1360,19 +1358,19 @@ final class Validator {
             switch (op.opcode()) {
                 case V128_LOAD8_LANE:
                 case V128_STORE8_LANE:
-                    validateLane((int) op.operand(2), 16);
+                    validateLane((int) op.operand(3), 16);
                     break;
                 case V128_LOAD16_LANE:
                 case V128_STORE16_LANE:
-                    validateLane((int) op.operand(2), 8);
+                    validateLane((int) op.operand(3), 8);
                     break;
                 case V128_LOAD32_LANE:
                 case V128_STORE32_LANE:
-                    validateLane((int) op.operand(2), 4);
+                    validateLane((int) op.operand(3), 4);
                     break;
                 case V128_LOAD64_LANE:
                 case V128_STORE64_LANE:
-                    validateLane((int) op.operand(2), 2);
+                    validateLane((int) op.operand(3), 2);
                     break;
                 case I8x16_REPLACE_LANE:
                 case I8x16_EXTRACT_LANE_S:

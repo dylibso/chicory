@@ -281,7 +281,8 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </includedWasts>
-          <excludedTests>SpecV1BinaryTest.test40,
+          <excludedTests>
+            SpecV1BinaryTest.test40,
             SpecV1EhBinaryTest.test40,
             SpecV1ThreadsImportsTest.test64,
             SpecV1ThreadsImportsTest.test65,
@@ -305,7 +306,75 @@
             SpecV1ExtendedConstElemTest.test77,
             SpecV1FunctionReferencesElemTest.test93,
             SpecV1FunctionReferencesElemTest.test101,
-            SpecV1GcElemTest.test103</excludedTests>
+            SpecV1GcElemTest.test103,
+            <!-- Multi-memory: tests that reject multiple memories (now valid) -->
+            SpecV1MemoryTest.test6,
+            SpecV1MemoryTest.test7,
+            SpecV1ImportsTest.test127,
+            SpecV1ImportsTest.test128,
+            SpecV1ImportsTest.test129,
+            SpecV1ExceptionHandlingImportsTest.test133,
+            SpecV1ExceptionHandlingImportsTest.test134,
+            SpecV1ExceptionHandlingImportsTest.test135,
+            <!-- Multi-memory: memory.grow/size reserved zero byte replaced by u32 memidx -->
+            SpecV1BinaryTest.test41,
+            SpecV1BinaryTest.test42,
+            SpecV1BinaryTest.test43,
+            SpecV1BinaryTest.test44,
+            SpecV1BinaryTest.test45,
+            SpecV1BinaryTest.test46,
+            SpecV1BinaryTest.test47,
+            SpecV1BinaryTest.test48,
+            SpecV1BinaryTest.test49,
+            SpecV1BinaryTest.test50,
+            SpecV1ExceptionHandlingBinaryTest.test41,
+            SpecV1ExceptionHandlingBinaryTest.test42,
+            SpecV1ExceptionHandlingBinaryTest.test43,
+            SpecV1ExceptionHandlingBinaryTest.test44,
+            SpecV1ExceptionHandlingBinaryTest.test45,
+            SpecV1ExceptionHandlingBinaryTest.test46,
+            SpecV1ExceptionHandlingBinaryTest.test47,
+            SpecV1ExceptionHandlingBinaryTest.test48,
+            SpecV1ExceptionHandlingBinaryTest.test49,
+            SpecV1ExceptionHandlingBinaryTest.test50,
+            SpecV1GcBinaryTest.test41,
+            SpecV1GcBinaryTest.test42,
+            SpecV1GcBinaryTest.test43,
+            SpecV1GcBinaryTest.test44,
+            SpecV1GcBinaryTest.test45,
+            SpecV1GcBinaryTest.test46,
+            SpecV1GcBinaryTest.test47,
+            SpecV1GcBinaryTest.test48,
+            SpecV1GcBinaryTest.test49,
+            SpecV1GcBinaryTest.test50,
+            SpecV1FunctionReferencesBinaryTest.test41,
+            SpecV1FunctionReferencesBinaryTest.test42,
+            SpecV1FunctionReferencesBinaryTest.test43,
+            SpecV1FunctionReferencesBinaryTest.test44,
+            SpecV1FunctionReferencesBinaryTest.test45,
+            SpecV1FunctionReferencesBinaryTest.test46,
+            SpecV1FunctionReferencesBinaryTest.test47,
+            SpecV1FunctionReferencesBinaryTest.test48,
+            SpecV1FunctionReferencesBinaryTest.test49,
+            SpecV1FunctionReferencesBinaryTest.test50,
+            <!-- Multi-memory: load/store flag encoding changed (bit 6 = memidx follows) -->
+            SpecV1AlignTest.test157,
+            SpecV1AlignTest.test158,
+            SpecV1AlignTest.test159,
+            SpecV1AlignTest.test160,
+            SpecV1AlignTest.test161,
+            <!-- Multi-memory: threads proposal tests that reject multiple memories -->
+            SpecV1ThreadsImportsTest.test98,
+            SpecV1ThreadsImportsTest.test99,
+            SpecV1ThreadsImportsTest.test100,
+            SpecV1ThreadsMemoryTest.test9,
+            SpecV1ThreadsMemoryTest.test10,
+            <!-- Multi-memory: shared memory error type differs between proposals -->
+            SpecV1MultiMemoryBinaryTest.test82,
+            <!-- Multi-memory: same unknown global issue as SpecV1DataTest -->
+            SpecV1MultiMemoryDataTest.test9,
+            SpecV1MultiMemoryDataTest.test10
+          </excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
           <excludedUnlinkableWasts/>
@@ -709,7 +778,8 @@
                 <wast>utf8-import-module.wast</wast>
                 <wast>utf8-invalid-encoding.wast</wast>
               </includedWasts>
-              <excludedTests>SpecV1BinaryTest.test40,
+              <excludedTests>
+                SpecV1BinaryTest.test40,
                 SpecV1EhBinaryTest.test40,
                 SpecV1ThreadsImportsTest.test64,
                 SpecV1ThreadsImportsTest.test65,
@@ -733,7 +803,75 @@
                 SpecV1ExtendedConstElemTest.test77,
                 SpecV1FunctionReferencesElemTest.test93,
                 SpecV1FunctionReferencesElemTest.test101,
-                SpecV1GcElemTest.test103</excludedTests>
+                SpecV1GcElemTest.test103,
+                <!-- Multi-memory: tests that reject multiple memories (now valid) -->
+                SpecV1MemoryTest.test6,
+                SpecV1MemoryTest.test7,
+                SpecV1ImportsTest.test127,
+                SpecV1ImportsTest.test128,
+                SpecV1ImportsTest.test129,
+                SpecV1ExceptionHandlingImportsTest.test133,
+                SpecV1ExceptionHandlingImportsTest.test134,
+                SpecV1ExceptionHandlingImportsTest.test135,
+                <!-- Multi-memory: memory.grow/size reserved zero byte replaced by u32 memidx -->
+                SpecV1BinaryTest.test41,
+                SpecV1BinaryTest.test42,
+                SpecV1BinaryTest.test43,
+                SpecV1BinaryTest.test44,
+                SpecV1BinaryTest.test45,
+                SpecV1BinaryTest.test46,
+                SpecV1BinaryTest.test47,
+                SpecV1BinaryTest.test48,
+                SpecV1BinaryTest.test49,
+                SpecV1BinaryTest.test50,
+                SpecV1ExceptionHandlingBinaryTest.test41,
+                SpecV1ExceptionHandlingBinaryTest.test42,
+                SpecV1ExceptionHandlingBinaryTest.test43,
+                SpecV1ExceptionHandlingBinaryTest.test44,
+                SpecV1ExceptionHandlingBinaryTest.test45,
+                SpecV1ExceptionHandlingBinaryTest.test46,
+                SpecV1ExceptionHandlingBinaryTest.test47,
+                SpecV1ExceptionHandlingBinaryTest.test48,
+                SpecV1ExceptionHandlingBinaryTest.test49,
+                SpecV1ExceptionHandlingBinaryTest.test50,
+                SpecV1GcBinaryTest.test41,
+                SpecV1GcBinaryTest.test42,
+                SpecV1GcBinaryTest.test43,
+                SpecV1GcBinaryTest.test44,
+                SpecV1GcBinaryTest.test45,
+                SpecV1GcBinaryTest.test46,
+                SpecV1GcBinaryTest.test47,
+                SpecV1GcBinaryTest.test48,
+                SpecV1GcBinaryTest.test49,
+                SpecV1GcBinaryTest.test50,
+                SpecV1FunctionReferencesBinaryTest.test41,
+                SpecV1FunctionReferencesBinaryTest.test42,
+                SpecV1FunctionReferencesBinaryTest.test43,
+                SpecV1FunctionReferencesBinaryTest.test44,
+                SpecV1FunctionReferencesBinaryTest.test45,
+                SpecV1FunctionReferencesBinaryTest.test46,
+                SpecV1FunctionReferencesBinaryTest.test47,
+                SpecV1FunctionReferencesBinaryTest.test48,
+                SpecV1FunctionReferencesBinaryTest.test49,
+                SpecV1FunctionReferencesBinaryTest.test50,
+                <!-- Multi-memory: load/store flag encoding changed (bit 6 = memidx follows) -->
+                SpecV1AlignTest.test157,
+                SpecV1AlignTest.test158,
+                SpecV1AlignTest.test159,
+                SpecV1AlignTest.test160,
+                SpecV1AlignTest.test161,
+                <!-- Multi-memory: threads proposal tests that reject multiple memories -->
+                SpecV1ThreadsImportsTest.test98,
+                SpecV1ThreadsImportsTest.test99,
+                SpecV1ThreadsImportsTest.test100,
+                SpecV1ThreadsMemoryTest.test9,
+                SpecV1ThreadsMemoryTest.test10,
+                <!-- Multi-memory: shared memory error type differs between proposals -->
+                SpecV1MultiMemoryBinaryTest.test82,
+                <!-- Multi-memory: same unknown global issue as SpecV1DataTest -->
+                SpecV1MultiMemoryDataTest.test9,
+                SpecV1MultiMemoryDataTest.test10
+              </excludedTests>
               <excludedMalformedWasts/>
               <excludedInvalidWasts/>
               <excludedUnlinkableWasts/>

@@ -172,12 +172,16 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ICONST_0
     BIPUSH 8
     ICONST_0
-    ALOAD 0
+    ALOAD 1
+    ICONST_0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory (I)Lcom/dylibso/chicory/runtime/Memory;
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
     ICONST_4
     BIPUSH 12
     ICONST_0
-    ALOAD 0
+    ALOAD 1
+    ICONST_0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory (I)Lcom/dylibso/chicory/runtime/Memory;
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
     ICONST_1
     ICONST_0
