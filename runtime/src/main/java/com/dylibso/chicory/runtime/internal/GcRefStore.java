@@ -1,6 +1,12 @@
 package com.dylibso.chicory.runtime.internal;
 
+import com.dylibso.chicory.runtime.GlobalInstance;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.TableInstance;
+import com.dylibso.chicory.runtime.WasmArray;
 import com.dylibso.chicory.runtime.WasmGcRef;
+import com.dylibso.chicory.runtime.WasmStruct;
+import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -8,8 +14,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
@@ -32,24 +36,11 @@ public class GcRefStore {
     private final Map<Integer, WasmGcRef> map = new HashMap<>();
     private int nextId = ID_OFFSET;
 
-    private Consumer<IntConsumer> rootCollector;
-    private BiConsumer<WasmGcRef, IntConsumer> tracer;
+    private final Instance instance;
     private int allocCount;
 
-    public GcRefStore() {}
-
-    /**
-     * Configures the mark-sweep callbacks.
-     *
-     * @param rootCollector receives an {@link IntConsumer} to report all root keys
-     *                      (e.g. from globals, tables)
-     * @param tracer        given a value and an {@link IntConsumer}, reports the keys
-     *                      of all entries directly referenced by that value
-     */
-    public void configureSweep(
-            Consumer<IntConsumer> rootCollector, BiConsumer<WasmGcRef, IntConsumer> tracer) {
-        this.rootCollector = rootCollector;
-        this.tracer = tracer;
+    public GcRefStore(Instance instance) {
+        this.instance = instance;
     }
 
     /**
@@ -59,7 +50,7 @@ public class GcRefStore {
     public int put(WasmGcRef value) {
         int id = nextId++;
         map.put(id, value);
-        if (rootCollector != null && ++allocCount >= SWEEP_INTERVAL) {
+        if (++allocCount >= SWEEP_INTERVAL) {
             allocCount = 0;
             sweep();
         }
@@ -78,11 +69,11 @@ public class GcRefStore {
 
     /**
      * Performs mark-sweep collection of unreachable entries.
-     * Scans all roots via the configured root collector, traces through
-     * the object graph, then removes unreachable entries.
+     * Scans all roots (globals, tables), traces through struct fields
+     * and array elements, then removes unreachable entries.
      */
     public void sweep() {
-        if (map.isEmpty() || rootCollector == null) {
+        if (map.isEmpty()) {
             return;
         }
 
@@ -96,19 +87,85 @@ public class GcRefStore {
                     }
                 };
 
-        // Mark phase: collect roots
-        rootCollector.accept(collector);
+        // Mark phase: collect roots from globals and tables
+        collectRoots(collector);
 
         // Trace phase: BFS through object graph
+        TypeSection typeSection = instance.module().typeSection();
         while (!worklist.isEmpty()) {
             int id = worklist.poll();
             WasmGcRef value = map.get(id);
             if (value != null) {
-                tracer.accept(value, collector);
+                trace(value, typeSection, collector);
             }
         }
 
         // Sweep phase: remove unreachable entries
         map.keySet().retainAll(reachable);
+    }
+
+    private void collectRoots(IntConsumer collector) {
+        // Globals (both local and imported)
+        int totalGlobals =
+                instance.module().globalSection().globalCount() + instance.imports().globalCount();
+        for (int i = 0; i < totalGlobals; i++) {
+            GlobalInstance g = instance.global(i);
+            if (g.getType().isReference()) {
+                long val = g.getValue();
+                if (isGcRefId(val)) {
+                    collector.accept((int) val);
+                }
+            }
+        }
+
+        // Tables (both local and imported)
+        int totalTables =
+                instance.module().tableSection().tableCount() + instance.imports().tableCount();
+        for (int i = 0; i < totalTables; i++) {
+            TableInstance t = instance.table(i);
+            for (int j = 0; j < t.size(); j++) {
+                int ref = t.ref(j);
+                if (isGcRefId(ref)) {
+                    collector.accept(ref);
+                }
+            }
+        }
+    }
+
+    private static void trace(WasmGcRef ref, TypeSection typeSection, IntConsumer collector) {
+        if (ref instanceof WasmStruct) {
+            WasmStruct struct = (WasmStruct) ref;
+            var subType = typeSection.getSubType(struct.typeIdx());
+            var structType = subType.compType().structType();
+            if (structType != null) {
+                var fieldTypes = structType.fieldTypes();
+                for (int i = 0; i < fieldTypes.length; i++) {
+                    var storage = fieldTypes[i].storageType();
+                    var valType = storage.valType();
+                    if (valType != null && valType.isReference()) {
+                        long val = struct.field(i);
+                        if (isGcRefId(val)) {
+                            collector.accept((int) val);
+                        }
+                    }
+                }
+            }
+        } else if (ref instanceof WasmArray) {
+            WasmArray array = (WasmArray) ref;
+            var subType = typeSection.getSubType(array.typeIdx());
+            var arrayType = subType.compType().arrayType();
+            if (arrayType != null) {
+                var storage = arrayType.fieldType().storageType();
+                var valType = storage.valType();
+                if (valType != null && valType.isReference()) {
+                    for (int i = 0; i < array.length(); i++) {
+                        long val = array.get(i);
+                        if (isGcRefId(val)) {
+                            collector.accept((int) val);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

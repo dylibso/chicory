@@ -116,69 +116,7 @@ public class Instance {
 
         this.exnRefs = new HashMap<>();
         this.arrayRefs = new HashMap<>();
-        this.gcRefs = new GcRefStore();
-        this.gcRefs.configureSweep(
-                // Root collector: report all GC ref IDs reachable from globals and tables
-                collector -> {
-                    int totalGlobals = this.globals.length + this.imports.globalCount();
-                    for (int i = 0; i < totalGlobals; i++) {
-                        GlobalInstance g = global(i);
-                        if (g.getType().isReference()) {
-                            long val = g.getValue();
-                            if (GcRefStore.isGcRefId(val)) {
-                                collector.accept((int) val);
-                            }
-                        }
-                    }
-                    int totalTables = this.tables.length + this.imports.tableCount();
-                    for (int i = 0; i < totalTables; i++) {
-                        TableInstance t = table(i);
-                        for (int j = 0; j < t.size(); j++) {
-                            int ref = t.ref(j);
-                            if (GcRefStore.isGcRefId(ref)) {
-                                collector.accept(ref);
-                            }
-                        }
-                    }
-                },
-                // Tracer: report GC ref IDs referenced by a struct/array value
-                (ref, collector) -> {
-                    var typeSection = module.typeSection();
-                    if (ref instanceof WasmStruct) {
-                        WasmStruct struct = (WasmStruct) ref;
-                        var subType = typeSection.getSubType(struct.typeIdx());
-                        var structType = subType.compType().structType();
-                        if (structType != null) {
-                            var fieldTypes = structType.fieldTypes();
-                            for (int i = 0; i < fieldTypes.length; i++) {
-                                var storage = fieldTypes[i].storageType();
-                                var valType = storage.valType();
-                                if (valType != null && valType.isReference()) {
-                                    long val = struct.field(i);
-                                    if (GcRefStore.isGcRefId(val)) {
-                                        collector.accept((int) val);
-                                    }
-                                }
-                            }
-                        }
-                    } else if (ref instanceof WasmArray) {
-                        WasmArray array = (WasmArray) ref;
-                        var subType = typeSection.getSubType(array.typeIdx());
-                        var arrayType = subType.compType().arrayType();
-                        if (arrayType != null) {
-                            var storage = arrayType.fieldType().storageType();
-                            var valType = storage.valType();
-                            if (valType != null && valType.isReference()) {
-                                for (int i = 0; i < array.length(); i++) {
-                                    long val = array.get(i);
-                                    if (GcRefStore.isGcRefId(val)) {
-                                        collector.accept((int) val);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+        this.gcRefs = new GcRefStore(this);
 
         for (int i = 0; i < tables.length; i++) {
             long rawValue = computeConstantValue(this, tables[i].initialize())[0];

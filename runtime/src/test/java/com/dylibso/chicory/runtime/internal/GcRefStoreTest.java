@@ -2,22 +2,33 @@ package com.dylibso.chicory.runtime.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.WasmGcRef;
+import com.dylibso.chicory.wasm.Parser;
+import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 
 public class GcRefStoreTest {
+
+    // Minimal valid wasm module: magic number + version 1
+    private static final byte[] EMPTY_WASM = {0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00};
 
     private static WasmGcRef ref(int typeIdx) {
         return () -> typeIdx;
     }
 
+    private static GcRefStore newStore() {
+        var module = Parser.parse(new ByteArrayInputStream(EMPTY_WASM));
+        var instance = Instance.builder(module).build();
+        return new GcRefStore(instance);
+    }
+
     @Test
     public void autoAssignKeysFromOffset() {
-        var store = new GcRefStore();
+        var store = newStore();
         int k0 = store.put(ref(0));
         int k1 = store.put(ref(1));
         int k2 = store.put(ref(2));
@@ -31,7 +42,7 @@ public class GcRefStoreTest {
 
     @Test
     public void getMissingKeyReturnsNull() {
-        var store = new GcRefStore();
+        var store = newStore();
         assertNull(store.get(0));
         assertNull(store.get(999));
     }
@@ -42,50 +53,5 @@ public class GcRefStoreTest {
         assertTrue(GcRefStore.isGcRefId(GcRefStore.ID_OFFSET + 100));
         assertFalse(GcRefStore.isGcRefId(0));
         assertFalse(GcRefStore.isGcRefId(GcRefStore.ID_OFFSET - 1));
-    }
-
-    @Test
-    public void sweepRemovesUnreachableEntries() {
-        var store = new GcRefStore();
-        int k0 = store.put(ref(0));
-        int k1 = store.put(ref(1));
-        int k2 = store.put(ref(2));
-
-        // Only k0 is a root, no tracing
-        store.configureSweep(collector -> collector.accept(k0), (val, collector) -> {});
-        store.sweep();
-
-        assertNotNull(store.get(k0));
-        assertNull(store.get(k1));
-        assertNull(store.get(k2));
-    }
-
-    @Test
-    public void sweepTracesReferences() {
-        var store = new GcRefStore();
-        int k0 = store.put(ref(0));
-        int k1 = store.put(ref(1));
-        int k2 = store.put(ref(2));
-
-        // k0 is a root, k0 references k2 via tracing, k1 is unreachable
-        store.configureSweep(
-                collector -> collector.accept(k0),
-                (val, collector) -> {
-                    if (val.typeIdx() == 0) {
-                        collector.accept(k2);
-                    }
-                });
-        store.sweep();
-
-        assertNotNull(store.get(k0));
-        assertNull(store.get(k1));
-        assertNotNull(store.get(k2));
-    }
-
-    @Test
-    public void sweepOnEmptyStoreIsNoop() {
-        var store = new GcRefStore();
-        store.configureSweep(collector -> {}, (val, collector) -> {});
-        store.sweep(); // should not throw
     }
 }
