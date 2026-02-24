@@ -313,10 +313,10 @@ public interface Memory {
         }
     }
 
-    void initialize(Instance instance, DataSegment[] dataSegments, int memoryIndex);
+    void initialize(Instance instance, DataSegment[] dataSegments);
 
-    default void initialize(Instance instance, DataSegment[] dataSegments) {
-        initialize(instance, dataSegments, 0);
+    default void initialize(Instance instance, DataSegment[] dataSegments, int memoryIndex) {
+        initialize(instance, dataSegments);
     }
 
     void initPassiveSegment(int segmentId, int dest, int offset, int size);

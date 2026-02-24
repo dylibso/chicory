@@ -288,6 +288,11 @@ public final class ByteArrayMemory implements Memory {
     }
 
     @Override
+    public void initialize(Instance instance, DataSegment[] dataSegments) {
+        initialize(instance, dataSegments, 0);
+    }
+
+    @Override
     public void initialize(Instance instance, DataSegment[] dataSegments, int memoryIndex) {
         this.dataSegments = dataSegments;
         if (dataSegments == null) {
