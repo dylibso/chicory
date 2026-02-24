@@ -964,17 +964,20 @@ final class Emitters {
     public static void MEM_ATOMIC_FENCE(
             Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         // ATOMIC_FENCE always uses memory 0 per spec
-        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        asm.iconst(0);
-        emitInvokeVirtual(asm, ShadedRefs.INSTANCE_MEMORY_IDX);
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, ShadedRefs.MEMORY_ATOMIC_FENCE);
     }
 
     private static void emitMemoryForIndex(
             Context ctx, CompilerInstruction ins, InstructionAdapter asm, int operandIdx) {
-        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        asm.iconst((int) ins.operand(operandIdx));
-        emitInvokeVirtual(asm, ShadedRefs.INSTANCE_MEMORY_IDX);
+        int memIdx = (int) ins.operand(operandIdx);
+        if (memIdx == 0) {
+            asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        } else {
+            asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+            asm.iconst(memIdx);
+            emitInvokeVirtual(asm, ShadedRefs.INSTANCE_MEMORY_IDX);
+        }
     }
 
     private static void emitLoadOrStore(

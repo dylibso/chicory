@@ -130,15 +130,11 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ICONST_0
     ILOAD 0
     ICONST_0
-    ALOAD 2
-    ICONST_0
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory (I)Lcom/dylibso/chicory/runtime/Memory;
+    ALOAD 1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
     ICONST_0
     ICONST_0
-    ALOAD 2
-    ICONST_0
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory (I)Lcom/dylibso/chicory/runtime/Memory;
+    ALOAD 1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.memoryReadInt (IILcom/dylibso/chicory/runtime/Memory;)I
     IRETURN
    L0
@@ -166,15 +162,11 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ICONST_0
     LLOAD 0
     ICONST_0
-    ALOAD 3
-    ICONST_0
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory (I)Lcom/dylibso/chicory/runtime/Memory;
+    ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.memoryWriteLong (IJILcom/dylibso/chicory/runtime/Memory;)V
     ICONST_0
     ICONST_0
-    ALOAD 3
-    ICONST_0
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory (I)Lcom/dylibso/chicory/runtime/Memory;
+    ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.memoryReadLong (IILcom/dylibso/chicory/runtime/Memory;)J
     LRETURN
    L0
