@@ -61,19 +61,11 @@
               <wasmFile>${project.basedir}/target/wasm-tools.wasm</wasmFile>
               <!-- <interpreterFallback>WARN</interpreterFallback> -->
               <interpretedFunctions>
-                <function>4591</function>
-                <function>4676</function>
                 <function>4725</function>
-                <function>4734</function>
-                <function>4836</function>
-                <function>4964</function>
-                <function>5019</function>
                 <function>5095</function>
-                <function>5154</function>
                 <function>5422</function>
                 <function>7668</function>
                 <function>10543</function>
-                <function>13374</function>
               </interpretedFunctions>
             </configuration>
           </execution>

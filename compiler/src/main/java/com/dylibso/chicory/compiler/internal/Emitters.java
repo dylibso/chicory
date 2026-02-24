@@ -340,9 +340,16 @@ final class Emitters {
     }
 
     public static void MEMORY_COPY(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitMemoryForIndex(ctx, ins, asm, 0);
-        emitMemoryForIndex(ctx, ins, asm, 1);
-        emitInvokeStatic(asm, ShadedRefs.MEMORY_COPY_2);
+        int dstMemIdx = (int) ins.operand(0);
+        int srcMemIdx = (int) ins.operand(1);
+        if (dstMemIdx == srcMemIdx) {
+            emitMemoryForIndex(ctx, ins, asm, 0);
+            emitInvokeStatic(asm, ShadedRefs.MEMORY_COPY);
+        } else {
+            emitMemoryForIndex(ctx, ins, asm, 0);
+            emitMemoryForIndex(ctx, ins, asm, 1);
+            emitInvokeStatic(asm, ShadedRefs.MEMORY_COPY_2);
+        }
     }
 
     public static void MEMORY_FILL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
