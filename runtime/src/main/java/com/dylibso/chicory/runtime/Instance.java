@@ -10,7 +10,7 @@ import static com.dylibso.chicory.wasm.types.ExternalType.TAG;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
-import com.dylibso.chicory.runtime.internal.IntWeakValueMap;
+import com.dylibso.chicory.runtime.internal.GcRefStore;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.UninstantiableException;
@@ -54,12 +54,6 @@ import java.util.stream.Collectors;
 public class Instance {
     public static final String START_FUNCTION_NAME = "_start";
 
-    // GC ref IDs start at this offset to avoid collisions with externref
-    // values that get internalized via any.convert_extern. Since internalized
-    // externrefs and GC refs both live in the ANY hierarchy, they share the
-    // same integer representation space.
-    static final int GC_REF_ID_OFFSET = 0x10000;
-
     private final WasmModule module;
     private final Machine machine;
     private final FunctionBody[] functions;
@@ -78,8 +72,9 @@ public class Instance {
     private final Exports fluentExports;
 
     private final Map<Integer, WasmException> exnRefs;
-    private final IntWeakValueMap<long[]> arrayRefs;
-    private final IntWeakValueMap<WasmGcRef> gcRefs;
+    private final Map<Integer, long[]> arrayRefs;
+    private int nextArrayId;
+    private final GcRefStore gcRefs;
 
     Instance(
             WasmModule module,
@@ -120,8 +115,70 @@ public class Instance {
         this.fluentExports = new Exports(this);
 
         this.exnRefs = new HashMap<>();
-        this.arrayRefs = new IntWeakValueMap<>();
-        this.gcRefs = new IntWeakValueMap<>(GC_REF_ID_OFFSET);
+        this.arrayRefs = new HashMap<>();
+        this.gcRefs = new GcRefStore();
+        this.gcRefs.configureSweep(
+                // Root collector: report all GC ref IDs reachable from globals and tables
+                collector -> {
+                    int totalGlobals = this.globals.length + this.imports.globalCount();
+                    for (int i = 0; i < totalGlobals; i++) {
+                        GlobalInstance g = global(i);
+                        if (g.getType().isReference()) {
+                            long val = g.getValue();
+                            if (GcRefStore.isGcRefId(val)) {
+                                collector.accept((int) val);
+                            }
+                        }
+                    }
+                    int totalTables = this.tables.length + this.imports.tableCount();
+                    for (int i = 0; i < totalTables; i++) {
+                        TableInstance t = table(i);
+                        for (int j = 0; j < t.size(); j++) {
+                            int ref = t.ref(j);
+                            if (GcRefStore.isGcRefId(ref)) {
+                                collector.accept(ref);
+                            }
+                        }
+                    }
+                },
+                // Tracer: report GC ref IDs referenced by a struct/array value
+                (ref, collector) -> {
+                    var typeSection = module.typeSection();
+                    if (ref instanceof WasmStruct) {
+                        WasmStruct struct = (WasmStruct) ref;
+                        var subType = typeSection.getSubType(struct.typeIdx());
+                        var structType = subType.compType().structType();
+                        if (structType != null) {
+                            var fieldTypes = structType.fieldTypes();
+                            for (int i = 0; i < fieldTypes.length; i++) {
+                                var storage = fieldTypes[i].storageType();
+                                var valType = storage.valType();
+                                if (valType != null && valType.isReference()) {
+                                    long val = struct.field(i);
+                                    if (GcRefStore.isGcRefId(val)) {
+                                        collector.accept((int) val);
+                                    }
+                                }
+                            }
+                        }
+                    } else if (ref instanceof WasmArray) {
+                        WasmArray array = (WasmArray) ref;
+                        var subType = typeSection.getSubType(array.typeIdx());
+                        var arrayType = subType.compType().arrayType();
+                        if (arrayType != null) {
+                            var storage = arrayType.fieldType().storageType();
+                            var valType = storage.valType();
+                            if (valType != null && valType.isReference()) {
+                                for (int i = 0; i < array.length(); i++) {
+                                    long val = array.get(i);
+                                    if (GcRefStore.isGcRefId(val)) {
+                                        collector.accept((int) val);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
 
         for (int i = 0; i < tables.length; i++) {
             long rawValue = computeConstantValue(this, tables[i].initialize())[0];
@@ -369,7 +426,9 @@ public class Instance {
     }
 
     public int registerArray(long[] arr) {
-        return arrayRefs.put(arr);
+        int id = nextArrayId++;
+        arrayRefs.put(id, arr);
+        return id;
     }
 
     public long[] array(int idx) {
@@ -384,98 +443,12 @@ public class Instance {
         return null;
     }
 
-    private static final int GC_SWEEP_INTERVAL = 1024;
-    private int gcAllocCount;
-
     public int registerGcRef(WasmGcRef ref) {
-        int id = gcRefs.put(ref);
-        if (++gcAllocCount >= GC_SWEEP_INTERVAL) {
-            gcAllocCount = 0;
-            sweepGcRefs();
-        }
-        return id;
+        return gcRefs.put(ref);
     }
 
     public WasmGcRef gcRef(int idx) {
         return gcRefs.get(idx);
-    }
-
-    /**
-     * Performs a mark-sweep collection of unreachable GC refs.
-     * Scans all roots (globals, tables), traces through struct fields
-     * and array elements, then removes unreachable entries.
-     */
-    public void sweepGcRefs() {
-        TypeSection typeSection = module.typeSection();
-
-        gcRefs.sweep(
-                // Root collector: report all GC ref IDs reachable from globals and tables
-                collector -> {
-                    // Globals (both local and imported)
-                    int totalGlobals = globals.length + imports.globalCount();
-                    for (int i = 0; i < totalGlobals; i++) {
-                        GlobalInstance g = global(i);
-                        if (g.getType().isReference()) {
-                            long val = g.getValue();
-                            if (isGcRefId(val)) {
-                                collector.accept((int) val);
-                            }
-                        }
-                    }
-
-                    // Tables (both local and imported)
-                    int totalTables = tables.length + imports.tableCount();
-                    for (int i = 0; i < totalTables; i++) {
-                        TableInstance t = table(i);
-                        for (int j = 0; j < t.size(); j++) {
-                            int ref = t.ref(j);
-                            if (isGcRefId(ref)) {
-                                collector.accept(ref);
-                            }
-                        }
-                    }
-                },
-                // Tracer: report GC ref IDs referenced by a struct/array value
-                (ref, collector) -> {
-                    if (ref instanceof WasmStruct) {
-                        WasmStruct struct = (WasmStruct) ref;
-                        var subType = typeSection.getSubType(struct.typeIdx());
-                        var structType = subType.compType().structType();
-                        if (structType != null) {
-                            var fieldTypes = structType.fieldTypes();
-                            for (int i = 0; i < fieldTypes.length; i++) {
-                                var storage = fieldTypes[i].storageType();
-                                var valType = storage.valType();
-                                if (valType != null && valType.isReference()) {
-                                    long val = struct.field(i);
-                                    if (isGcRefId(val)) {
-                                        collector.accept((int) val);
-                                    }
-                                }
-                            }
-                        }
-                    } else if (ref instanceof WasmArray) {
-                        WasmArray array = (WasmArray) ref;
-                        var subType = typeSection.getSubType(array.typeIdx());
-                        var arrayType = subType.compType().arrayType();
-                        if (arrayType != null) {
-                            var storage = arrayType.fieldType().storageType();
-                            var valType = storage.valType();
-                            if (valType != null && valType.isReference()) {
-                                for (int i = 0; i < array.length(); i++) {
-                                    long val = array.get(i);
-                                    if (isGcRefId(val)) {
-                                        collector.accept((int) val);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-    }
-
-    private static boolean isGcRefId(long val) {
-        return val >= GC_REF_ID_OFFSET && val != Value.REF_NULL_VALUE && !Value.isI31(val);
     }
 
     public boolean heapTypeMatch(
