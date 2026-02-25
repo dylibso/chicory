@@ -96,13 +96,12 @@ If you have an interest in working on any of these please reach out in Zulip!
 * [x] Exception Handling
 * [x] Threads Support
 * [x] Extended Constant Expressions
-* [ ] GC Support
-  * in progress
 
-### Proposals and Specs
+### 2026
 
-* [ ] Multi-Memory Support
-
+* [x] GC support
+* [x] Multi-Memory Support
+* [ ] Performance
 
 ## On the press
 
