@@ -1281,15 +1281,6 @@ public final class Parser {
         var signature = OpCode.signature(op);
 
         switch (op) {
-            case MEMORY_GROW:
-            case MEMORY_SIZE:
-                {
-                    var zero = readByte(buffer);
-                    if (zero != 0x00) {
-                        throw new MalformedException("zero byte expected");
-                    }
-                    break;
-                }
             default:
                 break;
         }
@@ -1301,6 +1292,7 @@ public final class Parser {
             case SELECT:
                 return new Instruction(address, op, new long[] {0});
         }
+
         if (signature.isEmpty()) {
             return new Instruction(address, op, EMPTY_OPERANDS);
         }
@@ -1382,6 +1374,20 @@ public final class Parser {
                         operands.add(readValueTypeBuilder(buffer).id());
                     }
                     break;
+                case MEMARG:
+                    {
+                        var flags = readVarUInt32(buffer);
+                        var align = flags & 0x3F;
+                        long memidx = 0;
+                        if ((flags >> 6) != 0) {
+                            memidx = readVarUInt32(buffer);
+                        }
+                        var offset = readVarUInt32(buffer);
+                        operands.add(align);
+                        operands.add(offset);
+                        operands.add(memidx);
+                        break;
+                    }
             }
         }
         var operandsArray = new long[operands.size()];
@@ -1464,11 +1470,11 @@ public final class Parser {
 
         if (align > 0) {
             var operand0 = ((int) operands[0]);
-            var offset = 1 << operand0;
+            // Maximum allowed alignment exponent: log2(naturalAlignment)
+            // where naturalAlignment = align / 8 (align is in bits)
+            var maxAlignExp = Integer.numberOfTrailingZeros(align >> 3);
 
-            if (operand0 >= align) {
-                throw new MalformedException("malformed memop flags");
-            } else if (offset < 0 || offset > (align >> 3)) {
+            if (operand0 > maxAlignExp) {
                 throw new InvalidException(
                         "alignment must not be larger than natural alignment (" + operand0 + ")");
             }

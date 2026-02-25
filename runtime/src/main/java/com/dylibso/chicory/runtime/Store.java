@@ -119,7 +119,8 @@ public class Store {
                     break;
 
                 case MEMORY:
-                    this.addMemory(new ImportMemory(name, exportName, instance.memory()));
+                    this.addMemory(
+                            new ImportMemory(name, exportName, instance.memory(export.index())));
                     break;
 
                 case GLOBAL:

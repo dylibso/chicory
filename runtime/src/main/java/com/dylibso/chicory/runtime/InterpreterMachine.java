@@ -355,10 +355,10 @@ public class InterpreterMachine implements Machine {
                     F64_STORE(stack, instance, operands);
                     break;
                 case MEMORY_GROW:
-                    MEMORY_GROW(stack, instance);
+                    MEMORY_GROW(stack, instance, operands);
                     break;
                 case MEMORY_FILL:
-                    MEMORY_FILL(stack, instance);
+                    MEMORY_FILL(stack, instance, operands);
                     break;
                 case I32_STORE8:
                 case I64_STORE8:
@@ -368,7 +368,7 @@ public class InterpreterMachine implements Machine {
                     I64_STORE32(stack, instance, operands);
                     break;
                 case MEMORY_SIZE:
-                    MEMORY_SIZE(stack, instance);
+                    MEMORY_SIZE(stack, instance, operands);
                     break;
                 // TODO 32bit and 64 bit operations are the same for now
                 case I32_CONST:
@@ -810,7 +810,7 @@ public class InterpreterMachine implements Machine {
                     DATA_DROP(instance, operands);
                     break;
                 case MEMORY_COPY:
-                    MEMORY_COPY(stack, instance);
+                    MEMORY_COPY(stack, instance, operands);
                     break;
                 case TABLE_COPY:
                     TABLE_COPY(stack, instance, operands);
@@ -1606,21 +1606,21 @@ public class InterpreterMachine implements Machine {
         stack.push(OpcodeImpl.I32_EQ(a, b));
     }
 
-    private static void MEMORY_SIZE(MStack stack, Instance instance) {
-        var sz = instance.memory().pages();
+    private static void MEMORY_SIZE(MStack stack, Instance instance, Operands operands) {
+        var sz = instance.memory((int) operands.get(0)).pages();
         stack.push(sz);
     }
 
     private static void I64_STORE32(MStack stack, Instance instance, Operands operands) {
         var value = stack.pop();
         var ptr = (int) (operands.get(1) + (int) stack.pop());
-        instance.memory().writeI32(ptr, (int) value);
+        instance.memory((int) operands.get(2)).writeI32(ptr, (int) value);
     }
 
     private static void I64_STORE8(MStack stack, Instance instance, Operands operands) {
         var value = (byte) stack.pop();
         var ptr = (int) (operands.get(1) + (int) stack.pop());
-        instance.memory().writeByte(ptr, value);
+        instance.memory((int) operands.get(2)).writeByte(ptr, value);
     }
 
     private static void F64_PROMOTE_F32(MStack stack) {
@@ -1794,11 +1794,7 @@ public class InterpreterMachine implements Machine {
 
     private static void DATA_DROP(Instance instance, Operands operands) {
         var segment = (int) operands.get(0);
-        if (instance.memory() != null) {
-            instance.memory().drop(segment);
-        } else {
-            instance.dropDataSegment(segment);
-        }
+        instance.dropDataSegment(segment);
     }
 
     private static void F64_CONVERT_I64_S(MStack stack) {
@@ -1845,11 +1841,17 @@ public class InterpreterMachine implements Machine {
         OpcodeImpl.TABLE_COPY(instance, tableidxSrc, tableidxDst, size, s, d);
     }
 
-    private static void MEMORY_COPY(MStack stack, Instance instance) {
+    private static void MEMORY_COPY(MStack stack, Instance instance, Operands operands) {
         var size = (int) stack.pop();
         var offset = (int) stack.pop();
         var destination = (int) stack.pop();
-        instance.memory().copy(destination, offset, size);
+        var dstMem = instance.memory((int) operands.get(0));
+        var srcMem = instance.memory((int) operands.get(1));
+        if (dstMem == srcMem) {
+            dstMem.copy(destination, offset, size);
+        } else {
+            dstMem.write(destination, srcMem.readBytes(offset, size));
+        }
     }
 
     private static void TABLE_INIT(MStack stack, Instance instance, Operands operands) {
@@ -1865,10 +1867,11 @@ public class InterpreterMachine implements Machine {
 
     private static void MEMORY_INIT(MStack stack, Instance instance, Operands operands) {
         var segmentId = (int) operands.get(0);
+        var memidx = (int) operands.get(1);
         var size = (int) stack.pop();
         var offset = (int) stack.pop();
         var destination = (int) stack.pop();
-        instance.memory().initPassiveSegment(segmentId, destination, offset, size);
+        instance.memory(memidx).initPassiveSegment(segmentId, destination, offset, size);
     }
 
     private static void I64_TRUNC_F32_S(MStack stack) {
@@ -1995,17 +1998,17 @@ public class InterpreterMachine implements Machine {
         stack.push(Value.floatToLong(-tos));
     }
 
-    private static void MEMORY_FILL(MStack stack, Instance instance) {
+    private static void MEMORY_FILL(MStack stack, Instance instance, Operands operands) {
         var size = (int) stack.pop();
         var val = (byte) stack.pop();
         var offset = (int) stack.pop();
         var end = (size + offset);
-        instance.memory().fill(val, offset, end);
+        instance.memory((int) operands.get(0)).fill(val, offset, end);
     }
 
-    private static void MEMORY_GROW(MStack stack, Instance instance) {
+    private static void MEMORY_GROW(MStack stack, Instance instance, Operands operands) {
         var size = (int) stack.pop();
-        var nPages = instance.memory().grow(size);
+        var nPages = instance.memory((int) operands.get(0)).grow(size);
         stack.push(nPages);
     }
 
@@ -2021,115 +2024,115 @@ public class InterpreterMachine implements Machine {
     private static void F64_STORE(MStack stack, Instance instance, Operands operands) {
         var value = Value.longToDouble(stack.pop());
         var ptr = readMemPtr(stack, operands);
-        instance.memory().writeF64(ptr, value);
+        instance.memory((int) operands.get(2)).writeF64(ptr, value);
     }
 
     private static void F32_STORE(MStack stack, Instance instance, Operands operands) {
         var value = Value.longToFloat(stack.pop());
         var ptr = readMemPtr(stack, operands);
-        instance.memory().writeF32(ptr, value);
+        instance.memory((int) operands.get(2)).writeF32(ptr, value);
     }
 
     private static void I64_STORE(MStack stack, Instance instance, Operands operands) {
         var value = stack.pop();
         var ptr = readMemPtr(stack, operands);
-        instance.memory().writeLong(ptr, value);
+        instance.memory((int) operands.get(2)).writeLong(ptr, value);
     }
 
     private static void I64_STORE16(MStack stack, Instance instance, Operands operands) {
         var value = (short) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        instance.memory().writeShort(ptr, value);
+        instance.memory((int) operands.get(2)).writeShort(ptr, value);
     }
 
     private static void I32_STORE(MStack stack, Instance instance, Operands operands) {
         var value = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        instance.memory().writeI32(ptr, value);
+        instance.memory((int) operands.get(2)).writeI32(ptr, value);
     }
 
     private static void I64_LOAD32_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         // TODO: make all the memory.readThings to return long
-        var val = instance.memory().readU32(ptr);
+        var val = instance.memory((int) operands.get(2)).readU32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD32_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readI32(ptr);
+        var val = instance.memory((int) operands.get(2)).readI32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD16_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readU16(ptr);
+        var val = instance.memory((int) operands.get(2)).readU16(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD16_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readU16(ptr);
+        var val = instance.memory((int) operands.get(2)).readU16(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD16_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readI16(ptr);
+        var val = instance.memory((int) operands.get(2)).readI16(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD16_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readI16(ptr);
+        var val = instance.memory((int) operands.get(2)).readI16(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readU8(ptr);
+        var val = instance.memory((int) operands.get(2)).readU8(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readU8(ptr);
+        var val = instance.memory((int) operands.get(2)).readU8(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD8_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readI8(ptr);
+        var val = instance.memory((int) operands.get(2)).readI8(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD8_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readI8(ptr);
+        var val = instance.memory((int) operands.get(2)).readI8(ptr);
         stack.push(val);
     }
 
     private static void F64_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readF64(ptr);
+        var val = instance.memory((int) operands.get(2)).readF64(ptr);
         stack.push(val);
     }
 
     private static void F32_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readF32(ptr);
+        var val = instance.memory((int) operands.get(2)).readF32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readI64(ptr);
+        var val = instance.memory((int) operands.get(2)).readI64(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readI32(ptr);
+        var val = instance.memory((int) operands.get(2)).readI32(ptr);
         stack.push(val);
     }
 
@@ -2272,7 +2275,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var val = instance.memory().atomicReadInt(ptr);
+        var val = instance.memory((int) operands.get(2)).atomicReadInt(ptr);
         stack.push(val);
     }
 
@@ -2281,19 +2284,19 @@ public class InterpreterMachine implements Machine {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var val = instance.memory().atomicReadLong(ptr);
+        var val = instance.memory((int) operands.get(2)).atomicReadLong(ptr);
         stack.push(val);
     }
 
     private static void I64_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().atomicReadByte(ptr);
+        var val = instance.memory((int) operands.get(2)).atomicReadByte(ptr);
         stack.push(Byte.toUnsignedLong(val));
     }
 
     private static void I32_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().atomicReadByte(ptr);
+        var val = instance.memory((int) operands.get(2)).atomicReadByte(ptr);
         stack.push(Byte.toUnsignedLong(val));
     }
 
@@ -2302,7 +2305,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 2 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var val = instance.memory().atomicReadShort(ptr);
+        var val = instance.memory((int) operands.get(2)).atomicReadShort(ptr);
         stack.push(Short.toUnsignedLong(val));
     }
 
@@ -2311,7 +2314,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 2 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var val = instance.memory().atomicReadShort(ptr);
+        var val = instance.memory((int) operands.get(2)).atomicReadShort(ptr);
         stack.push(Short.toUnsignedLong(val));
     }
 
@@ -2320,7 +2323,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var val = instance.memory().atomicReadInt(ptr);
+        var val = instance.memory((int) operands.get(2)).atomicReadInt(ptr);
         stack.push(Integer.toUnsignedLong(val));
     }
 
@@ -2330,13 +2333,13 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        instance.memory().atomicWriteInt(ptr, value);
+        instance.memory((int) operands.get(2)).atomicWriteInt(ptr, value);
     }
 
     private static void I64_ATOMIC_STORE8(MStack stack, Instance instance, Operands operands) {
         var value = (byte) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        instance.memory().atomicWriteByte(ptr, value);
+        instance.memory((int) operands.get(2)).atomicWriteByte(ptr, value);
     }
 
     private static void I64_ATOMIC_STORE16(MStack stack, Instance instance, Operands operands) {
@@ -2345,7 +2348,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 2 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        instance.memory().atomicWriteShort(ptr, value);
+        instance.memory((int) operands.get(2)).atomicWriteShort(ptr, value);
     }
 
     private static void I64_ATOMIC_STORE32(MStack stack, Instance instance, Operands operands) {
@@ -2354,7 +2357,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        instance.memory().atomicWriteInt(ptr, (int) value);
+        instance.memory((int) operands.get(2)).atomicWriteInt(ptr, (int) value);
     }
 
     private static void I64_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
@@ -2363,7 +2366,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        instance.memory().atomicWriteLong(ptr, value);
+        instance.memory((int) operands.get(2)).atomicWriteLong(ptr, value);
     }
 
     private static void I32_ATOMIC_RMW(
@@ -2376,22 +2379,22 @@ public class InterpreterMachine implements Machine {
         int oldVal;
         switch (op) {
             case ADD:
-                oldVal = instance.memory().atomicAddInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAddInt(ptr, operand);
                 break;
             case SUB:
-                oldVal = instance.memory().atomicAddInt(ptr, -operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAddInt(ptr, -operand);
                 break;
             case AND:
-                oldVal = instance.memory().atomicAndInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAndInt(ptr, operand);
                 break;
             case OR:
-                oldVal = instance.memory().atomicOrInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicOrInt(ptr, operand);
                 break;
             case XOR:
-                oldVal = instance.memory().atomicXorInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXorInt(ptr, operand);
                 break;
             case XCHG:
-                oldVal = instance.memory().atomicXchgInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXchgInt(ptr, operand);
                 break;
             default:
                 throw new IllegalStateException("Unexpected atomic op: " + op);
@@ -2406,7 +2409,8 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var oldVal = instance.memory().atomicCmpxchgInt(ptr, expected, replacement);
+        var oldVal =
+                instance.memory((int) operands.get(2)).atomicCmpxchgInt(ptr, expected, replacement);
         stack.push(oldVal);
     }
 
@@ -2420,22 +2424,22 @@ public class InterpreterMachine implements Machine {
         long oldVal;
         switch (op) {
             case ADD:
-                oldVal = instance.memory().atomicAddLong(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAddLong(ptr, operand);
                 break;
             case SUB:
-                oldVal = instance.memory().atomicAddLong(ptr, -operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAddLong(ptr, -operand);
                 break;
             case AND:
-                oldVal = instance.memory().atomicAndLong(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAndLong(ptr, operand);
                 break;
             case OR:
-                oldVal = instance.memory().atomicOrLong(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicOrLong(ptr, operand);
                 break;
             case XOR:
-                oldVal = instance.memory().atomicXorLong(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXorLong(ptr, operand);
                 break;
             case XCHG:
-                oldVal = instance.memory().atomicXchgLong(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXchgLong(ptr, operand);
                 break;
             default:
                 throw new IllegalStateException("Unexpected atomic op: " + op);
@@ -2450,7 +2454,9 @@ public class InterpreterMachine implements Machine {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var oldVal = instance.memory().atomicCmpxchgLong(ptr, expected, replacement);
+        var oldVal =
+                instance.memory((int) operands.get(2))
+                        .atomicCmpxchgLong(ptr, expected, replacement);
         stack.push(oldVal);
     }
 
@@ -2461,22 +2467,22 @@ public class InterpreterMachine implements Machine {
         byte oldVal;
         switch (op) {
             case ADD:
-                oldVal = instance.memory().atomicAddByte(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAddByte(ptr, operand);
                 break;
             case SUB:
-                oldVal = instance.memory().atomicAddByte(ptr, (byte) -operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAddByte(ptr, (byte) -operand);
                 break;
             case AND:
-                oldVal = instance.memory().atomicAndByte(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAndByte(ptr, operand);
                 break;
             case OR:
-                oldVal = instance.memory().atomicOrByte(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicOrByte(ptr, operand);
                 break;
             case XOR:
-                oldVal = instance.memory().atomicXorByte(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXorByte(ptr, operand);
                 break;
             case XCHG:
-                oldVal = instance.memory().atomicXchgByte(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXchgByte(ptr, operand);
                 break;
             default:
                 throw new IllegalStateException("Unexpected atomic op: " + op);
@@ -2489,7 +2495,9 @@ public class InterpreterMachine implements Machine {
         var replacement = (byte) stack.pop();
         var expected = (byte) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        var oldVal = instance.memory().atomicCmpxchgByte(ptr, expected, replacement);
+        var oldVal =
+                instance.memory((int) operands.get(2))
+                        .atomicCmpxchgByte(ptr, expected, replacement);
         stack.push(Byte.toUnsignedLong(oldVal));
     }
 
@@ -2503,22 +2511,24 @@ public class InterpreterMachine implements Machine {
         short oldVal;
         switch (op) {
             case ADD:
-                oldVal = instance.memory().atomicAddShort(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAddShort(ptr, operand);
                 break;
             case SUB:
-                oldVal = instance.memory().atomicAddShort(ptr, (short) -operand);
+                oldVal =
+                        instance.memory((int) operands.get(2))
+                                .atomicAddShort(ptr, (short) -operand);
                 break;
             case AND:
-                oldVal = instance.memory().atomicAndShort(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAndShort(ptr, operand);
                 break;
             case OR:
-                oldVal = instance.memory().atomicOrShort(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicOrShort(ptr, operand);
                 break;
             case XOR:
-                oldVal = instance.memory().atomicXorShort(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXorShort(ptr, operand);
                 break;
             case XCHG:
-                oldVal = instance.memory().atomicXchgShort(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXchgShort(ptr, operand);
                 break;
             default:
                 throw new IllegalStateException("Unexpected atomic op: " + op);
@@ -2534,7 +2544,9 @@ public class InterpreterMachine implements Machine {
         if (ptr % 2 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var oldVal = instance.memory().atomicCmpxchgShort(ptr, expected, replacement);
+        var oldVal =
+                instance.memory((int) operands.get(2))
+                        .atomicCmpxchgShort(ptr, expected, replacement);
         stack.push(Short.toUnsignedLong(oldVal));
     }
 
@@ -2548,22 +2560,22 @@ public class InterpreterMachine implements Machine {
         int oldVal;
         switch (op) {
             case ADD:
-                oldVal = instance.memory().atomicAddInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAddInt(ptr, operand);
                 break;
             case SUB:
-                oldVal = instance.memory().atomicAddInt(ptr, -operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAddInt(ptr, -operand);
                 break;
             case AND:
-                oldVal = instance.memory().atomicAndInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicAndInt(ptr, operand);
                 break;
             case OR:
-                oldVal = instance.memory().atomicOrInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicOrInt(ptr, operand);
                 break;
             case XOR:
-                oldVal = instance.memory().atomicXorInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXorInt(ptr, operand);
                 break;
             case XCHG:
-                oldVal = instance.memory().atomicXchgInt(ptr, operand);
+                oldVal = instance.memory((int) operands.get(2)).atomicXchgInt(ptr, operand);
                 break;
             default:
                 throw new IllegalStateException("Unexpected atomic op: " + op);
@@ -2579,7 +2591,8 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var oldVal = instance.memory().atomicCmpxchgInt(ptr, expected, replacement);
+        var oldVal =
+                instance.memory((int) operands.get(2)).atomicCmpxchgInt(ptr, expected, replacement);
         stack.push(Integer.toUnsignedLong(oldVal));
     }
 
@@ -2590,7 +2603,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var result = instance.memory().atomicWait(ptr, expected, timeout);
+        var result = instance.memory((int) operands.get(2)).atomicWait(ptr, expected, timeout);
         stack.push(result);
     }
 
@@ -2601,19 +2614,19 @@ public class InterpreterMachine implements Machine {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var result = instance.memory().atomicWait(ptr, expected, timeout);
+        var result = instance.memory((int) operands.get(2)).atomicWait(ptr, expected, timeout);
         stack.push(result);
     }
 
     private static void MEM_ATOMIC_NOTIFY(MStack stack, Instance instance, Operands operands) {
         int maxThreads = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        var result = instance.memory().atomicNotify(ptr, maxThreads);
+        var result = instance.memory((int) operands.get(2)).atomicNotify(ptr, maxThreads);
         stack.push(result);
     }
 
     private static void ATOMIC_FENCE(Instance instance) {
-        instance.memory().atomicFence();
+        instance.memory(0).atomicFence();
     }
 
     private static StackFrame RETURN_CALL(

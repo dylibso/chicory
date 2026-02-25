@@ -335,27 +335,35 @@ final class Emitters {
 
     public static void MEMORY_INIT(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
-        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        emitMemoryForIndex(ctx, ins, asm, 1);
         emitInvokeStatic(asm, ShadedRefs.MEMORY_INIT);
     }
 
     public static void MEMORY_COPY(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, ShadedRefs.MEMORY_COPY);
+        int dstMemIdx = (int) ins.operand(0);
+        int srcMemIdx = (int) ins.operand(1);
+        if (dstMemIdx == srcMemIdx) {
+            emitMemoryForIndex(ctx, ins, asm, 0);
+            emitInvokeStatic(asm, ShadedRefs.MEMORY_COPY);
+        } else {
+            emitMemoryForIndex(ctx, ins, asm, 0);
+            emitMemoryForIndex(ctx, ins, asm, 1);
+            emitInvokeStatic(asm, ShadedRefs.MEMORY_COPY_2);
+        }
     }
 
     public static void MEMORY_FILL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        emitMemoryForIndex(ctx, ins, asm, 0);
         emitInvokeStatic(asm, ShadedRefs.MEMORY_FILL);
     }
 
     public static void MEMORY_GROW(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        emitMemoryForIndex(ctx, ins, asm, 0);
         emitInvokeStatic(asm, ShadedRefs.MEMORY_GROW);
     }
 
     public static void MEMORY_SIZE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        emitMemoryForIndex(ctx, ins, asm, 0);
         emitInvokeStatic(asm, ShadedRefs.MEMORY_PAGES);
     }
 
@@ -962,8 +970,21 @@ final class Emitters {
 
     public static void MEM_ATOMIC_FENCE(
             Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // ATOMIC_FENCE always uses memory 0 per spec
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, ShadedRefs.MEMORY_ATOMIC_FENCE);
+    }
+
+    private static void emitMemoryForIndex(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm, int operandIdx) {
+        int memIdx = (int) ins.operand(operandIdx);
+        if (memIdx == 0) {
+            asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        } else {
+            asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+            asm.iconst(memIdx);
+            emitInvokeVirtual(asm, ShadedRefs.INSTANCE_MEMORY_IDX);
+        }
     }
 
     private static void emitLoadOrStore(
@@ -976,7 +997,7 @@ final class Emitters {
         }
 
         asm.iconst((int) offset);
-        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        emitMemoryForIndex(ctx, ins, asm, 2);
         emitInvokeStatic(asm, method);
     }
 

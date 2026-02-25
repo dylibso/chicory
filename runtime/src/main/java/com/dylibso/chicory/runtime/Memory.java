@@ -315,6 +315,10 @@ public interface Memory {
 
     void initialize(Instance instance, DataSegment[] dataSegments);
 
+    default void initialize(Instance instance, DataSegment[] dataSegments, int memoryIndex) {
+        initialize(instance, dataSegments);
+    }
+
     void initPassiveSegment(int segmentId, int dest, int offset, int size);
 
     default void writeString(int offset, String data, Charset charSet) {

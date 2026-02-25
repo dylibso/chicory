@@ -14,6 +14,7 @@ public final class ShadedRefs {
     static final Method CALL_INDIRECT;
     static final Method CALL_INDIRECT_ON_INTERPRETER;
     static final Method INSTANCE_MEMORY;
+    static final Method INSTANCE_MEMORY_IDX;
     static final Method CALL_HOST_FUNCTION;
     static final Method READ_GLOBAL;
     static final Method READ_GLOBAL_REF;
@@ -21,6 +22,7 @@ public final class ShadedRefs {
     static final Method INSTANCE_SET_ELEMENT;
     static final Method INSTANCE_TABLE;
     static final Method MEMORY_COPY;
+    static final Method MEMORY_COPY_2;
     static final Method MEMORY_FILL;
     static final Method MEMORY_INIT;
     static final Method MEMORY_GROW;
@@ -173,6 +175,7 @@ public final class ShadedRefs {
             CALL_INDIRECT_ON_INTERPRETER =
                     Shaded.class.getMethod("callIndirect", long[].class, int.class, Instance.class);
             INSTANCE_MEMORY = Instance.class.getMethod("memory");
+            INSTANCE_MEMORY_IDX = Instance.class.getMethod("memory", int.class);
             CALL_HOST_FUNCTION =
                     Shaded.class.getMethod(
                             "callHostFunction", Instance.class, int.class, long[].class);
@@ -185,6 +188,14 @@ public final class ShadedRefs {
             MEMORY_COPY =
                     Shaded.class.getMethod(
                             "memoryCopy", int.class, int.class, int.class, Memory.class);
+            MEMORY_COPY_2 =
+                    Shaded.class.getMethod(
+                            "memoryCopy",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class,
+                            Memory.class);
             MEMORY_FILL =
                     Shaded.class.getMethod(
                             "memoryFill", int.class, byte.class, int.class, Memory.class);

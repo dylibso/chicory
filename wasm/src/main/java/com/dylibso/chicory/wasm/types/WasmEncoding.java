@@ -11,5 +11,6 @@ public enum WasmEncoding {
     BYTE,
     V128,
     BLOCK_TYPE,
-    VEC_VALUE_TYPE
+    VEC_VALUE_TYPE,
+    MEMARG
 }

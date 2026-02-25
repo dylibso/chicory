@@ -52,7 +52,8 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                         (v, ptr) ->
                                 v.reinterpretAsBytes()
                                         .withLane(
-                                                (int) operands.get(2), instance.memory().read(ptr))
+                                                (int) operands.get(3),
+                                                instance.memory((int) operands.get(2)).read(ptr))
                                         .reinterpretAsLongs());
                 break;
             case OpCode.V128_LOAD16_LANE:
@@ -62,8 +63,9 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                         (v, ptr) ->
                                 v.reinterpretAsShorts()
                                         .withLane(
-                                                (int) operands.get(2),
-                                                instance.memory().readShort(ptr))
+                                                (int) operands.get(3),
+                                                instance.memory((int) operands.get(2))
+                                                        .readShort(ptr))
                                         .reinterpretAsLongs());
                 break;
             case OpCode.V128_LOAD32_LANE:
@@ -73,8 +75,8 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                         (v, ptr) ->
                                 v.reinterpretAsInts()
                                         .withLane(
-                                                (int) operands.get(2),
-                                                instance.memory().readInt(ptr))
+                                                (int) operands.get(3),
+                                                instance.memory((int) operands.get(2)).readInt(ptr))
                                         .reinterpretAsLongs());
                 break;
             case OpCode.V128_LOAD64_LANE:
@@ -82,7 +84,9 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                         stack,
                         operands,
                         (v, ptr) ->
-                                v.withLane((int) operands.get(2), instance.memory().readLong(ptr)));
+                                v.withLane(
+                                        (int) operands.get(3),
+                                        instance.memory((int) operands.get(2)).readLong(ptr)));
                 break;
             case OpCode.V128_LOAD8x8_S:
                 V128_LOAD8x8_S(stack, instance, operands);
@@ -143,43 +147,43 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                         stack,
                         operands,
                         (v, ptr) ->
-                                instance.memory()
+                                instance.memory((int) operands.get(2))
                                         .writeByte(
                                                 ptr,
                                                 v.reinterpretAsBytes()
-                                                        .lane((int) operands.get(2))));
+                                                        .lane((int) operands.get(3))));
                 break;
             case OpCode.V128_STORE16_LANE:
                 STORE_LANE(
                         stack,
                         operands,
                         (v, ptr) ->
-                                instance.memory()
+                                instance.memory((int) operands.get(2))
                                         .writeShort(
                                                 ptr,
                                                 v.reinterpretAsShorts()
-                                                        .lane((int) operands.get(2))));
+                                                        .lane((int) operands.get(3))));
                 break;
             case OpCode.V128_STORE32_LANE:
                 STORE_LANE(
                         stack,
                         operands,
                         (v, ptr) ->
-                                instance.memory()
+                                instance.memory((int) operands.get(2))
                                         .writeI32(
                                                 ptr,
-                                                v.reinterpretAsInts().lane((int) operands.get(2))));
+                                                v.reinterpretAsInts().lane((int) operands.get(3))));
                 break;
             case OpCode.V128_STORE64_LANE:
                 STORE_LANE(
                         stack,
                         operands,
                         (v, ptr) ->
-                                instance.memory()
+                                instance.memory((int) operands.get(2))
                                         .writeLong(
                                                 ptr,
                                                 v.reinterpretAsLongs()
-                                                        .lane((int) operands.get(2))));
+                                                        .lane((int) operands.get(3))));
                 break;
             case OpCode.I8x16_REPLACE_LANE:
                 REPLACE_LANE(
@@ -1033,15 +1037,15 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
     private static void V128_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var valHigh = instance.memory().readLong(ptr);
-        var valLow = instance.memory().readLong(ptr + 8);
+        var valHigh = instance.memory((int) operands.get(2)).readLong(ptr);
+        var valLow = instance.memory((int) operands.get(2)).readLong(ptr + 8);
         stack.push(valHigh);
         stack.push(valLow);
     }
 
     private static void V128_LOAD8_SPLAT(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var value = instance.memory().read(ptr);
+        var value = instance.memory((int) operands.get(2)).read(ptr);
         var bytes = new long[16];
         Arrays.fill(bytes, value);
         var vals = Value.i8ToVec(bytes);
@@ -1052,7 +1056,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
     private static void V128_LOAD16_SPLAT(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var value = instance.memory().readShort(ptr);
+        var value = instance.memory((int) operands.get(2)).readShort(ptr);
         var shorts = new long[8];
         Arrays.fill(shorts, value);
         var vals = Value.i16ToVec(shorts);
@@ -1063,7 +1067,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
     private static void V128_LOAD32_SPLAT(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var value = instance.memory().readInt(ptr);
+        var value = instance.memory((int) operands.get(2)).readInt(ptr);
         var ints = new long[4];
         Arrays.fill(ints, value);
         var vals = Value.i32ToVec(ints);
@@ -1074,7 +1078,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
     private static void V128_LOAD64_SPLAT(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var value = instance.memory().readLong(ptr);
+        var value = instance.memory((int) operands.get(2)).readLong(ptr);
         stack.push(value);
         stack.push(value);
     }
@@ -1083,7 +1087,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var ptr = readMemPtr(stack, operands);
         var bytes = new long[8];
         for (int i = 0; i < 8; i++) {
-            bytes[i] = instance.memory().read(ptr + i);
+            bytes[i] = instance.memory((int) operands.get(2)).read(ptr + i);
         }
         var vals = Value.i16ToVec(bytes);
         for (var v : vals) {
@@ -1095,7 +1099,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var ptr = readMemPtr(stack, operands);
         var bytes = new long[8];
         for (int i = 0; i < 8; i++) {
-            bytes[i] = Byte.toUnsignedLong(instance.memory().read(ptr + i));
+            bytes[i] = Byte.toUnsignedLong(instance.memory((int) operands.get(2)).read(ptr + i));
         }
         var vals = Value.i16ToVec(bytes);
         for (var v : vals) {
@@ -1107,7 +1111,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var ptr = readMemPtr(stack, operands);
         var bytes = new long[4];
         for (int i = 0; i < 4; i++) {
-            bytes[i] = instance.memory().readShort(ptr + (i * 2));
+            bytes[i] = instance.memory((int) operands.get(2)).readShort(ptr + (i * 2));
         }
         var vals = Value.i32ToVec(bytes);
         for (var v : vals) {
@@ -1119,7 +1123,9 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var ptr = readMemPtr(stack, operands);
         var bytes = new long[4];
         for (int i = 0; i < 4; i++) {
-            bytes[i] = Short.toUnsignedLong(instance.memory().readShort(ptr + (i * 2)));
+            bytes[i] =
+                    Short.toUnsignedLong(
+                            instance.memory((int) operands.get(2)).readShort(ptr + (i * 2)));
         }
         var vals = Value.i32ToVec(bytes);
         for (var v : vals) {
@@ -1131,7 +1137,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var ptr = readMemPtr(stack, operands);
         var bytes = new long[8];
         for (int i = 0; i < 2; i++) {
-            bytes[i] = instance.memory().readInt(ptr + (i * 4));
+            bytes[i] = instance.memory((int) operands.get(2)).readInt(ptr + (i * 4));
         }
         var vals = Value.i64ToVec(bytes);
         for (var v : vals) {
@@ -1143,7 +1149,9 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var ptr = readMemPtr(stack, operands);
         var bytes = new long[8];
         for (int i = 0; i < 2; i++) {
-            bytes[i] = Integer.toUnsignedLong(instance.memory().readInt(ptr + (i * 4)));
+            bytes[i] =
+                    Integer.toUnsignedLong(
+                            instance.memory((int) operands.get(2)).readInt(ptr + (i * 4)));
         }
         var vals = Value.i64ToVec(bytes);
         for (var v : vals) {
@@ -1153,7 +1161,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
     private static void V128_LOAD32_ZERO(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readInt(ptr);
+        var val = instance.memory((int) operands.get(2)).readInt(ptr);
         var vals = Value.i32ToVec(new long[] {val, 0, 0, 0});
         for (var v : vals) {
             stack.push(v);
@@ -1162,7 +1170,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
     private static void V128_LOAD64_ZERO(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var val = instance.memory().readLong(ptr);
+        var val = instance.memory((int) operands.get(2)).readLong(ptr);
         var vals = Value.i64ToVec(new long[] {val, 0});
         for (var v : vals) {
             stack.push(v);
@@ -1195,8 +1203,8 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         // to let the bounds check kick in appropriately
         var ptr = (i >= 0) ? (int) (offset + i) : (int) i;
 
-        instance.memory().writeLong(ptr, valLow);
-        instance.memory().writeLong(ptr + 8, valHigh);
+        instance.memory((int) operands.get(2)).writeLong(ptr, valLow);
+        instance.memory((int) operands.get(2)).writeLong(ptr + 8, valHigh);
     }
 
     private static void I8x16_SHUFFLE(MStack stack, Operands operands) {
