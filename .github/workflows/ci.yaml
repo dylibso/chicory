@@ -78,6 +78,7 @@ jobs:
         working-directory: docs
         run: |
           npm ci
+          npm run build
           npm run test
 
   test-results:
