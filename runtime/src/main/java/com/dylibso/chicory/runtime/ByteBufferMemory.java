@@ -597,6 +597,8 @@ public final class ByteBufferMemory implements Memory {
     }
 
     @Override
+    // Safe: pages are always heap-allocated via ByteBuffer.allocate(), which guarantees a backing
+    // array.
     @SuppressWarnings("ByteBufferBackingArray")
     public void fill(byte value, int fromIndex, int toIndex) {
         int addr = fromIndex;
@@ -609,6 +611,60 @@ public final class ByteBufferMemory implements Memory {
             Arrays.fill(pages[pageIdx].array(), pageOffset, pageOffset + chunk, value);
             addr += chunk;
             remaining -= chunk;
+        }
+    }
+
+    @Override
+    @SuppressWarnings("ByteBufferBackingArray")
+    public void copy(int dest, int src, int size) {
+        int limit = sizeInBytes();
+        checkBounds(dest, size, limit, WasmRuntimeException::new);
+        checkBounds(src, size, limit, WasmRuntimeException::new);
+        if (dest > src && dest < src + size) {
+            // Overlapping with dest after src: copy backward to avoid corruption
+            copyBackward(dest, src, size);
+        } else {
+            copyForward(dest, src, size);
+        }
+    }
+
+    @SuppressWarnings("ByteBufferBackingArray")
+    private void copyForward(int dest, int src, int size) {
+        while (size > 0) {
+            int destOffset = dest & PAGE_MASK;
+            int srcOffset = src & PAGE_MASK;
+            int chunk = Math.min(size, PAGE_SIZE - Math.max(destOffset, srcOffset));
+            System.arraycopy(
+                    pages[src >>> PAGE_SHIFT].array(),
+                    srcOffset,
+                    pages[dest >>> PAGE_SHIFT].array(),
+                    destOffset,
+                    chunk);
+            dest += chunk;
+            src += chunk;
+            size -= chunk;
+        }
+    }
+
+    @SuppressWarnings("ByteBufferBackingArray")
+    private void copyBackward(int dest, int src, int size) {
+        dest += size;
+        src += size;
+        while (size > 0) {
+            int destInPage = dest & PAGE_MASK;
+            int srcInPage = src & PAGE_MASK;
+            int destAvail = destInPage == 0 ? PAGE_SIZE : destInPage;
+            int srcAvail = srcInPage == 0 ? PAGE_SIZE : srcInPage;
+            int chunk = Math.min(size, Math.min(destAvail, srcAvail));
+            dest -= chunk;
+            src -= chunk;
+            System.arraycopy(
+                    pages[src >>> PAGE_SHIFT].array(),
+                    src & PAGE_MASK,
+                    pages[dest >>> PAGE_SHIFT].array(),
+                    dest & PAGE_MASK,
+                    chunk);
+            size -= chunk;
         }
     }
 
