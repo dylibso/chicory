@@ -641,6 +641,15 @@ public final class ByteArrayMemory implements Memory {
         int limit = sizeInBytes();
         checkBounds(dest, size, limit, WasmRuntimeException::new);
         checkBounds(src, size, limit, WasmRuntimeException::new);
+        if (dest > src && dest < src + size) {
+            // Overlapping with dest after src: copy backward to avoid corruption
+            copyBackward(dest, src, size);
+        } else {
+            copyForward(dest, src, size);
+        }
+    }
+
+    private void copyForward(int dest, int src, int size) {
         while (size > 0) {
             int destOffset = dest & PAGE_MASK;
             int srcOffset = src & PAGE_MASK;
@@ -653,6 +662,27 @@ public final class ByteArrayMemory implements Memory {
                     chunk);
             dest += chunk;
             src += chunk;
+            size -= chunk;
+        }
+    }
+
+    private void copyBackward(int dest, int src, int size) {
+        dest += size;
+        src += size;
+        while (size > 0) {
+            int destInPage = dest & PAGE_MASK;
+            int srcInPage = src & PAGE_MASK;
+            int destAvail = destInPage == 0 ? PAGE_SIZE : destInPage;
+            int srcAvail = srcInPage == 0 ? PAGE_SIZE : srcInPage;
+            int chunk = Math.min(size, Math.min(destAvail, srcAvail));
+            dest -= chunk;
+            src -= chunk;
+            System.arraycopy(
+                    pages[src >>> PAGE_SHIFT],
+                    src & PAGE_MASK,
+                    pages[dest >>> PAGE_SHIFT],
+                    dest & PAGE_MASK,
+                    chunk);
             size -= chunk;
         }
     }
