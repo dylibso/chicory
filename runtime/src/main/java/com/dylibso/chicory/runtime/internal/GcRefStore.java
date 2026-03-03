@@ -1,25 +1,22 @@
 package com.dylibso.chicory.runtime.internal;
 
-import com.dylibso.chicory.runtime.GlobalInstance;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.WasmArray;
 import com.dylibso.chicory.runtime.WasmGcRef;
 import com.dylibso.chicory.runtime.WasmStruct;
-import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.Value;
-import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.function.IntConsumer;
 
 /**
  * Store for GC-managed references keyed by auto-assigned integers.
- * Values are held with strong references and unreachable entries are
- * periodically removed via mark-sweep collection.
+ *
+ * <p>Uses epoch-based deferred collection: refs are never swept during wasm
+ * execution. Collection only happens at <em>safe points</em> — between
+ * top-level calls — when the wasm operand stack and all call frames are
+ * empty. At that point the only roots are globals and tables.
  */
 public class GcRefStore {
 
@@ -31,28 +28,25 @@ public class GcRefStore {
      */
     public static final int ID_OFFSET = 0x10000;
 
-    private static final int SWEEP_INTERVAL = 1024;
-
-    private final Map<Integer, WasmGcRef> map = new HashMap<>();
-    private int nextId = ID_OFFSET;
+    private static final int SWEEP_INTERVAL = 4096;
 
     private final Instance instance;
-    private int allocCount;
+    private final Map<Integer, WasmGcRef> map = new HashMap<>();
+    private int nextId = ID_OFFSET;
+    private int allocsSinceLastSweep;
+    private boolean sweepRequested;
 
     public GcRefStore(Instance instance) {
         this.instance = instance;
     }
 
-    /**
-     * Inserts a value with an automatically assigned key.
-     * Triggers mark-sweep collection every {@value SWEEP_INTERVAL} allocations.
-     */
+    /** Inserts a value with an automatically assigned key. */
     public int put(WasmGcRef value) {
         int id = nextId++;
         map.put(id, value);
-        if (++allocCount >= SWEEP_INTERVAL) {
-            allocCount = 0;
-            sweep();
+        allocsSinceLastSweep++;
+        if (allocsSinceLastSweep >= SWEEP_INTERVAL) {
+            sweepRequested = true;
         }
         return id;
     }
@@ -62,109 +56,69 @@ public class GcRefStore {
         return map.get(key);
     }
 
+    /** Called at safe points (between top-level calls). */
+    public void safePoint() {
+        if (sweepRequested) {
+            sweep();
+            sweepRequested = false;
+            allocsSinceLastSweep = 0;
+        }
+    }
+
     /** Checks whether a raw reference value is a GC ref ID. */
     public static boolean isGcRefId(long val) {
         return val >= ID_OFFSET && val != Value.REF_NULL_VALUE && !Value.isI31(val);
     }
 
-    /**
-     * Performs mark-sweep collection of unreachable entries.
-     * Scans all roots (globals, tables), traces through struct fields
-     * and array elements, then removes unreachable entries.
-     */
-    public void sweep() {
-        if (map.isEmpty()) {
+    private void sweep() {
+        Set<Integer> reachable = new HashSet<>();
+
+        // 1. Scan globals
+        int globalCount = instance.globalCount();
+        for (int i = 0; i < globalCount; i++) {
+            var g = instance.global(i);
+            if (g != null) {
+                markIfGcRef(g.getValueLow(), reachable);
+            }
+        }
+
+        // 2. Scan tables
+        int tableCount = instance.tableCount();
+        for (int i = 0; i < tableCount; i++) {
+            var table = instance.table(i);
+            if (table != null) {
+                for (int j = 0; j < table.size(); j++) {
+                    markIfGcRef(table.ref(j), reachable);
+                }
+            }
+        }
+
+        // 3. Remove unreachable entries
+        map.keySet().removeIf(id -> !reachable.contains(id));
+    }
+
+    private void markIfGcRef(long val, Set<Integer> reachable) {
+        if (!isGcRefId(val)) {
             return;
         }
-
-        Set<Integer> reachable = new HashSet<>();
-        Queue<Integer> worklist = new ArrayDeque<>();
-
-        IntConsumer collector =
-                id -> {
-                    if (reachable.add(id) && map.containsKey(id)) {
-                        worklist.add(id);
-                    }
-                };
-
-        // Mark phase: collect roots from globals and tables
-        collectRoots(collector);
-
-        // Trace phase: BFS through object graph
-        TypeSection typeSection = instance.module().typeSection();
-        while (!worklist.isEmpty()) {
-            int id = worklist.poll();
-            WasmGcRef value = map.get(id);
-            if (value != null) {
-                trace(value, typeSection, collector);
-            }
+        int id = (int) val;
+        if (!reachable.add(id)) {
+            return; // already visited — prevents infinite loops in cyclic structures
         }
-
-        // Sweep phase: remove unreachable entries
-        map.keySet().retainAll(reachable);
-    }
-
-    private void collectRoots(IntConsumer collector) {
-        // Globals (both local and imported)
-        int totalGlobals =
-                instance.module().globalSection().globalCount() + instance.imports().globalCount();
-        for (int i = 0; i < totalGlobals; i++) {
-            GlobalInstance g = instance.global(i);
-            if (g.getType().isReference()) {
-                long val = g.getValue();
-                if (isGcRefId(val)) {
-                    collector.accept((int) val);
-                }
-            }
+        WasmGcRef ref = map.get(id);
+        if (ref == null) {
+            return;
         }
-
-        // Tables (both local and imported)
-        int totalTables =
-                instance.module().tableSection().tableCount() + instance.imports().tableCount();
-        for (int i = 0; i < totalTables; i++) {
-            TableInstance t = instance.table(i);
-            for (int j = 0; j < t.size(); j++) {
-                int ref = t.ref(j);
-                if (isGcRefId(ref)) {
-                    collector.accept(ref);
-                }
-            }
-        }
-    }
-
-    private static void trace(WasmGcRef ref, TypeSection typeSection, IntConsumer collector) {
+        // Recursively trace nested refs
         if (ref instanceof WasmStruct) {
-            WasmStruct struct = (WasmStruct) ref;
-            var subType = typeSection.getSubType(struct.typeIdx());
-            var structType = subType.compType().structType();
-            if (structType != null) {
-                var fieldTypes = structType.fieldTypes();
-                for (int i = 0; i < fieldTypes.length; i++) {
-                    var storage = fieldTypes[i].storageType();
-                    var valType = storage.valType();
-                    if (valType != null && valType.isReference()) {
-                        long val = struct.field(i);
-                        if (isGcRefId(val)) {
-                            collector.accept((int) val);
-                        }
-                    }
-                }
+            var s = (WasmStruct) ref;
+            for (int i = 0; i < s.fieldCount(); i++) {
+                markIfGcRef(s.field(i), reachable);
             }
         } else if (ref instanceof WasmArray) {
-            WasmArray array = (WasmArray) ref;
-            var subType = typeSection.getSubType(array.typeIdx());
-            var arrayType = subType.compType().arrayType();
-            if (arrayType != null) {
-                var storage = arrayType.fieldType().storageType();
-                var valType = storage.valType();
-                if (valType != null && valType.isReference()) {
-                    for (int i = 0; i < array.length(); i++) {
-                        long val = array.get(i);
-                        if (isGcRefId(val)) {
-                            collector.accept((int) val);
-                        }
-                    }
-                }
+            var a = (WasmArray) ref;
+            for (int i = 0; i < a.length(); i++) {
+                markIfGcRef(a.get(i), reachable);
             }
         }
     }
