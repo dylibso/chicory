@@ -6,6 +6,7 @@ import com.dylibso.chicory.compiler.InterpreterFallback;
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
+import java.util.TreeSet;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -95,6 +96,21 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
             var finalInterpretedFunctions = generator.generateResources();
             generator.generateMetaWasm(finalInterpretedFunctions);
             generator.generateSources();
+
+            if (interpreterFallback == InterpreterFallback.WARN
+                    && !finalInterpretedFunctions.isEmpty()) {
+                var sorted = new TreeSet<>(finalInterpretedFunctions);
+                StringBuilder sb = new StringBuilder();
+                sb.append("<interpretedFunctions>\n");
+                for (Integer funcId : sorted) {
+                    sb.append("  <function>").append(funcId).append("</function>\n");
+                }
+                sb.append("</interpretedFunctions>");
+                getLog().warn(
+                                "Copy-paste the following to pre-declare interpreted functions"
+                                        + " in your pom.xml:\n"
+                                        + sb);
+            }
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to generate resources", e);
         }
