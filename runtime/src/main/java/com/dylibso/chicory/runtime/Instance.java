@@ -204,6 +204,9 @@ public class Instance {
             }
         }
 
+        // Safe point: wasm stack is empty after init
+        gcSafePoint();
+
         return this;
     }
 
@@ -236,7 +239,13 @@ public class Instance {
 
         public ExportFunction function(String name) {
             var export = getExport(FUNCTION, name);
-            return args -> instance.machine.call(export.index(), args);
+            return args -> {
+                try {
+                    return instance.machine.call(export.index(), args);
+                } finally {
+                    instance.gcSafePoint();
+                }
+            };
         }
 
         public GlobalInstance global(String name) {
@@ -274,6 +283,14 @@ public class Instance {
 
     public int functionCount() {
         return imports.functionCount() + functions.length;
+    }
+
+    public int globalCount() {
+        return imports.globalCount() + globals.length;
+    }
+
+    public int tableCount() {
+        return imports.tableCount() + tables.length;
     }
 
     public Memory memory() {
@@ -438,6 +455,11 @@ public class Instance {
             return true;
         }
         return ValType.heapTypeSubtype(actual, target, module.typeSection());
+    }
+
+    /** Epoch-based GC safe point. Call when the wasm stack is guaranteed empty. */
+    void gcSafePoint() {
+        gcRefs.safePoint();
     }
 
     public Machine getMachine() {
