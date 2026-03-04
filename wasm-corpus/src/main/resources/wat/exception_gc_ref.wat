@@ -2,6 +2,9 @@
   ;; Import a host function to call from catch handlers
   (import "host" "on_catch" (func $on_catch (param i32) (result i32)))
 
+  ;; Function type for call_indirect: (i32) -> void (throws)
+  (type $throw_fn_type (func (param i32)))
+
   ;; Struct type (represents a Java object like Throwable)
   (type $Obj (struct (field $value i32)))
 
@@ -112,5 +115,163 @@
     (struct.get $Obj $value)
     (call $on_catch)
     (i32.add (local.get $sum))
+  )
+
+  ;; Test 5: try_table inside a loop - catch, call host, loop back and catch again
+  ;; This is the common Java pattern: while (...) { try { ... } catch (Throwable t) { ... } }
+  ;; Mirrors the javac init code that catches 4 exceptions in sequence
+  (func $maybe_throw (param $counter i32) (result i32)
+    ;; Throw if counter < 4, otherwise return 0
+    (if (i32.lt_u (local.get $counter) (i32.const 4))
+      (then (call $do_throw (local.get $counter)))
+    )
+    (i32.const 0)
+  )
+
+  (func (export "catch-in-loop-gc") (result i32)
+    (local $i i32)
+    (local $caught i32)
+
+    (local.set $i (i32.const 0))
+    (local.set $caught (i32.const 0))
+
+    (block $exit
+      (loop $retry
+        ;; Try calling maybe_throw - it throws for i < 4
+        (block $h (result (ref null $Obj))
+          (try_table (catch $e $h)
+            (drop (call $maybe_throw (local.get $i)))
+            ;; No exception: exit the loop
+            (br $exit)
+          )
+          (unreachable)
+        )
+        ;; Exception caught - extract value and call host
+        (struct.get $Obj $value)
+        (call $on_catch)
+        (drop)
+        ;; Increment caught count
+        (local.set $caught (i32.add (local.get $caught) (i32.const 1)))
+        ;; Increment loop counter
+        (local.set $i (i32.add (local.get $i) (i32.const 1)))
+        ;; Loop back
+        (br $retry)
+      )
+    )
+    ;; Return number of caught exceptions (should be 4)
+    (local.get $caught)
+  )
+
+  ;; Test 6: try_table in loop with throw from deep call chain
+  (func $deep_maybe_throw (param $counter i32) (result i32)
+    (call $maybe_throw (local.get $counter))
+  )
+
+  (func (export "deep-catch-in-loop-gc") (result i32)
+    (local $i i32)
+    (local $caught i32)
+
+    (local.set $i (i32.const 0))
+    (local.set $caught (i32.const 0))
+
+    (block $exit
+      (loop $retry
+        (block $h (result (ref null $Obj))
+          (try_table (catch $e $h)
+            (drop (call $deep_maybe_throw (local.get $i)))
+            (br $exit)
+          )
+          (unreachable)
+        )
+        (struct.get $Obj $value)
+        (call $on_catch)
+        (drop)
+        (local.set $caught (i32.add (local.get $caught) (i32.const 1)))
+        (local.set $i (i32.add (local.get $i) (i32.const 1)))
+        (br $retry)
+      )
+    )
+    (local.get $caught)
+  )
+
+  ;; --- call_indirect tests ---
+  ;; GraalVM WebImage uses call_indirect (virtual dispatch) to call throwException.
+  ;; The throw function is in a table and called indirectly.
+
+  ;; Table with throw function
+  (table $ftable 1 funcref)
+  (elem (table $ftable) (i32.const 0) func $do_throw)
+
+  ;; Test 7: throw via call_indirect, catch with GC ref
+  (func (export "indirect-catch-gc") (result i32)
+    (block $h (result (ref null $Obj))
+      (try_table (catch $e $h)
+        (call_indirect $ftable (type $throw_fn_type) (i32.const 42) (i32.const 0))
+      )
+      (unreachable)
+    )
+    (struct.get $Obj $value)
+  )
+
+  ;; Test 8: sequential catches via call_indirect
+  (func (export "indirect-sequential-gc") (result i32)
+    (local $sum i32)
+
+    (block $h1 (result (ref null $Obj))
+      (try_table (catch $e $h1)
+        (call_indirect $ftable (type $throw_fn_type) (i32.const 10) (i32.const 0))
+      )
+      (unreachable)
+    )
+    (struct.get $Obj $value)
+    (call $on_catch)
+    (local.set $sum)
+
+    (block $h2 (result (ref null $Obj))
+      (try_table (catch $e $h2)
+        (call_indirect $ftable (type $throw_fn_type) (i32.const 20) (i32.const 0))
+      )
+      (unreachable)
+    )
+    (struct.get $Obj $value)
+    (call $on_catch)
+    (i32.add (local.get $sum))
+  )
+
+  ;; Test 9: loop with call_indirect throw (closest to javac pattern)
+  (func $indirect_maybe_throw (param $counter i32) (result i32)
+    (if (i32.lt_u (local.get $counter) (i32.const 4))
+      (then
+        (call_indirect $ftable (type $throw_fn_type) (local.get $counter) (i32.const 0))
+      )
+    )
+    (i32.const 0)
+  )
+
+  (func (export "indirect-loop-gc") (result i32)
+    (local $i i32)
+    (local $caught i32)
+
+    (local.set $i (i32.const 0))
+    (local.set $caught (i32.const 0))
+
+    (block $exit
+      (loop $retry
+        (block $h (result (ref null $Obj))
+          (try_table (catch $e $h)
+            (drop (call $indirect_maybe_throw (local.get $i)))
+            (br $exit)
+          )
+          (unreachable)
+        )
+        (struct.get $Obj $value)
+        (call $on_catch)
+        (drop)
+        (local.set $caught (i32.add (local.get $caught) (i32.const 1)))
+        (local.set $i (i32.add (local.get $i) (i32.const 1)))
+        (br $retry)
+      )
+    )
+    (local.get $caught)
   )
 )

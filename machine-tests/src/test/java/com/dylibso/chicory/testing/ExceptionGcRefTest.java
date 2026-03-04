@@ -92,4 +92,55 @@ public class ExceptionGcRefTest {
                         .build();
         assertEquals(30, instance.export("deep-catch-gc").apply()[0]);
     }
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void catchInLoopGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        // Loop catches 4 exceptions (i=0,1,2,3), then i=4 doesn't throw
+        assertEquals(4, instance.export("catch-in-loop-gc").apply()[0]);
+    }
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void deepCatchInLoopGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        assertEquals(4, instance.export("deep-catch-in-loop-gc").apply()[0]);
+    }
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void indirectCatchGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        assertEquals(42, instance.export("indirect-catch-gc").apply()[0]);
+    }
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void indirectSequentialGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        assertEquals(30, instance.export("indirect-sequential-gc").apply()[0]);
+    }
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void indirectLoopGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        assertEquals(4, instance.export("indirect-loop-gc").apply()[0]);
+    }
 }
