@@ -1,18 +1,23 @@
 package com.dylibso.chicory.testing;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.ImportFunction;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.List;
-import org.junit.jupiter.api.Test;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Tests for exception handling with host function callbacks.
@@ -30,6 +35,16 @@ public class ExceptionCatchHostTest {
     private static final WasmModule MODULE =
             Parser.parse(CorpusResources.getResource("compiled/exception_catch_host.wat.wasm"));
 
+    private static Stream<Arguments> machineImplementations() {
+        return Stream.of(
+                Arguments.of(
+                        (Function<Instance.Builder, Instance.Builder>)
+                                (b) -> b.withMachineFactory(InterpreterMachine::new)),
+                Arguments.of(
+                        (Function<Instance.Builder, Instance.Builder>)
+                                (b) -> b.withMachineFactory(MachineFactoryCompiler::compile)));
+    }
+
     private static ImportValues makeImports() {
         return ImportValues.builder()
                 .addFunction(
@@ -41,71 +56,43 @@ public class ExceptionCatchHostTest {
                 .build();
     }
 
-    // --- Interpreter tests ---
-
-    @Test
-    public void basicCatchInterpreted() {
-        var instance = Instance.builder(MODULE).withImportValues(makeImports()).build();
-        assertArrayEquals(new long[] {42}, instance.export("basic-catch").apply());
-    }
-
-    @Test
-    public void catchCallHostInterpreted() {
-        var instance = Instance.builder(MODULE).withImportValues(makeImports()).build();
-        assertArrayEquals(new long[] {7}, instance.export("catch-call-host").apply());
-    }
-
-    @Test
-    public void sequentialCatchesInterpreted() {
-        var instance = Instance.builder(MODULE).withImportValues(makeImports()).build();
-        assertArrayEquals(new long[] {30}, instance.export("sequential-catches").apply());
-    }
-
-    @Test
-    public void nestedCatchInterpreted() {
-        var instance = Instance.builder(MODULE).withImportValues(makeImports()).build();
-        assertArrayEquals(new long[] {99}, instance.export("nested-catch").apply());
-    }
-
-    // --- Compiler tests ---
-
-    @Test
-    public void basicCatchCompiled() {
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void basicCatch(Function<Instance.Builder, Instance.Builder> machineInject) {
         var instance =
-                Instance.builder(MODULE)
-                        .withMachineFactory(MachineFactoryCompiler::compile)
-                        .withImportValues(makeImports())
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
                         .build();
-        assertArrayEquals(new long[] {42}, instance.export("basic-catch").apply());
+        assertEquals(42, instance.export("basic-catch").apply()[0]);
     }
 
-    @Test
-    public void catchCallHostCompiled() {
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void catchCallHost(Function<Instance.Builder, Instance.Builder> machineInject) {
         var instance =
-                Instance.builder(MODULE)
-                        .withMachineFactory(MachineFactoryCompiler::compile)
-                        .withImportValues(makeImports())
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
                         .build();
-        assertArrayEquals(new long[] {7}, instance.export("catch-call-host").apply());
+        assertEquals(7, instance.export("catch-call-host").apply()[0]);
     }
 
-    @Test
-    public void sequentialCatchesCompiled() {
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void sequentialCatches(Function<Instance.Builder, Instance.Builder> machineInject) {
         var instance =
-                Instance.builder(MODULE)
-                        .withMachineFactory(MachineFactoryCompiler::compile)
-                        .withImportValues(makeImports())
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
                         .build();
-        assertArrayEquals(new long[] {30}, instance.export("sequential-catches").apply());
+        assertEquals(30, instance.export("sequential-catches").apply()[0]);
     }
 
-    @Test
-    public void nestedCatchCompiled() {
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void nestedCatch(Function<Instance.Builder, Instance.Builder> machineInject) {
         var instance =
-                Instance.builder(MODULE)
-                        .withMachineFactory(MachineFactoryCompiler::compile)
-                        .withImportValues(makeImports())
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
                         .build();
-        assertArrayEquals(new long[] {99}, instance.export("nested-catch").apply());
+        assertEquals(99, instance.export("nested-catch").apply()[0]);
     }
 }
