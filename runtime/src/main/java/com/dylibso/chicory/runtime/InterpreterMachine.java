@@ -159,7 +159,7 @@ public class InterpreterMachine implements Machine {
         boolean shouldReturn = false;
 
         loop:
-        while (!frame.terminated()) {
+        while (!frame.terminated() && frame.ctrlStackSize() > 0) {
             if (shouldReturn) {
                 return;
             }
