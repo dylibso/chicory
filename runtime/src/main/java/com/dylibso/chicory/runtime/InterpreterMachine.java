@@ -167,7 +167,7 @@ public class InterpreterMachine implements Machine {
             //                LOGGER.log(
             //                        System.Logger.Level.DEBUG,
             //                        "func="
-            //                                + frame.funcId
+            //                                + frame.funcId()
             //                                + "@"
             //                                + frame.pc
             //                                + ": "
@@ -227,8 +227,10 @@ public class InterpreterMachine implements Machine {
                         // RETURN doesn't pass through the END
                         var ctrlFrame = frame.popCtrlTillCall();
                         StackFrame.doControlTransfer(ctrlFrame, stack);
-                        callStack.clear();
-
+                        // Note: do NOT callStack.clear() here — that wipes all caller
+                        // frames and breaks exception handling (try_table/catch can't
+                        // find handlers in callers). The caller's call() method handles
+                        // popping this frame from the callStack.
                         shouldReturn = true;
                         break;
                     }
@@ -2897,6 +2899,18 @@ public class InterpreterMachine implements Machine {
             Deque<StackFrame> callStack) {
         var exception = instance.exn(exceptionIdx);
         boolean found = false;
+        boolean trace = Boolean.getBoolean("chicory.trace.throw");
+        if (trace) {
+            System.err.println(
+                    "[THROW_REF] tag="
+                            + exception.tagIdx()
+                            + " callStack.size="
+                            + callStack.size()
+                            + " frame.func="
+                            + frame.funcId()
+                            + " frame.ctrlStackSize="
+                            + frame.ctrlStackSize());
+        }
         while (!found) {
             while (frame.ctrlStackSize() > 0) {
                 var ctrlFrame = frame.popCtrl();
@@ -2908,6 +2922,13 @@ public class InterpreterMachine implements Machine {
                 var tryInst = frame.loadCurrentInstruction();
 
                 var catches = tryInst.catches();
+                if (trace) {
+                    System.err.println(
+                            "[THROW_REF] Found TRY_TABLE in func="
+                                    + frame.funcId()
+                                    + " catches.size="
+                                    + catches.size());
+                }
                 for (int i = 0; i < catches.size() && !found; i++) {
                     var currentCatch = catches.get(i);
 
@@ -2918,6 +2939,18 @@ public class InterpreterMachine implements Machine {
                         var currentCatchTag = instance.tag(currentCatch.tag());
                         var exceptionTag = exception.instance().tag(exception.tagIdx());
 
+                        if (trace) {
+                            System.err.println(
+                                    "[THROW_REF]   catch tag="
+                                            + currentCatch.tag()
+                                            + " exc.tag="
+                                            + exception.tagIdx()
+                                            + " catchTag==excTag: "
+                                            + (currentCatchTag == exceptionTag)
+                                            + " isImport: "
+                                            + (currentCatch.tag() < instance.imports().tagCount()));
+                        }
+
                         // if it's an import we verify the compatibility
                         if (currentCatch.tag() < instance.imports().tagCount()
                                 && currentCatchTag.type().paramsMatch(exceptionTag.type())
@@ -2925,6 +2958,9 @@ public class InterpreterMachine implements Machine {
                             compatibleImport = true;
                         } else if (exceptionTag != currentCatchTag) {
                             // if it's not an import the tag should be the same
+                            if (trace) {
+                                System.err.println("[THROW_REF]   SKIPPING: tags don't match");
+                            }
                             continue;
                         }
                     }
@@ -2957,6 +2993,9 @@ public class InterpreterMachine implements Machine {
                     }
 
                     if (found) {
+                        if (trace) {
+                            System.err.println("[THROW_REF] CAUGHT in func=" + frame.funcId());
+                        }
                         // BR l
                         ctrlJump(frame, stack, currentCatch.label());
                         frame.jumpTo(currentCatch.resolvedLabel());
@@ -2965,6 +3004,13 @@ public class InterpreterMachine implements Machine {
                 }
             }
             if (!found) {
+                if (trace) {
+                    System.err.println(
+                            "[THROW_REF] No handler in func="
+                                    + frame.funcId()
+                                    + ", unwinding. callStack.size="
+                                    + callStack.size());
+                }
                 if (callStack.isEmpty()) {
                     throw exception;
                 }

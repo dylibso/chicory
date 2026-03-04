@@ -143,4 +143,59 @@ public class ExceptionGcRefTest {
                         .build();
         assertEquals(4, instance.export("indirect-loop-gc").apply()[0]);
     }
+
+    // --- GC subtype exception tests ---
+    // In GraalVM WebImage: tag has (param (ref null $Throwable)) but thrown value
+    // is a subtype like NoSuchFileException. These tests verify that catch works
+    // when the thrown struct is a subtype of the tag's declared parameter type.
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void subtypeCatchGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        assertEquals(55, instance.export("subtype-catch-gc").apply()[0]);
+    }
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void subtypeFromCallGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        assertEquals(77, instance.export("subtype-from-call-gc").apply()[0]);
+    }
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void subtypeDeepCallGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        assertEquals(33, instance.export("subtype-deep-call-gc").apply()[0]);
+    }
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void subtypeSequentialGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        assertEquals(30, instance.export("subtype-sequential-gc").apply()[0]);
+    }
+
+    @ParameterizedTest
+    @MethodSource("machineImplementations")
+    public void subtypeLoopDeepGc(Function<Instance.Builder, Instance.Builder> machineInject) {
+        var instance =
+                machineInject
+                        .apply(Instance.builder(MODULE).withImportValues(makeImports()))
+                        .build();
+        assertEquals(4, instance.export("subtype-loop-deep-gc").apply()[0]);
+    }
 }

@@ -8,10 +8,18 @@
   ;; Struct type (represents a Java object like Throwable)
   (type $Obj (struct (field $value i32)))
 
+  ;; Subtype hierarchy (matches GraalVM WebImage: NoSuchFileException extends ... extends Throwable)
+  (type $Base (sub (struct (field $bval i32))))
+  (type $Mid (sub $Base (struct (field $bval i32) (field $mval i32))))
+  (type $Leaf (sub final $Mid (struct (field $bval i32) (field $mval i32) (field $lval i32))))
+
   ;; Exception tag with GC ref parameter (matches GraalVM WebImage pattern:
   ;;   (tag $tag0 (param (ref null $Throwable)))
   ;; )
   (tag $e (param (ref null $Obj)))
+
+  ;; Exception tag with BASE type param — thrown value will be a subtype
+  (tag $esub (param (ref null $Base)))
 
   ;; Helper that always throws with a new struct
   (func $do_throw (param $val i32)
@@ -184,6 +192,122 @@
           (unreachable)
         )
         (struct.get $Obj $value)
+        (call $on_catch)
+        (drop)
+        (local.set $caught (i32.add (local.get $caught) (i32.const 1)))
+        (local.set $i (i32.add (local.get $i) (i32.const 1)))
+        (br $retry)
+      )
+    )
+    (local.get $caught)
+  )
+
+  ;; --- GC subtype exception tests ---
+  ;; In GraalVM WebImage: tag $tag0 has (param (ref null $_Throwable))
+  ;; but the thrown value is $_NoSuchFileException (a subtype of $_Throwable).
+  ;; The catch block result type is (ref null $_Throwable).
+
+  ;; Helper: throws a $Leaf (subtype of $Base) using tag $esub (param $Base)
+  (func $do_throw_leaf (param $val i32)
+    (throw $esub (struct.new $Leaf (local.get $val) (i32.const 100) (i32.const 200)))
+  )
+
+  ;; Test 10: basic catch with subtype — throw Leaf, catch expects Base
+  (func (export "subtype-catch-gc") (result i32)
+    (block $h (result (ref null $Base))
+      (try_table (catch $esub $h)
+        (call $do_throw_leaf (i32.const 55))
+      )
+      (unreachable)
+    )
+    ;; caught: (ref null $Base) on stack — but runtime value is $Leaf
+    (struct.get $Base $bval)
+  )
+
+  ;; Test 11: subtype throw from called function (mirrors javac pattern exactly)
+  (func $inner_throw_leaf (param $val i32) (result i32)
+    (call $do_throw_leaf (local.get $val))
+    (i32.const 0)
+  )
+
+  (func (export "subtype-from-call-gc") (result i32)
+    (block $h (result (ref null $Base))
+      (try_table (catch $esub $h)
+        (drop (call $inner_throw_leaf (i32.const 77)))
+      )
+      (unreachable)
+    )
+    (struct.get $Base $bval)
+  )
+
+  ;; Test 12: subtype throw from deep call chain (FileSystemView -> FileStore -> FileTree -> throw)
+  (func $mid_throw_leaf (param $val i32) (result i32)
+    (call $inner_throw_leaf (local.get $val))
+  )
+
+  (func (export "subtype-deep-call-gc") (result i32)
+    (block $h (result (ref null $Base))
+      (try_table (catch $esub $h)
+        (drop (call $mid_throw_leaf (i32.const 33)))
+      )
+      (unreachable)
+    )
+    (struct.get $Base $bval)
+  )
+
+  ;; Test 13: subtype with sequential catches (first catch, then another)
+  (func (export "subtype-sequential-gc") (result i32)
+    (local $sum i32)
+
+    (block $h1 (result (ref null $Base))
+      (try_table (catch $esub $h1)
+        (call $do_throw_leaf (i32.const 10))
+      )
+      (unreachable)
+    )
+    (struct.get $Base $bval)
+    (call $on_catch)
+    (local.set $sum)
+
+    (block $h2 (result (ref null $Base))
+      (try_table (catch $esub $h2)
+        (call $do_throw_leaf (i32.const 20))
+      )
+      (unreachable)
+    )
+    (struct.get $Base $bval)
+    (call $on_catch)
+    (i32.add (local.get $sum))
+  )
+
+  ;; Test 14: subtype in loop with deep call (closest to javac pattern)
+  (func $maybe_throw_leaf (param $counter i32) (result i32)
+    (if (i32.lt_u (local.get $counter) (i32.const 4))
+      (then (call $do_throw_leaf (local.get $counter)))
+    )
+    (i32.const 0)
+  )
+  (func $deep_maybe_throw_leaf (param $counter i32) (result i32)
+    (call $maybe_throw_leaf (local.get $counter))
+  )
+
+  (func (export "subtype-loop-deep-gc") (result i32)
+    (local $i i32)
+    (local $caught i32)
+
+    (local.set $i (i32.const 0))
+    (local.set $caught (i32.const 0))
+
+    (block $exit
+      (loop $retry
+        (block $h (result (ref null $Base))
+          (try_table (catch $esub $h)
+            (drop (call $deep_maybe_throw_leaf (local.get $i)))
+            (br $exit)
+          )
+          (unreachable)
+        )
+        (struct.get $Base $bval)
         (call $on_catch)
         (drop)
         (local.set $caught (i32.add (local.get $caught) (i32.const 1)))
