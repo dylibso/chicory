@@ -2967,9 +2967,17 @@ public class InterpreterMachine implements Machine {
             if (!found) {
                 if (callStack.isEmpty()) {
                     throw exception;
-                } else {
-                    frame = callStack.pop();
                 }
+                // Only pop if the current frame is on the callStack;
+                // in CompilerInterpreterMachine.CALL() the frame may be
+                // an ad-hoc StackFrame that was never pushed.
+                if (callStack.peek() == frame) {
+                    callStack.pop();
+                }
+                if (callStack.isEmpty()) {
+                    throw exception;
+                }
+                frame = callStack.peek(); // peek, don't pop - keep catcher on callStack
             }
         }
         throw new RuntimeException("unreacheable");
