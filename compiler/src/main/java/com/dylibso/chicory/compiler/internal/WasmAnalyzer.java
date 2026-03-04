@@ -399,8 +399,8 @@ final class WasmAnalyzer {
                         // not-null path: ref stays on JVM stack from DUP
                         result.add(new CompilerInstruction(CompilerOpCode.LABEL, notNullLabel));
 
-                        // Type stack: ref stays on stack for fall-through (not-null)
-                        stack.push(ref);
+                        // Type stack: refine to non-nullable on fall-through (not-null)
+                        stack.push(valType(ValType.ID.Ref, ref.typeIdx()));
                         break;
                     }
                 case BR_ON_NON_NULL:
