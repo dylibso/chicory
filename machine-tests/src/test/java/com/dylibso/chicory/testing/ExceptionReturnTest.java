@@ -14,11 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-/**
- * Tests for exception handling when `return` instruction is used in the call chain.
- * Reproduces a bug where callStack.clear() on RETURN wipes the entire call stack,
- * preventing exception handlers from being found during stack unwinding.
- */
+/** Tests for exception handling when `return` instruction is used in the call chain. */
 public class ExceptionReturnTest {
 
     private static final WasmModule MODULE =

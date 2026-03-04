@@ -36,7 +36,6 @@
   )
 
   ;; Test 3: catch, call host, then catch another exception
-  ;; This is the pattern from javac-in-wasm that fails in Chicory
   (func (export "sequential-catches") (result i32)
     (local $sum i32)
 

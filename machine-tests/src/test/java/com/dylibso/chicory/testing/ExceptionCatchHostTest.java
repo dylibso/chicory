@@ -22,13 +22,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 /**
  * Tests for exception handling with host function callbacks.
  *
- * Reproduces a pattern from GraalVM WebImage javac-in-wasm where:
  * - Wasm code throws exceptions inside try_table/catch blocks
  * - Catch handlers call imported host functions
  * - Multiple sequential exceptions should each be caught
- *
- * In Node.js these exceptions are caught correctly; this test
- * verifies the same behavior in Chicory's interpreter and compiler.
  */
 public class ExceptionCatchHostTest {
 

@@ -100,6 +100,10 @@ public class InterpreterMachine implements Machine {
                 eval(stack, instance, callStack);
             } catch (StackOverflowError e) {
                 throw new ChicoryException("call stack exhausted", e);
+            } finally {
+                if (!callStack.isEmpty() && callStack.peek() == stackFrame) {
+                    callStack.pop();
+                }
             }
         } else {
             var stackFrame = new StackFrame(instance, funcId, args);
@@ -119,11 +123,11 @@ public class InterpreterMachine implements Machine {
                 }
             } catch (WasmException e) {
                 THROW_REF(instance, instance.registerException(e), stack, stackFrame, callStack);
+            } finally {
+                if (!callStack.isEmpty() && callStack.peek() == stackFrame) {
+                    callStack.pop();
+                }
             }
-        }
-
-        if (!callStack.isEmpty()) {
-            callStack.pop();
         }
 
         if (!popResults) {
@@ -227,10 +231,6 @@ public class InterpreterMachine implements Machine {
                         // RETURN doesn't pass through the END
                         var ctrlFrame = frame.popCtrlTillCall();
                         StackFrame.doControlTransfer(ctrlFrame, stack);
-                        // Note: do NOT callStack.clear() here — that wipes all caller
-                        // frames and breaks exception handling (try_table/catch can't
-                        // find handlers in callers). The caller's call() method handles
-                        // popping this frame from the callStack.
                         shouldReturn = true;
                         break;
                     }
