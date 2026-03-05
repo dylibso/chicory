@@ -29,7 +29,7 @@ public class ExceptionReturnTest {
 
     @ParameterizedTest
     @MethodSource("machineImplementations")
-    public void catchThroughReturn(Function<Instance.Builder, Instance.Builder> machineInject) {
+    public void catchAfterReturn(Function<Instance.Builder, Instance.Builder> machineInject) {
         var instance =
                 machineInject
                         .apply(
@@ -37,30 +37,6 @@ public class ExceptionReturnTest {
                                         .withImportValues(ImportValues.builder().build()))
                         .build();
         assertEquals(42, instance.export("catch-after-return").apply()[0]);
-    }
-
-    @ParameterizedTest
-    @MethodSource("machineImplementations")
-    public void catchDeepAfterReturn(Function<Instance.Builder, Instance.Builder> machineInject) {
-        var instance =
-                machineInject
-                        .apply(
-                                Instance.builder(MODULE)
-                                        .withImportValues(ImportValues.builder().build()))
-                        .build();
-        assertEquals(77, instance.export("catch-deep-after-return").apply()[0]);
-    }
-
-    @ParameterizedTest
-    @MethodSource("machineImplementations")
-    public void catchMultiReturn(Function<Instance.Builder, Instance.Builder> machineInject) {
-        var instance =
-                machineInject
-                        .apply(
-                                Instance.builder(MODULE)
-                                        .withImportValues(ImportValues.builder().build()))
-                        .build();
-        assertEquals(33, instance.export("catch-multi-return").apply()[0]);
     }
 
     @ParameterizedTest

@@ -171,7 +171,7 @@ public class InterpreterMachine implements Machine {
             //                LOGGER.log(
             //                        System.Logger.Level.DEBUG,
             //                        "func="
-            //                                + frame.funcId()
+            //                                + frame.funcId
             //                                + "@"
             //                                + frame.pc
             //                                + ": "

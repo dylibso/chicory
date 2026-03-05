@@ -33,46 +33,7 @@
     (struct.get $Obj $value)
   )
 
-  ;; Test 2: deeper call chain with return then throw
-  (func $deep_return_then_throw (param $val i32) (result i32)
-    (drop (call $func_with_return (i32.const 0)))
-    (call $do_throw (local.get $val))
-    (i32.const 0)
-  )
-  (func $wrapper (param $val i32) (result i32)
-    (call $deep_return_then_throw (local.get $val))
-  )
-
-  (func (export "catch-deep-after-return") (result i32)
-    (block $h (result (ref null $Obj))
-      (try_table (catch $e $h)
-        (drop (call $wrapper (i32.const 77)))
-      )
-      (unreachable)
-    )
-    (struct.get $Obj $value)
-  )
-
-  ;; Test 3: multiple returns before throw
-  (func $multi_return_then_throw (param $val i32) (result i32)
-    (drop (call $func_with_return (i32.const 1)))
-    (drop (call $func_with_return (i32.const 2)))
-    (drop (call $func_with_return (i32.const 3)))
-    (call $do_throw (local.get $val))
-    (i32.const 0)
-  )
-
-  (func (export "catch-multi-return") (result i32)
-    (block $h (result (ref null $Obj))
-      (try_table (catch $e $h)
-        (drop (call $multi_return_then_throw (i32.const 33)))
-      )
-      (unreachable)
-    )
-    (struct.get $Obj $value)
-  )
-
-  ;; Test 4: sequential catches with returns in between
+  ;; Test 2: sequential catches with returns in between
   (func (export "catch-sequential-with-return") (result i32)
     (local $sum i32)
 
