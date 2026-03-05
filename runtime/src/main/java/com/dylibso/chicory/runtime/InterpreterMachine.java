@@ -100,6 +100,10 @@ public class InterpreterMachine implements Machine {
                 eval(stack, instance, callStack);
             } catch (StackOverflowError e) {
                 throw new ChicoryException("call stack exhausted", e);
+            } finally {
+                if (!callStack.isEmpty() && callStack.peek() == stackFrame) {
+                    callStack.pop();
+                }
             }
         } else {
             var stackFrame = new StackFrame(instance, funcId, args);
@@ -119,11 +123,11 @@ public class InterpreterMachine implements Machine {
                 }
             } catch (WasmException e) {
                 THROW_REF(instance, instance.registerException(e), stack, stackFrame, callStack);
+            } finally {
+                if (!callStack.isEmpty() && callStack.peek() == stackFrame) {
+                    callStack.pop();
+                }
             }
-        }
-
-        if (!callStack.isEmpty()) {
-            callStack.pop();
         }
 
         if (!popResults) {
@@ -159,7 +163,7 @@ public class InterpreterMachine implements Machine {
         boolean shouldReturn = false;
 
         loop:
-        while (!frame.terminated()) {
+        while (!frame.terminated() && frame.ctrlStackSize() > 0) {
             if (shouldReturn) {
                 return;
             }
@@ -227,8 +231,6 @@ public class InterpreterMachine implements Machine {
                         // RETURN doesn't pass through the END
                         var ctrlFrame = frame.popCtrlTillCall();
                         StackFrame.doControlTransfer(ctrlFrame, stack);
-                        callStack.clear();
-
                         shouldReturn = true;
                         break;
                     }
@@ -2967,9 +2969,17 @@ public class InterpreterMachine implements Machine {
             if (!found) {
                 if (callStack.isEmpty()) {
                     throw exception;
-                } else {
-                    frame = callStack.pop();
                 }
+                // Only pop if the current frame is on the callStack;
+                // in CompilerInterpreterMachine.CALL() the frame may be
+                // an ad-hoc StackFrame that was never pushed.
+                if (callStack.peek() == frame) {
+                    callStack.pop();
+                }
+                if (callStack.isEmpty()) {
+                    throw exception;
+                }
+                frame = callStack.peek(); // peek, don't pop - keep catcher on callStack
             }
         }
         throw new RuntimeException("unreacheable");
