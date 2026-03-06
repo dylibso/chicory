@@ -123,11 +123,22 @@ If you have an interest in working on any of these please reach out in Zulip!
 ## Who uses Chicory?
 
 * [sqlite4j - Pure Java SQLite JDBC driver](https://github.com/roastedroot/sqlite4j)
+* [pglite4j - Embedded PostgreSQL 17 in pure Java](https://github.com/roastedroot/pglite4j)
+* [Quickjs4J - Sandboxed runtime for JavaScript](https://github.com/roastedroot/quickjs4j) (used by [Microcks](https://github.com/microcks/microcks) and [Apicurio Registry](https://github.com/Apicurio/apicurio-registry))
+* [jq4j - jq JSON processor as pure Java bytecode](https://github.com/roastedroot/jq4j)
+* [protobuf4j - protoc compiler as pure Java bytecode](https://github.com/roastedroot/protobuf4j)
+* [lumis4j - Pure Java syntax highlighter powered by Tree-sitter](https://github.com/roastedroot/lumis4j)
+* [Proxy-Wasm - Java Host](https://github.com/roastedroot/proxy-wasm-java-host)
+* Quarkus extensions: [quarkus-chicory](https://github.com/quarkiverse/quarkus-chicory), [quarkus-proxy-wasm](https://github.com/quarkiverse/quarkus-proxy-wasm), [quarkus-quickjs4j](https://github.com/quarkiverse/quarkus-quickjs4j)
+* [Apache Camel - Wasm component](https://camel.apache.org/components/4.8.x/wasm-component.html)
+* [JRuby - Ruby Prism parser](https://github.com/jruby/jruby)
 * [Debezium - Pluggable Go Single Message Transformations](https://github.com/debezium/debezium)
 * [OPA - Open Policy Agent - WebAssembly Java SDK](https://github.com/StyraInc/opa-java-wasm)
 * [Trino - Python user-defined functions](https://trino.io/docs/current/udf/python.html) [(Trino plugin source)](https://github.com/trinodb/trino/tree/master/plugin/trino-functions-python) [(Python host source)](https://github.com/trinodb/trino-wasm-python)
-* [Proxy-Wasm - Java Host](https://github.com/roastedroot/proxy-wasm-java-host)
-* [Quickjs4J - Sandboxed runtime for JavaScript](https://github.com/roastedroot/quickjs4j)
+* [Extism Chicory SDK](https://github.com/extism/chicory-sdk)
+* [OpenFeature Go Feature Flag provider - local feature flag evaluation](https://github.com/open-feature/java-sdk-contrib)
+* [Spotify Confidence resolver - local feature flag evaluation](https://github.com/spotify/confidence-resolver)
+* [Bazel - WebAssembly execution in repo rules](https://github.com/bazelbuild/bazel)
 * [WildFly - AI Feature Pack](https://github.com/wildfly-extras/wildfly-ai-feature-pack)
 
 ## Meet the Team
