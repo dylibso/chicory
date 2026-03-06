@@ -32,6 +32,8 @@ final class Context {
     private final int instanceSlot;
     private final int tempSlot;
     private final List<TagImport> tagImports;
+    private final String callIndirectBridgePrefix;
+    private final int callIndirectBridgeChunkSize;
 
     public Context(
             WasmModule module,
@@ -41,7 +43,9 @@ final class Context {
             List<FunctionType> functionTypes,
             int funcId,
             FunctionType type,
-            FunctionBody body) {
+            FunctionBody body,
+            String callIndirectBridgePrefix,
+            int callIndirectBridgeChunkSize) {
         this.module = module;
         this.internalClassName = internalClassName;
         this.maxFunctionsPerClass = maxFunctionsPerClass;
@@ -50,6 +54,8 @@ final class Context {
         this.funcId = funcId;
         this.type = type;
         this.body = body;
+        this.callIndirectBridgePrefix = callIndirectBridgePrefix;
+        this.callIndirectBridgeChunkSize = callIndirectBridgeChunkSize;
 
         // compute JVM slot indices for WASM locals
         List<Integer> slots = new ArrayList<>(type.params().size() + body.localTypes().size());
@@ -145,6 +151,14 @@ final class Context {
 
     public int tempSlot() {
         return tempSlot;
+    }
+
+    public String callIndirectClassName(int typeId) {
+        if (callIndirectBridgePrefix != null) {
+            int start = (typeId / callIndirectBridgeChunkSize) * callIndirectBridgeChunkSize;
+            return callIndirectBridgePrefix + start;
+        }
+        return internalClassName;
     }
 
     public String classNameForFuncGroup(String prefix, int funcId) {

@@ -210,7 +210,7 @@ final class Emitters {
         // stack: arguments, funcTableIdx, tableIdx, memory, instance
 
         asm.invokestatic(
-                ctx.internalClassName(),
+                ctx.callIndirectClassName(typeId),
                 callIndirectMethodName(typeId),
                 callIndirectMethodType(functionType).toMethodDescriptorString(),
                 false);
@@ -1156,7 +1156,7 @@ final class Emitters {
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
 
         asm.invokestatic(
-                ctx.internalClassName(),
+                ctx.callIndirectClassName(typeId),
                 callIndirectMethodName(typeId),
                 callIndirectMethodType(functionType).toMethodDescriptorString(),
                 false);
