@@ -113,6 +113,12 @@ If you have an interest in working on any of these please reach out in Zulip!
 - [Chicory: Creating a Language-Native Wasm Runtime by Benjamin Eckel / Andrea Peruffo](https://www.youtube.com/watch?v=00LYdZS0YlI) (Wasm I/O 2024)
 - [Chicory, a JVM Native WebAssembly Runtime by Benjamin Eckel](https://youtu.be/acF_cJ70n04?si=jpMAfAmjl5UaEWWa) (Dylibso Insiders)
 - [WebAssembly the ace up the sleeve of your Java and Quarkus apps](https://www.youtube.com/live/YY5he2pdv8Q?si=tJCXJbfLXDtRxbh-) (Quarkus Insights 206)
+- [The Chicory Photo Album: Celebrating 1.0.0 and a Year of Wasm](https://www.javaadvent.com/2024/12/wasm-chicory-1.html) on [Java Advent 2024](https://www.javaadvent.com/2024/12)
+- [Wazero vs Chicory: An In-Depth Comparison Between Two Language-Native Wasm Runtimes by Edoardo Vacchi](https://archive.fosdem.org/2025/schedule/event/fosdem-2025-4961-wazero-vs-chicory-an-in-depth-comparison-between-two-language-native-wasm-runtimes/) (FOSDEM 2025)
+- [WASM in the Enterprise: Secure, Portable, and Ready for Business by Andrea Peruffo](https://www.infoq.com/presentations/wasm-enterprise/) (QCon London 2025)
+- [A Go CEL Policy Engine in Java, with Quarkus Chicory](https://quarkus.io/blog/k8s-style-CEL-with-quarkus-chicory/) on [Quarkus Blog](https://quarkus.io/blog/)
+- [Introduction to the Chicory Native JVM WebAssembly Runtime](https://www.baeldung.com/chicory-native-jvm-webassembly-runtime) on [Baeldung](https://www.baeldung.com)
+- [Bring WebAssembly to the JVM. How Chicory Is Powering a New Generation of Java Libraries](https://www.javaadvent.com/2025/12/chicory-webassembly-on-the-jvm.html) on [Java Advent 2025](https://www.javaadvent.com/2025/12)
 
 ## Prior Art
 
