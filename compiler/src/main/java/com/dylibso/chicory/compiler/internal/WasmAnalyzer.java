@@ -1,6 +1,7 @@
 package com.dylibso.chicory.compiler.internal;
 
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.slotCount;
 import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
 import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
@@ -65,6 +66,9 @@ final class WasmAnalyzer {
         final long handler;
         final long after;
         final long[] afterCatch;
+        // types of values below the try scope that need to be saved/restored
+        int savedStackSlotBase;
+        List<ValType> savedStackTypes;
 
         public TryCatchBlock(
                 AnnotatedInstruction ins,
@@ -88,6 +92,7 @@ final class WasmAnalyzer {
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
         var stack = new TypeStack(module.typeSection());
         int nextLabel = body.instructions().size();
+        int trySaveSlotOffset = 0;
         List<CompilerInstruction> result = new ArrayList<>();
 
         // find label targets
@@ -301,8 +306,38 @@ final class WasmAnalyzer {
                             break;
                         }
 
-                        stack.enterScope(ins.scope(), blockType(ins));
                         var tryCatchBlock = tryCatchBlocks.get(ins.address());
+
+                        // Save below-try stack values for catch handler restoration.
+                        // JVM exception handlers clear the operand stack, but WASM
+                        // try_table catch preserves values below the try scope.
+                        var allTypes = new ArrayList<>(stack.types());
+                        reverse(allTypes); // convert to bottom-to-top order
+                        int paramCount = blockType(ins).params().size();
+                        int belowCount = allTypes.size() - paramCount;
+
+                        if (belowCount > 0) {
+                            int saveSlotBase = trySaveSlotOffset;
+                            var belowTypes = allTypes.subList(0, belowCount);
+                            for (ValType t : belowTypes) {
+                                trySaveSlotOffset += slotCount(t);
+                            }
+                            tryCatchBlock.savedStackSlotBase = saveSlotBase;
+                            tryCatchBlock.savedStackTypes = new ArrayList<>(belowTypes);
+
+                            // operands: [saveSlotBase, belowCount, type_ids...]
+                            long[] saveOperands = new long[2 + allTypes.size()];
+                            saveOperands[0] = saveSlotBase;
+                            saveOperands[1] = belowCount;
+                            for (int i = 0; i < allTypes.size(); i++) {
+                                saveOperands[i + 2] = allTypes.get(i).id();
+                            }
+                            result.add(
+                                    new CompilerInstruction(
+                                            CompilerOpCode.TRY_SAVE_STACK, saveOperands));
+                        }
+
+                        stack.enterScope(ins.scope(), blockType(ins));
                         result.add(
                                 new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.start));
                         break;
@@ -541,7 +576,14 @@ final class WasmAnalyzer {
                     stack.pop(ValType.I32);
                     var selectType = stack.peek();
                     stack.pop(selectType);
-                    stack.pop(selectType);
+                    // For GC reference types, the second operand may have a
+                    // different concrete type index (both are valid subtypes
+                    // of a common supertype). Just verify it's a reference.
+                    if (selectType.isReference()) {
+                        stack.popRef();
+                    } else {
+                        stack.pop(selectType);
+                    }
                     stack.push(selectType);
                     result.add(new CompilerInstruction(CompilerOpCode.SELECT, selectType.id()));
                     break;
@@ -612,6 +654,18 @@ final class WasmAnalyzer {
 
         // store the exception in a temporary slot
         result.add(new CompilerInstruction(CompilerOpCode.CATCH_START));
+
+        // Restore below-try stack values that were saved before the try block.
+        // JVM exception handlers clear the operand stack, but WASM semantics
+        // preserve values below the try scope when a catch fires.
+        if (tryCatchBlock.savedStackTypes != null && !tryCatchBlock.savedStackTypes.isEmpty()) {
+            long[] operands = new long[1 + tryCatchBlock.savedStackTypes.size()];
+            operands[0] = tryCatchBlock.savedStackSlotBase;
+            for (int i = 0; i < tryCatchBlock.savedStackTypes.size(); i++) {
+                operands[i + 1] = tryCatchBlock.savedStackTypes.get(i).id();
+            }
+            result.add(new CompilerInstruction(CompilerOpCode.TRY_RESTORE_STACK, operands));
+        }
 
         for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
             var catchCondition = tryCatchBlock.ins.catches().get(i);

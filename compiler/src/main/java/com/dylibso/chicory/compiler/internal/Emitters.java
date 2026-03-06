@@ -1082,6 +1082,69 @@ final class Emitters {
         asm.athrow();
     }
 
+    // Save all values on the JVM operand stack to local variables before a try block.
+    // This is needed because JVM exception handlers clear the operand stack,
+    // but WASM try_table catch preserves values below the try scope.
+    // Operands: [saveSlotBase, belowCount, type_ids from bottom to top...]
+    public static void TRY_SAVE_STACK(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int saveSlotBase = (int) ins.operand(0);
+        int belowCount = (int) ins.operand(1);
+        int totalCount = ins.operandCount() - 2;
+
+        // Pop above-try values (block params) from stack top, save to transient temp
+        int tempSlot = ctx.tempSlot();
+        for (int i = totalCount - 1; i >= belowCount; i--) {
+            var type = valType(ins.operand(i + 2), ctx);
+            asm.store(tempSlot, asmType(type));
+            tempSlot += slotCount(type);
+        }
+
+        // Pop below-try values and save to persistent try-save slots.
+        // Compute slot assignments bottom-to-top so the layout matches
+        // TRY_RESTORE_STACK's sequential loading order.
+        int[] belowSlots = new int[belowCount];
+        int saveSlot = ctx.trySaveBaseSlot() + saveSlotBase;
+        for (int i = 0; i < belowCount; i++) {
+            belowSlots[i] = saveSlot;
+            saveSlot += slotCount(valType(ins.operand(i + 2), ctx));
+        }
+        // Pop in reverse (top-of-below first) and store to pre-computed slots
+        for (int i = belowCount - 1; i >= 0; i--) {
+            var type = valType(ins.operand(i + 2), ctx);
+            asm.store(belowSlots[i], asmType(type));
+        }
+
+        // Restore below-try values (bottom to top)
+        for (int i = 0; i < belowCount; i++) {
+            var type = valType(ins.operand(i + 2), ctx);
+            asm.load(belowSlots[i], asmType(type));
+        }
+
+        // Restore above-try values (bottom to top)
+        tempSlot = ctx.tempSlot();
+        for (int i = belowCount; i < totalCount; i++) {
+            var type = valType(ins.operand(i + 2), ctx);
+            asm.load(tempSlot, asmType(type));
+            tempSlot += slotCount(type);
+        }
+    }
+
+    // Restore below-try values in the catch handler from persistent try-save slots.
+    // Operands: [saveSlotBase, type_ids of below-try values from bottom to top...]
+    public static void TRY_RESTORE_STACK(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int saveSlotBase = (int) ins.operand(0);
+        int saveSlot = ctx.trySaveBaseSlot() + saveSlotBase;
+
+        // Load below-try values (bottom to top)
+        for (int i = 1; i < ins.operandCount(); i++) {
+            var type = valType(ins.operand(i), ctx);
+            asm.load(saveSlot, asmType(type));
+            saveSlot += slotCount(type);
+        }
+    }
+
     public static void CATCH_UNBOX_PARAMS(
             Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         var tag = (int) ins.operand(0);

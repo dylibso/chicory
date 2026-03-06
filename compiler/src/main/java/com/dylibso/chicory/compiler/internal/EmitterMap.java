@@ -29,6 +29,8 @@ final class EmitterMap {
                             Emitters::CATCH_REGISTER_EXCEPTION)
                     .intrinsic(CompilerOpCode.CATCH_START, Emitters::CATCH_START)
                     .intrinsic(CompilerOpCode.CATCH_END, Emitters::CATCH_END)
+                    .intrinsic(CompilerOpCode.TRY_SAVE_STACK, Emitters::TRY_SAVE_STACK)
+                    .intrinsic(CompilerOpCode.TRY_RESTORE_STACK, Emitters::TRY_RESTORE_STACK)
 
                     // ====== References ======
                     .intrinsic(CompilerOpCode.REF_FUNC, Emitters::REF_FUNC)

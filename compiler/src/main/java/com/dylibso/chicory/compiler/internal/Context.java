@@ -31,6 +31,7 @@ final class Context {
     private final int memorySlot;
     private final int instanceSlot;
     private final int tempSlot;
+    private final int trySaveBaseSlot;
     private final List<TagImport> tagImports;
     private final String callIndirectBridgePrefix;
     private final int callIndirectBridgeChunkSize;
@@ -93,6 +94,9 @@ final class Context {
 
         this.slots = List.copyOf(slots);
         this.tempSlot = slot;
+        // Reserve space after tempSlot for transient temp usage (DROP_KEEP, CATCH_START, etc.)
+        // before the persistent try save slots begin.
+        this.trySaveBaseSlot = slot + 32;
 
         this.tagImports =
                 module.importSection().stream()
@@ -151,6 +155,10 @@ final class Context {
 
     public int tempSlot() {
         return tempSlot;
+    }
+
+    public int trySaveBaseSlot() {
+        return trySaveBaseSlot;
     }
 
     public String callIndirectClassName(int typeId) {
