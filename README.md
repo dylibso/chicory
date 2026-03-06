@@ -129,7 +129,7 @@ If you have an interest in working on any of these please reach out in Zulip!
 * [protobuf4j - protoc compiler as pure Java bytecode](https://github.com/roastedroot/protobuf4j)
 * [lumis4j - Pure Java syntax highlighter powered by Tree-sitter](https://github.com/roastedroot/lumis4j)
 * [Proxy-Wasm - Java Host](https://github.com/roastedroot/proxy-wasm-java-host)
-* Quarkus extensions: [quarkus-chicory](https://github.com/quarkiverse/quarkus-chicory), [quarkus-proxy-wasm](https://github.com/quarkiverse/quarkus-proxy-wasm), [quarkus-quickjs4j](https://github.com/quarkiverse/quarkus-quickjs4j)
+* Quarkus extensions: [quarkus-chicory](https://github.com/quarkiverse/quarkus-chicory), [quarkus-proxy-wasm](https://github.com/quarkiverse/quarkus-proxy-wasm), [quarkus-quickjs4j](https://github.com/quarkiverse/quarkus-quickjs4j), [quarkus-grpc-zero](https://github.com/quarkiverse/quarkus-grpc-zero)
 * [Apache Camel - Wasm component](https://camel.apache.org/components/4.8.x/wasm-component.html)
 * [JRuby - Ruby Prism parser](https://github.com/jruby/jruby)
 * [Debezium - Pluggable Go Single Message Transformations](https://github.com/debezium/debezium)
