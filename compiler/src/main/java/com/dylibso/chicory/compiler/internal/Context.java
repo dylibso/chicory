@@ -12,6 +12,7 @@ import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -33,8 +34,7 @@ final class Context {
     private final int tempSlot;
     private final int trySaveBaseSlot;
     private final List<TagImport> tagImports;
-    private final String callIndirectBridgePrefix;
-    private final int callIndirectBridgeChunkSize;
+    private final IntFunction<String> callIndirectClassResolver;
 
     public Context(
             WasmModule module,
@@ -45,8 +45,7 @@ final class Context {
             int funcId,
             FunctionType type,
             FunctionBody body,
-            String callIndirectBridgePrefix,
-            int callIndirectBridgeChunkSize) {
+            IntFunction<String> callIndirectClassResolver) {
         this.module = module;
         this.internalClassName = internalClassName;
         this.maxFunctionsPerClass = maxFunctionsPerClass;
@@ -55,8 +54,7 @@ final class Context {
         this.funcId = funcId;
         this.type = type;
         this.body = body;
-        this.callIndirectBridgePrefix = callIndirectBridgePrefix;
-        this.callIndirectBridgeChunkSize = callIndirectBridgeChunkSize;
+        this.callIndirectClassResolver = callIndirectClassResolver;
 
         // compute JVM slot indices for WASM locals
         List<Integer> slots = new ArrayList<>(type.params().size() + body.localTypes().size());
@@ -162,11 +160,7 @@ final class Context {
     }
 
     public String callIndirectClassName(int typeId) {
-        if (callIndirectBridgePrefix != null) {
-            int start = (typeId / callIndirectBridgeChunkSize) * callIndirectBridgeChunkSize;
-            return callIndirectBridgePrefix + start;
-        }
-        return internalClassName;
+        return callIndirectClassResolver.apply(typeId);
     }
 
     public String classNameForFuncGroup(String prefix, int funcId) {

@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import org.objectweb.asm.ClassTooLargeException;
 import org.objectweb.asm.ClassVisitor;
@@ -249,6 +250,19 @@ public final class Compiler {
             }
         }
         return new CompilerResult(collector, Set.copyOf(interpretedFunctions));
+    }
+
+    private IntFunction<String> callIndirectClassResolver() {
+        var defaultClassName = internalClassName(className);
+        if (callIndirectBridgePrefix == null) {
+            return typeId -> defaultClassName;
+        }
+        var prefix = callIndirectBridgePrefix;
+        var chunkSize = callIndirectBridgeChunkSize;
+        return typeId -> {
+            int start = (typeId / chunkSize) * chunkSize;
+            return prefix + start;
+        };
     }
 
     private void compileExtraClasses() {
@@ -1260,8 +1274,7 @@ public final class Compiler {
                         funcId,
                         type,
                         body,
-                        callIndirectBridgePrefix,
-                        callIndirectBridgeChunkSize);
+                        callIndirectClassResolver());
 
         List<CompilerInstruction> instructions = analyzer.analyze(funcId);
 
