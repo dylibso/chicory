@@ -117,8 +117,8 @@ public final class Compiler {
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
     private final Set<Integer> callRefTypeIds;
-    private String callIndirectBridgePrefix;
-    private int callIndirectBridgeChunkSize;
+    private boolean useBridgeClasses;
+    private IntFunction<String> callIndirectClassResolver;
 
     private Compiler(
             WasmModule module,
@@ -242,35 +242,23 @@ public final class Compiler {
                 collector.putMainClass(className, bytes);
                 break;
             } catch (ClassTooLargeException e) {
-                if (callIndirectBridgePrefix != null) {
+                if (useBridgeClasses) {
                     throw e;
                 }
-                callIndirectBridgePrefix = internalClassName(className) + "CallIndirectBridge_";
+                // retry with call_indirect methods split into bridge classes
+                useBridgeClasses = true;
                 collector = classCollectorFactory.get();
             }
         }
         return new CompilerResult(collector, Set.copyOf(interpretedFunctions));
     }
 
-    private IntFunction<String> callIndirectClassResolver() {
-        var defaultClassName = internalClassName(className);
-        if (callIndirectBridgePrefix == null) {
-            return typeId -> defaultClassName;
-        }
-        var prefix = callIndirectBridgePrefix;
-        var chunkSize = callIndirectBridgeChunkSize;
-        return typeId -> {
-            int start = (typeId / chunkSize) * chunkSize;
-            return prefix + start;
-        };
-    }
-
     private void compileExtraClasses() {
         createShadedClass(className, collector);
 
         // When call_indirect methods are moved to bridge classes, compile them first
-        // so the bridge chunk size is known before FuncGroup compilation
-        if (callIndirectBridgePrefix != null) {
+        // so the resolver is built before FuncGroup compilation
+        if (useBridgeClasses) {
             compileCallIndirectBridgeClasses();
         }
 
@@ -359,12 +347,11 @@ public final class Compiler {
         var allTypes = module.typeSection().types();
         var mainInternalClassName = internalClassName(className);
 
-        callIndirectBridgeChunkSize =
+        var chunkSize =
                 loadChunkedClass(
                         allTypes.length,
                         DEFAULT_MAX_FUNCTIONS_PER_CLASS,
-                        (collector, start, end, chunkSize) -> {
-                            callIndirectBridgeChunkSize = chunkSize;
+                        (collector, start, end, cs) -> {
                             String bridgeClassName = className + "CallIndirectBridge_" + start;
                             compileExtraClass(
                                     collector,
@@ -390,6 +377,13 @@ public final class Compiler {
                                         }
                                     });
                         });
+
+        var bridgePrefix = internalClassName(className) + "CallIndirectBridge_";
+        callIndirectClassResolver =
+                typeId -> {
+                    int start = (typeId / chunkSize) * chunkSize;
+                    return bridgePrefix + start;
+                };
     }
 
     interface ChunkedClassEmitter {
@@ -534,8 +528,8 @@ public final class Compiler {
                 asm -> compileMachineCall(internalClassName, asm));
 
         // call_indirect_xxx() bridges for native CALL_INDIRECT
-        // When callIndirectBridgePrefix is set, these methods are on separate bridge classes
-        if (callIndirectBridgePrefix == null) {
+        // When using bridge classes, these methods are on separate classes
+        if (!useBridgeClasses) {
             var allTypes = module.typeSection().types();
             for (int i = 0; i < allTypes.length; i++) {
                 var typeId = i;
@@ -626,6 +620,9 @@ public final class Compiler {
                         methodType.toMethodDescriptorString(),
                         null,
                         null);
+
+        // uncomment if you ever want to troubleshoot invalid bytecode generation
+        // methodWriter = new CheckMethodAdapter(methodWriter);
 
         methodWriter.visitCode();
         consumer.accept(new InstructionAdapter(methodWriter));
@@ -1274,7 +1271,7 @@ public final class Compiler {
                         funcId,
                         type,
                         body,
-                        callIndirectClassResolver());
+                        useBridgeClasses ? callIndirectClassResolver : typeId -> internalClassName);
 
         List<CompilerInstruction> instructions = analyzer.analyze(funcId);
 
