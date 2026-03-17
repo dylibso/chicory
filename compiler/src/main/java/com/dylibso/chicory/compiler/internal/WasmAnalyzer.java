@@ -1,5 +1,6 @@
 package com.dylibso.chicory.compiler.internal;
 
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.hasTooManyParameters;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.slotCount;
 import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
@@ -36,6 +37,24 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 final class WasmAnalyzer {
+
+    static final class AnalysisResult {
+        private final List<CompilerInstruction> instructions;
+        private final int maxTempSlots;
+
+        AnalysisResult(List<CompilerInstruction> instructions, int maxTempSlots) {
+            this.instructions = instructions;
+            this.maxTempSlots = maxTempSlots;
+        }
+
+        List<CompilerInstruction> instructions() {
+            return instructions;
+        }
+
+        int maxTempSlots() {
+            return maxTempSlots;
+        }
+    }
 
     private final WasmModule module;
     private final List<ValType> globalTypes;
@@ -87,7 +106,7 @@ final class WasmAnalyzer {
     }
 
     @SuppressWarnings("checkstyle:modifiedcontrolvariable")
-    public List<CompilerInstruction> analyze(int funcId) {
+    public AnalysisResult analyze(int funcId) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
         var stack = new TypeStack(module.typeSection());
@@ -637,7 +656,75 @@ final class WasmAnalyzer {
         result.add(new CompilerInstruction(CompilerOpCode.RETURN, ids(functionType.returns())));
 
         stack.verifyEmpty();
-        return result;
+        return new AnalysisResult(result, computeMaxTempSlots(result));
+    }
+
+    private int computeMaxTempSlots(List<CompilerInstruction> instructions) {
+        int max = 0;
+        for (var ins : instructions) {
+            switch (ins.opcode()) {
+                case DROP_KEEP:
+                    {
+                        // keep values are stored starting at tempSlot
+                        int keepStart = (int) ins.operand(0) + 1;
+                        int slots = 0;
+                        for (int i = keepStart; i < ins.operandCount(); i++) {
+                            slots += slotCount(ins.operand(i));
+                        }
+                        max = Math.max(max, slots);
+                        break;
+                    }
+                case TRY_SAVE_STACK:
+                    {
+                        // above-try values (block params) are stored at tempSlot
+                        int belowCount = (int) ins.operand(1);
+                        int totalCount = ins.operandCount() - 2;
+                        int slots = 0;
+                        for (int i = belowCount; i < totalCount; i++) {
+                            slots += slotCount(ins.operand(i + 2));
+                        }
+                        max = Math.max(max, slots);
+                        break;
+                    }
+                case CATCH_START:
+                    // exception ref (1 slot) + potential array ref in CATCH_UNBOX_PARAMS (1 slot)
+                    max = Math.max(max, 2);
+                    break;
+                case CALL_INDIRECT:
+                    {
+                        // 1 slot always; more if hasTooManyParameters
+                        var type = module.typeSection().getType((int) ins.operand(0));
+                        if (hasTooManyParameters(type)) {
+                            max =
+                                    Math.max(
+                                            max,
+                                            type.params().stream()
+                                                    .mapToInt(CompilerUtil::slotCount)
+                                                    .sum());
+                        }
+                        break;
+                    }
+                case CALL_REF:
+                    {
+                        // 1 slot for funcref; more if hasTooManyParameters
+                        var type = module.typeSection().getType((int) ins.operand(0));
+                        int slots = 1;
+                        if (hasTooManyParameters(type)) {
+                            slots =
+                                    Math.max(
+                                            slots,
+                                            type.params().stream()
+                                                    .mapToInt(CompilerUtil::slotCount)
+                                                    .sum());
+                        }
+                        max = Math.max(max, slots);
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+        return max;
     }
 
     private static void analyzeTryCatchEnd(

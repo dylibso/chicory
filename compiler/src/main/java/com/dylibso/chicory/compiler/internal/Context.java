@@ -45,7 +45,8 @@ final class Context {
             int funcId,
             FunctionType type,
             FunctionBody body,
-            IntFunction<String> callIndirectClassResolver) {
+            IntFunction<String> callIndirectClassResolver,
+            int maxTempSlots) {
         this.module = module;
         this.internalClassName = internalClassName;
         this.maxFunctionsPerClass = maxFunctionsPerClass;
@@ -92,9 +93,7 @@ final class Context {
 
         this.slots = List.copyOf(slots);
         this.tempSlot = slot;
-        // Reserve space after tempSlot for transient temp usage (DROP_KEEP, CATCH_START, etc.)
-        // before the persistent try save slots begin.
-        this.trySaveBaseSlot = slot + 32;
+        this.trySaveBaseSlot = slot + maxTempSlots;
 
         this.tagImports =
                 module.importSection().stream()

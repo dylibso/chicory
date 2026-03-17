@@ -1261,6 +1261,9 @@ public final class Compiler {
             return;
         }
 
+        var analysis = analyzer.analyze(funcId);
+        List<CompilerInstruction> instructions = analysis.instructions();
+
         var ctx =
                 new Context(
                         module,
@@ -1271,9 +1274,8 @@ public final class Compiler {
                         funcId,
                         type,
                         body,
-                        useBridgeClasses ? callIndirectClassResolver : typeId -> internalClassName);
-
-        List<CompilerInstruction> instructions = analyzer.analyze(funcId);
+                        useBridgeClasses ? callIndirectClassResolver : typeId -> internalClassName,
+                        analysis.maxTempSlots());
 
         int localsCount = type.params().size();
         if (hasTooManyParameters(type)) {
