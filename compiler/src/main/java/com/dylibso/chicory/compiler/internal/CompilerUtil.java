@@ -199,7 +199,12 @@ final class CompilerUtil {
     }
 
     public static int slotCount(ValType type) {
-        switch (type.opcode()) {
+        return slotCount(type.id());
+    }
+
+    public static int slotCount(long valTypeId) {
+        int opcode = (int) (valTypeId & 0xFFFFFFFFL);
+        switch (opcode) {
             case ValType.ID.I32:
             case ValType.ID.F32:
             case ValType.ID.Ref:
@@ -210,7 +215,7 @@ final class CompilerUtil {
             case ValType.ID.F64:
                 return 2;
             default:
-                throw new IllegalArgumentException("Unsupported type: " + type);
+                throw new IllegalArgumentException("Unsupported type id: " + valTypeId);
         }
     }
 
