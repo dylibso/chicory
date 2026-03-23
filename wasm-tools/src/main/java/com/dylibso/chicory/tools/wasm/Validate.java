@@ -1,7 +1,5 @@
 package com.dylibso.chicory.tools.wasm;
 
-import static com.dylibso.chicory.tools.wasm.Validate.validate;
-
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ByteArrayMemory;
@@ -21,8 +19,9 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-public final class Wat2Wasm {
-    private Wat2Wasm() {}
+public final class Validate {
+
+    private Validate() {}
 
     private static final Logger logger =
             new SystemLogger() {
@@ -33,36 +32,33 @@ public final class Wat2Wasm {
             };
     private static final WasmModule MODULE = WasmToolsModule.load();
 
-    public static byte[] parse(File file) {
+    public static void validate(File file) {
         try (var is = new FileInputStream(file)) {
-            return parse(is);
+            validate(is);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    public static byte[] parse(String wat) {
+    public static void validate(String wat) {
         try (var is = new ByteArrayInputStream(wat.getBytes(StandardCharsets.UTF_8))) {
-            return parse(is);
+            validate(is);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    public static byte[] parse(InputStream is) {
+    public static void validate(InputStream is) {
         try (var stdinStream = new ByteArrayInputStream(is.readAllBytes());
                 var stdoutStream = new ByteArrayOutputStream();
                 var stderrStream = new ByteArrayOutputStream()) {
-
-            validate(stdinStream);
-            stdinStream.reset();
 
             var options =
                     WasiOptions.builder()
                             .withStdin(stdinStream, false)
                             .withStdout(stdoutStream, false)
                             .withStderr(stderrStream, false)
-                            .withArguments(List.of("wasm-tools", "parse", "-"))
+                            .withArguments(List.of("wasm-tools", "validate", "-"))
                             .build();
 
             logger.info("Running command: " + String.join(" ", options.arguments()));
@@ -71,20 +67,21 @@ public final class Wat2Wasm {
                     WasiPreview1.builder().withLogger(logger).withOptions(options).build()) {
                 var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
 
-                Instance.builder(MODULE)
-                        .withMachineFactory(WasmToolsModule::create)
-                        .withMemoryFactory(ByteArrayMemory::new)
-                        .withImportValues(imports)
-                        .build();
-            } catch (WasiExitException e) {
-                if (e.exitCode() != 0 || stdoutStream.size() <= 0) {
-                    throw new WatParseException(
-                            stdoutStream.toString(StandardCharsets.UTF_8)
-                                    + stderrStream.toString(StandardCharsets.UTF_8),
-                            e);
+                try {
+                    Instance.builder(MODULE)
+                            .withMachineFactory(WasmToolsModule::create)
+                            .withMemoryFactory(ByteArrayMemory::new)
+                            .withImportValues(imports)
+                            .build();
+                } catch (WasiExitException e) {
+                    if (e.exitCode() != 0) {
+                        throw new WatParseException(
+                                stdoutStream.toString(StandardCharsets.UTF_8)
+                                        + stderrStream.toString(StandardCharsets.UTF_8),
+                                e);
+                    }
                 }
             }
-            return stdoutStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

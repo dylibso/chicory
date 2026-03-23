@@ -76,11 +76,24 @@ public class WasmToolsTest {
     }
 
     @Test
-    public void shouldValidateWat() throws Exception {
+    public void shouldValidateWatBeforeParsing() {
         var exitException =
                 assertThrows(
                         WatParseException.class,
                         () -> Wat2Wasm.parse(new File("src/test/resources/address.1.wat")));
+
+        assertEquals(1, ((WasiExitException) exitException.getCause()).exitCode());
+        assertTrue(
+                exitException.getMessage().contains("failed to validate"),
+                "found: " + exitException.getMessage() + " doesn't contains the expected result");
+    }
+
+    @Test
+    public void shouldValidateWat() {
+        var exitException =
+                assertThrows(
+                        WatParseException.class,
+                        () -> Validate.validate(new File("src/test/resources/address.1.wat")));
 
         assertEquals(1, ((WasiExitException) exitException.getCause()).exitCode());
         assertTrue(
