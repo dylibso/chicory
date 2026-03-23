@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import org.objectweb.asm.ClassTooLargeException;
 import org.objectweb.asm.ClassVisitor;
@@ -112,10 +113,12 @@ public final class Compiler {
     private final InterpreterFallback interpreterFallback;
     private final List<FunctionType> functionTypes;
     private final Supplier<ClassCollector> classCollectorFactory;
-    private final ClassCollector collector;
+    private ClassCollector collector;
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
     private final Set<Integer> callRefTypeIds;
+    private boolean useBridgeClasses;
+    private IntFunction<String> callIndirectClassResolver;
 
     private Compiler(
             WasmModule module,
@@ -149,7 +152,6 @@ public final class Compiler {
         this.functionTypes = analyzer.functionTypes();
         this.callRefTypeIds = collectCallRefTypeIds();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
-        compileExtraClasses();
     }
 
     private Set<Integer> collectCallRefTypeIds() {
@@ -233,13 +235,32 @@ public final class Compiler {
     }
 
     public CompilerResult compile() {
-        var bytes = compileClass();
-        collector.putMainClass(className, bytes);
+        while (true) {
+            try {
+                compileExtraClasses();
+                var bytes = compileClass();
+                collector.putMainClass(className, bytes);
+                break;
+            } catch (ClassTooLargeException e) {
+                if (useBridgeClasses) {
+                    throw e;
+                }
+                // retry with call_indirect methods split into bridge classes
+                useBridgeClasses = true;
+                collector = classCollectorFactory.get();
+            }
+        }
         return new CompilerResult(collector, Set.copyOf(interpretedFunctions));
     }
 
     private void compileExtraClasses() {
         createShadedClass(className, collector);
+
+        // When call_indirect methods are moved to bridge classes, compile them first
+        // so the resolver is built before FuncGroup compilation
+        if (useBridgeClasses) {
+            compileCallIndirectBridgeClasses();
+        }
 
         int totalFunctions = functionImports + module.functionSection().functionCount();
 
@@ -320,6 +341,49 @@ public final class Compiler {
         if (!functionTypes.isEmpty()) {
             compileMachineCallClass();
         }
+    }
+
+    private void compileCallIndirectBridgeClasses() {
+        var allTypes = module.typeSection().types();
+        var mainInternalClassName = internalClassName(className);
+
+        var chunkSize =
+                loadChunkedClass(
+                        allTypes.length,
+                        DEFAULT_MAX_FUNCTIONS_PER_CLASS,
+                        (collector, start, end, cs) -> {
+                            String bridgeClassName = className + "CallIndirectBridge_" + start;
+                            compileExtraClass(
+                                    collector,
+                                    bridgeClassName,
+                                    cw -> {
+                                        for (int i = start; i < end; i++) {
+                                            var typeId = i;
+                                            var type = allTypes[i];
+                                            if (type == null) {
+                                                continue;
+                                            }
+                                            emitFunction(
+                                                    cw,
+                                                    callIndirectMethodName(typeId),
+                                                    callIndirectMethodType(type),
+                                                    true,
+                                                    asm ->
+                                                            compileCallIndirect(
+                                                                    mainInternalClassName,
+                                                                    typeId,
+                                                                    type,
+                                                                    asm));
+                                        }
+                                    });
+                        });
+
+        var bridgePrefix = internalClassName(className) + "CallIndirectBridge_";
+        callIndirectClassResolver =
+                typeId -> {
+                    int start = (typeId / chunkSize) * chunkSize;
+                    return bridgePrefix + start;
+                };
     }
 
     interface ChunkedClassEmitter {
@@ -464,19 +528,22 @@ public final class Compiler {
                 asm -> compileMachineCall(internalClassName, asm));
 
         // call_indirect_xxx() bridges for native CALL_INDIRECT
-        var allTypes = module.typeSection().types();
-        for (int i = 0; i < allTypes.length; i++) {
-            var typeId = i;
-            var type = allTypes[i];
-            if (type == null) {
-                continue; // skip non-function types (struct/array)
+        // When using bridge classes, these methods are on separate classes
+        if (!useBridgeClasses) {
+            var allTypes = module.typeSection().types();
+            for (int i = 0; i < allTypes.length; i++) {
+                var typeId = i;
+                var type = allTypes[i];
+                if (type == null) {
+                    continue; // skip non-function types (struct/array)
+                }
+                emitFunction(
+                        classWriter,
+                        callIndirectMethodName(typeId),
+                        callIndirectMethodType(type),
+                        true,
+                        asm -> compileCallIndirect(internalClassName, typeId, type, asm));
             }
-            emitFunction(
-                    classWriter,
-                    callIndirectMethodName(typeId),
-                    callIndirectMethodType(type),
-                    true,
-                    asm -> compileCallIndirect(internalClassName, typeId, type, asm));
         }
 
         // value_xxx() bridges for multi-value return
@@ -1194,6 +1261,9 @@ public final class Compiler {
             return;
         }
 
+        var analysis = analyzer.analyze(funcId);
+        List<CompilerInstruction> instructions = analysis.instructions();
+
         var ctx =
                 new Context(
                         module,
@@ -1203,9 +1273,9 @@ public final class Compiler {
                         functionTypes,
                         funcId,
                         type,
-                        body);
-
-        List<CompilerInstruction> instructions = analyzer.analyze(funcId);
+                        body,
+                        useBridgeClasses ? callIndirectClassResolver : typeId -> internalClassName,
+                        analysis.maxTempSlots());
 
         int localsCount = type.params().size();
         if (hasTooManyParameters(type)) {
