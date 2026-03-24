@@ -128,7 +128,17 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>chicory-compiler-maven-plugin</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>cli-experimental</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>codegen</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -956,6 +966,7 @@
         <module>build-time-compiler</module>
         <module>build-time-compiler-cli</module>
         <module>cli</module>
+        <module>codegen</module>
         <module>compiler</module>
         <module>compiler-maven-plugin</module>
         <module>compiler-tests</module>
@@ -993,6 +1004,7 @@
         <module>build-time-compiler</module>
         <module>build-time-compiler-cli</module>
         <module>cli</module>
+        <module>codegen</module>
         <module>compiler</module>
         <module>compiler-maven-plugin</module>
         <module>dircache</module>

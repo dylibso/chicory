@@ -103,6 +103,64 @@ var instance = Instance.builder(module).
         withMachineFactory(Add::create).
         build();
 ```
+
+### Generating Module Exports and Imports
+
+The build-time compiler can also generate typed Java wrappers for a module's exports and imports,
+eliminating the need for the [`@WasmModuleInterface` annotation](annotations.md#wasmmoduleinterface) and the annotation processor setup.
+
+Add the `moduleInterface` parameter to the plugin configuration:
+
+```xml
+<configuration>
+  <wasmFile>src/main/resources/demo.wasm</wasmFile>
+  <name>org.acme.wasm.DemoModule</name>
+  <moduleInterface>org.acme.wasm.Demo</moduleInterface>
+</configuration>
+```
+
+This generates `Demo_ModuleExports` and `Demo_ModuleImports` classes alongside the compiled module.
+You can then use them directly in your code without any annotation:
+
+<!--
+```java
+//DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
+//DEPS com.dylibso.chicory:runtime:999-SNAPSHOT
+
+import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Machine;
+import com.dylibso.chicory.runtime.InterpreterMachine;
+
+docs.FileOps.copyFromWasmCorpus("count_vowels.rs.wasm", "demo.wasm");
+
+// mocking up the generated code
+class DemoModule {
+
+    public static WasmModule load() {
+      return Parser.parse(new File("demo.wasm"));
+    }
+
+    public static Machine create(Instance instance) {
+        return new InterpreterMachine(instance);
+    }
+
+}
+
+class Demo_ModuleExports {
+    public Demo_ModuleExports(Instance instance) {}
+}
+```
+-->
+
+```java
+var instance = Instance.builder(DemoModule.load()).
+        withMachineFactory(DemoModule::create).
+        build();
+var exports = new Demo_ModuleExports(instance);
+```
+
 ### The `compile` Goal
 
 You can obtain the full description of the Maven Plugin with a command like:
@@ -125,6 +183,11 @@ chicory:compile
       Required: true
       the action to take if the compiler needs to use the interpreter because a
       function is too big
+
+    moduleInterface
+      Fully qualified name of the user's class for which to generate
+      _ModuleExports and _ModuleImports wrapper classes. When set, eliminates
+      the need for @WasmModuleInterface annotation and the annotation processor.
 
     name
       Required: true

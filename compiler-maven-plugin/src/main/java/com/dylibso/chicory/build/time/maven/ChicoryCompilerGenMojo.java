@@ -70,6 +70,14 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
     Set<Integer> interpretedFunctions;
 
     /**
+     * Fully qualified name of the user's class that will use the compiled module.
+     * When set, the plugin generates _ModuleExports and _ModuleImports wrapper classes,
+     * eliminating the need for @WasmModuleInterface annotation and the annotation processor.
+     */
+    @Parameter(required = false)
+    String moduleInterface;
+
+    /**
      * The current Maven project.
      */
     @Parameter(property = "project", required = true, readonly = true)
@@ -88,6 +96,7 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
                         .withTargetWasmFolder(targetWasmFolder.toPath())
                         .withInterpreterFallback(interpreterFallback)
                         .withInterpretedFunctions(interpretedFunctions)
+                        .withModuleInterface(moduleInterface)
                         .build();
 
         var generator = new Generator(config);
@@ -96,6 +105,10 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
             var finalInterpretedFunctions = generator.generateResources();
             generator.generateMetaWasm(finalInterpretedFunctions);
             generator.generateSources();
+
+            if (moduleInterface != null && !moduleInterface.isEmpty()) {
+                generator.generateModuleInterface(moduleInterface);
+            }
 
             if (interpreterFallback == InterpreterFallback.WARN
                     && !finalInterpretedFunctions.isEmpty()) {

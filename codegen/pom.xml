@@ -8,25 +8,13 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>build-time-compiler</artifactId>
+  <artifactId>codegen</artifactId>
   <packaging>jar</packaging>
 
-  <name>Chicory - Build Time Compiler</name>
-  <description>Chicory Build Time Compiler</description>
+  <name>Chicory - Codegen</name>
+  <description>Shared code generation utilities for Chicory annotation processor and build-time compiler</description>
 
   <dependencies>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>codegen</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>compiler</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>runtime</artifactId>
-    </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>

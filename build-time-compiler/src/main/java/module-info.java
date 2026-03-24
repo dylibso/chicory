@@ -1,5 +1,6 @@
 module com.dylibso.chicory.build.time.compiler {
     requires transitive com.dylibso.chicory.compiler;
+    requires com.dylibso.chicory.codegen;
     requires com.dylibso.chicory.runtime;
     requires com.dylibso.chicory.wasm;
     requires com.github.javaparser.core;

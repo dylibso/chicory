@@ -14,10 +14,15 @@
   <description>Integration tests for the Chicory annotations</description>
 
   <dependencies>
-    <!-- Dummy dependencies to force the order -->
+    <!-- Dummy dependencies to force reactor ordering -->
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>annotations-processor</artifactId>
+    </dependency>
+    <!-- Needed for reactor ordering: plugin-only-exports IT uses the compiler plugin -->
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>chicory-compiler-maven-plugin</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
@@ -34,6 +39,7 @@
         <configuration>
           <ignoredUnusedDeclaredDependencies combine.children="append">
             <dependency>com.dylibso.chicory:annotations-processor</dependency>
+            <dependency>com.dylibso.chicory:chicory-compiler-maven-plugin</dependency>
             <dependency>com.dylibso.chicory:wasi</dependency>
           </ignoredUnusedDeclaredDependencies>
         </configuration>
