@@ -1,6 +1,5 @@
 package com.dylibso.chicory.fuzz;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
@@ -26,7 +25,15 @@ public class FuzzTest extends TestModule {
     @ParameterizedTest
     @EnumSource(
             value = InstructionType.class,
-            names = {"NUMERIC", "TABLE"})
+            names = {
+                "NUMERIC",
+                "TABLE",
+                "MEMORY",
+                "CONTROL",
+                "VARIABLE",
+                "PARAMETRIC",
+                "REFERENCE"
+            })
     void differentialFuzz(InstructionType type) throws Exception {
         for (int i = 0; i < ITERATIONS; i++) {
             logger.info(
@@ -48,11 +55,7 @@ public class FuzzTest extends TestModule {
                 module = Parser.parse(targetWasm);
             } catch (RuntimeException e) {
                 logger.warn("Generated WASM failed to parse: " + e);
-                try {
-                    CrashReproducer.save(targetWasm, type.value(), "parse", e.getMessage(), null);
-                } catch (IOException ex) {
-                    logger.error("Failed to save parse crash reproducer: " + ex);
-                }
+                saveCrashReproducer(targetWasm, type.value(), "parse", e);
                 continue;
             }
 
@@ -68,7 +71,15 @@ public class FuzzTest extends TestModule {
                 continue;
             }
 
-            var instance = Instance.builder(module).withInitialize(true).withStart(false).build();
+            // Instantiate and run differential tests — any crash is saved as a reproducer
+            Instance instance;
+            try {
+                instance = Instance.builder(module).withInitialize(true).withStart(false).build();
+            } catch (RuntimeException e) {
+                logger.warn("Failed to instantiate module: " + e);
+                saveCrashReproducer(targetWasm, type.value(), "instantiate", e);
+                continue;
+            }
 
             var results =
                     testModule(
@@ -83,8 +94,15 @@ public class FuzzTest extends TestModule {
             for (var res : results) {
                 assertEquals(res.getOracleResult(), res.getChicoryResult());
             }
+        }
+    }
 
-            assertDoesNotThrow(() -> Instance.builder(module).build());
+    private static void saveCrashReproducer(
+            File targetWasm, String instructionType, String phase, RuntimeException e) {
+        try {
+            CrashReproducer.save(targetWasm, instructionType, phase, e.getMessage(), null);
+        } catch (IOException ex) {
+            logger.error("Failed to save crash reproducer: " + ex);
         }
     }
 }
