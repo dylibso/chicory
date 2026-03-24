@@ -717,6 +717,47 @@ public class WasmModuleTest {
     }
 
     @Test
+    public void shouldSupportGlobalFactoryOverride() {
+        // External context: a map of global index -> initial value
+        var context = new HashMap<Integer, Long>();
+        context.put(0, 100L); // override the wasm-declared initial value (10) with 100
+
+        AtomicInteger created = new AtomicInteger();
+        var instance =
+                Instance.builder(loadModule("compiled/globals.wat.wasm"))
+                        .withGlobalFactory(
+                                (value, highValue, type, mutability) -> {
+                                    int idx = created.getAndIncrement();
+                                    long initValue = context.getOrDefault(idx, value);
+                                    return new GlobalInstance(
+                                            initValue, highValue, type, mutability);
+                                })
+                        .build();
+
+        // The module's doit(x) returns x + global.
+        // With the default global=10, doit(32) would return 42.
+        // Our factory set global=100, so doit(32) returns 132.
+        var doit = instance.export("doit");
+        assertEquals(132L, doit.apply(32)[0]);
+        assertEquals(1, created.get());
+    }
+
+    @Test
+    public void shouldSupportTableFactoryOverride() {
+        AtomicBoolean tableCreated = new AtomicBoolean();
+        var instance =
+                Instance.builder(loadModule("compiled/exports.wat.wasm"))
+                        .withTableFactory(
+                                (table, initValue) -> {
+                                    tableCreated.set(true);
+                                    return new TableInstance(table, initValue);
+                                })
+                        .build();
+        assertTrue(tableCreated.get());
+        assertNotNull(instance.exports().table("tab"));
+    }
+
+    @Test
     public void testExternrefHandling() {
         var testObject = new Object();
         var sideTable = new HashMap<Long, Object>();
