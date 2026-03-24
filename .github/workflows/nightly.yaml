@@ -2,9 +2,8 @@ name: Nightly Fuzz
 
 on:
   schedule:
-# FIXME: Disabled waiting for: https://github.com/dylibso/chicory/pull/386
-    - cron: "0 12 1 1 *" # At 12:00 on day-of-month 1 in January.
-#    - cron: "0 0 * * *" # everyday
+    - cron: "0 0 * * *" # every day at midnight
+  workflow_dispatch: # allow manual triggering
 
 permissions:
   pull-requests: write
@@ -16,40 +15,26 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
-      - name: Checkout testsuite
-        uses: actions/checkout@v6
-        with:
-          repository: WebAssembly/testsuite
-          path: testsuite
-          # The ref needs to stay in sync with the default value in test-gen-plugin
-          ref: 88e97b0f742f4c3ee01fea683da130f344dd7b02
-      - name: Checkout wasi-testsuite
-        uses: actions/checkout@v6
-        with:
-          repository: WebAssembly/wasi-testsuite
-          path: wasi-testsuite
-          ref: prod/testsuite-base
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
           cache: maven
-      - name: Setup `wasmtime`
-        uses: bytecodealliance/actions/wasmtime/setup@v1
-        with:
-          version: "v17.0.0"
-      - name: Setup `wasm-tools`
-        uses: bytecodealliance/actions/wasm-tools/setup@v1
-        with:
-          version: "1.0.57"
       - name: Fuzz Test
         if: github.repository_owner == 'dylibso'
         run: |
           # Build everything
-          mvn -B install -DskipTests
-          # Run only the fuzz tests
-          mvn -B clean verify -pl fuzz -DskipTests=false -Dfuzz.test.numeric=10 -Dfuzz.test.table=10
+          mvn -B -Dquickly
+          # Run differential fuzz tests (interpreter vs compiler)
+          mvn -B verify -pl fuzz -DskipTests=false -Dfuzz.test.iterations=50
+
+      - name: Copy crash reproducers to source tree
+        if: failure()
+        run: |
+          if [ -d fuzz/target/crash-reproducers ]; then
+            cp -r fuzz/target/crash-reproducers/crash-* fuzz/src/test/resources/ 2>/dev/null || true
+          fi
 
       - name: Create Pull Request with the crash repro
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
