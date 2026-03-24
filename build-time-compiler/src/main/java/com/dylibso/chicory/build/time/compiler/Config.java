@@ -41,6 +41,11 @@ public final class Config {
      */
     private final Set<Integer> interpretedFunctions;
 
+    /**
+     * the fully qualified name of the user's class for which to generate module interface wrappers
+     */
+    private final String moduleInterface;
+
     private Config(
             Path wasmFile,
             String name,
@@ -48,7 +53,8 @@ public final class Config {
             Path targetSourceFolder,
             Path targetWasmFolder,
             InterpreterFallback interpreterFallback,
-            Set<Integer> interpretedFunctions) {
+            Set<Integer> interpretedFunctions,
+            String moduleInterface) {
         this.wasmFile = wasmFile;
         this.name = name;
         this.targetClassFolder = targetClassFolder;
@@ -56,6 +62,7 @@ public final class Config {
         this.targetWasmFolder = targetWasmFolder;
         this.interpreterFallback = interpreterFallback;
         this.interpretedFunctions = interpretedFunctions;
+        this.moduleInterface = moduleInterface;
     }
 
     public Path wasmFile() {
@@ -86,6 +93,10 @@ public final class Config {
         return interpretedFunctions;
     }
 
+    public String moduleInterface() {
+        return moduleInterface;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -114,6 +125,7 @@ public final class Config {
         private Path targetWasmFolder;
         private InterpreterFallback interpreterFallback = InterpreterFallback.FAIL;
         private Set<Integer> interpretedFunctions;
+        private String moduleInterface;
 
         private Builder() {}
 
@@ -152,6 +164,11 @@ public final class Config {
             return this;
         }
 
+        public Builder withModuleInterface(String moduleInterface) {
+            this.moduleInterface = moduleInterface;
+            return this;
+        }
+
         public Config build() {
             return new Config(
                     wasmFile,
@@ -160,7 +177,8 @@ public final class Config {
                     targetSourceFolder,
                     targetWasmFolder,
                     interpreterFallback,
-                    interpretedFunctions);
+                    interpretedFunctions,
+                    moduleInterface);
         }
     }
 }

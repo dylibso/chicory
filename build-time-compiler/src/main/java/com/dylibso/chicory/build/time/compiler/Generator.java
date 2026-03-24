@@ -5,6 +5,8 @@ import static com.dylibso.chicory.wasm.WasmWriter.writeVarUInt32;
 import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
 
+import com.dylibso.chicory.codegen.CodegenUtils;
+import com.dylibso.chicory.codegen.ModuleInterfaceCodegen;
 import com.dylibso.chicory.compiler.internal.ByteClassCollector;
 import com.dylibso.chicory.compiler.internal.Compiler;
 import com.dylibso.chicory.runtime.CompiledModule;
@@ -109,6 +111,30 @@ public class Generator {
 
         dest.add(packageName, moduleName + ".java", cu);
         dest.saveAll();
+    }
+
+    public void generateModuleInterface(String moduleInterfaceName) throws IOException {
+        var module = Parser.parse(config.wasmFile());
+
+        var lastDot = moduleInterfaceName.lastIndexOf('.');
+        var packageName = (lastDot > 0) ? moduleInterfaceName.substring(0, lastDot) : "";
+        var typeName = moduleInterfaceName.substring(lastDot + 1);
+
+        var codegen =
+                ModuleInterfaceCodegen.builder(module)
+                        .withPackageName(packageName)
+                        .withTypeName(typeName)
+                        .withGeneratorName("com.dylibso.chicory.build.time.compiler.Generator")
+                        .build();
+        var classes = codegen.generate();
+
+        for (var entry : classes.entrySet()) {
+            var filePath =
+                    config.targetSourceFolder().resolve(entry.getKey().replace('.', '/') + ".java");
+            Files.createDirectories(filePath.getParent());
+            Files.writeString(
+                    filePath, entry.getValue().printer(CodegenUtils.printer()).toString());
+        }
     }
 
     public void generateMetaWasm(Set<Integer> interpretedFunctions) throws IOException {
