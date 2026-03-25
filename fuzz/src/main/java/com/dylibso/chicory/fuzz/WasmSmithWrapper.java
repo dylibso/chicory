@@ -55,7 +55,7 @@ public class WasmSmithWrapper {
             }
         }
 
-        var retry = 10;
+        var retry = 5;
         var seedSize = BASE_SEED_SIZE;
         while (retry > 0) {
             // Write the seed file for reproducibility
@@ -85,10 +85,10 @@ public class WasmSmithWrapper {
                 retry--;
             } finally {
                 seed = getSeed(seedSize);
-                seedSize = seedSize * 10;
+                seedSize = Math.min(seedSize * 2, 100_000);
             }
         }
 
-        throw new IOException("wasm-smith failed after 10 retries");
+        throw new IOException("wasm-smith failed after 5 retries");
     }
 }
