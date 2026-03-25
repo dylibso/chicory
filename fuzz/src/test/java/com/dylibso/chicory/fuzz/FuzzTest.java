@@ -40,6 +40,7 @@ public class FuzzTest extends TestModule {
             })
     void differentialFuzz(InstructionType type) throws Exception {
         var failures = new ArrayList<String>();
+        var smithFailures = 0;
 
         for (int i = 0; i < ITERATIONS; i++) {
             logger.info(
@@ -50,7 +51,8 @@ public class FuzzTest extends TestModule {
                 targetWasm =
                         smith.run(type.value() + "-" + i, "test.wasm", new InstructionTypes(type));
             } catch (IOException e) {
-                logger.warn("wasm-smith failed to generate module, skipping iteration: " + e);
+                logger.warn("wasm-smith failed to generate module: " + e);
+                smithFailures++;
                 continue;
             }
 
@@ -112,6 +114,15 @@ public class FuzzTest extends TestModule {
                 }
             }
         }
+
+        // Fail if wasm-smith couldn't generate any modules at all
+        assertTrue(
+                smithFailures < ITERATIONS,
+                "wasm-smith failed on all "
+                        + ITERATIONS
+                        + " iterations for "
+                        + type.value()
+                        + " — check smith.default.properties for unsupported flags");
 
         // Fail after all iterations so all reproducers are saved
         assertTrue(
