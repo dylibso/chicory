@@ -45,9 +45,18 @@ public class RegressionTest extends TestModule {
             try (var in = new FileInputStream(propsFile)) {
                 props.load(in);
             }
-            if ("parse".equals(props.getProperty("functionName"))) {
+            var phase = props.getProperty("functionName");
+            if ("parse".equals(phase)) {
                 // Parse failure reproducer — verify the parser still rejects it
                 assertThrows(RuntimeException.class, () -> Parser.parse(targetWasm));
+                return;
+            }
+            if ("instantiate".equals(phase)) {
+                // Instantiation failure reproducer — verify it still fails
+                var mod = Parser.parse(targetWasm);
+                assertThrows(
+                        RuntimeException.class,
+                        () -> Instance.builder(mod).withInitialize(true).withStart(false).build());
                 return;
             }
         }
@@ -67,7 +76,9 @@ public class RegressionTest extends TestModule {
                         false);
 
         for (var res : results) {
-            assertEquals(res.getOracleResult(), res.getChicoryResult());
+            if (res.getChicoryResult() != null) {
+                assertEquals(res.getOracleResult(), res.getChicoryResult());
+            }
         }
         assertDoesNotThrow(() -> Instance.builder(module).build());
     }

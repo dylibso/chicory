@@ -1,6 +1,6 @@
 package com.dylibso.chicory.fuzz;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.log.Logger;
@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,6 +39,8 @@ public class FuzzTest extends TestModule {
                 "REFERENCE"
             })
     void differentialFuzz(InstructionType type) throws Exception {
+        var failures = new ArrayList<String>();
+
         for (int i = 0; i < ITERATIONS; i++) {
             logger.info(
                     String.format("Iteration %d of %d for %s", i + 1, ITERATIONS, type.value()));
@@ -51,14 +54,14 @@ public class FuzzTest extends TestModule {
                 continue;
             }
 
-            // Try to parse — if Chicory can't parse a valid wasm-smith module,
-            // save it as a crash reproducer for investigation
+            // Try to parse — save reproducer on failure but continue to next iteration
             WasmModule module;
             try {
                 module = Parser.parse(targetWasm);
             } catch (RuntimeException e) {
                 logger.warn("Generated WASM failed to parse: " + e);
                 saveCrashReproducer(targetWasm, type.value(), "parse", e);
+                failures.add("parse: " + e.getMessage());
                 continue;
             }
 
@@ -74,16 +77,18 @@ public class FuzzTest extends TestModule {
                 continue;
             }
 
-            // Instantiate and run differential tests — any crash is saved as a reproducer
+            // Instantiate — save reproducer on failure but continue
             Instance instance;
             try {
                 instance = Instance.builder(module).withInitialize(true).withStart(false).build();
             } catch (RuntimeException e) {
                 logger.warn("Failed to instantiate module: " + e);
                 saveCrashReproducer(targetWasm, type.value(), "instantiate", e);
+                failures.add("instantiate: " + e.getMessage());
                 continue;
             }
 
+            // Run differential test
             var results =
                     testModule(
                             targetWasm,
@@ -95,9 +100,27 @@ public class FuzzTest extends TestModule {
                             true);
 
             for (var res : results) {
-                assertEquals(res.getOracleResult(), res.getChicoryResult());
+                if (res.getChicoryResult() == null) {
+                    // Compiler crashed — reproducer already saved by testModule
+                    failures.add("compiler crash (subject returned null)");
+                } else if (!res.getOracleResult().equals(res.getChicoryResult())) {
+                    failures.add(
+                            "mismatch: oracle="
+                                    + res.getOracleResult()
+                                    + " subject="
+                                    + res.getChicoryResult());
+                }
             }
         }
+
+        // Fail after all iterations so all reproducers are saved
+        assertTrue(
+                failures.isEmpty(),
+                failures.size()
+                        + " failure(s) found for "
+                        + type.value()
+                        + ". Reproducers saved to target/crash-reproducers/.\n"
+                        + String.join("\n", failures));
     }
 
     private static void saveCrashReproducer(
