@@ -11,6 +11,8 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -22,6 +24,7 @@ public class FuzzTest extends TestModule {
     private final WasmRunner interpreterRunner = new ChicoryRunner();
     private final WasmRunner compilerRunner = new ChicoryRunner(MachineFactoryCompiler::compile);
 
+    @Timeout(value = 5, unit = TimeUnit.MINUTES)
     @ParameterizedTest
     @EnumSource(
             value = InstructionType.class,
