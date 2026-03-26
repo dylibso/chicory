@@ -5,9 +5,6 @@ on:
     - cron: "0 0 * * *" # every day at midnight
   workflow_dispatch: # allow manual triggering
 
-permissions:
-  pull-requests: write
-
 jobs:
   fuzz:
     name: Fuzz
@@ -29,25 +26,11 @@ jobs:
           # Run differential fuzz tests (interpreter vs compiler)
           mvn -B verify -pl fuzz -DskipTests=false -Dfuzz.test.iterations=50
 
-      - name: Copy crash reproducers to source tree
-        if: failure()
-        run: |
-          if [ -d fuzz/target/crash-reproducers ]; then
-            cp -r fuzz/target/crash-reproducers/crash-* fuzz/src/test/resources/ 2>/dev/null || true
-          fi
-
-      - name: Create Pull Request with the crash repro
-        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
+      - name: Upload crash reproducers
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          token: ${{secrets.GH_TOKEN}}
-          commit-message: Nightly crash
-          committer: Chicory BOT <chicory@dylibso.com>
-          author: Chicory BOT <chicory@dylibso.com>
-          signoff: false
-          branch: fuzz-crash-repro
-          branch-suffix: random
-          delete-branch: true
-          title: '[FUZZ] Crash reproducer'
-          body: Fuzz testing failed and there are new reproducers available.
-          draft: false
+          name: fuzz-crash-reproducers
+          path: fuzz/target/crash-reproducers/
+          retention-days: 90
+          if-no-files-found: ignore
