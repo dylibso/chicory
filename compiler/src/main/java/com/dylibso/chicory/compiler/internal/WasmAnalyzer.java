@@ -1513,8 +1513,14 @@ final class WasmAnalyzer {
         var types = forward ? blockType.returns() : blockType.params();
         int keep = types.size();
 
+        // scope may have been exited already (unreachable code after unconditional branch)
+        var scopeSize = stack.scopeStackSize(scope);
+        if (scopeSize == null) {
+            return Optional.empty();
+        }
+
         // for a backward jump, the initial loop parameters are dropped
-        int drop = stack.types().size() - stack.scopeStackSize(scope);
+        int drop = stack.types().size() - scopeSize;
 
         // do not drop the return values for a forward jump
         if (forward) {
