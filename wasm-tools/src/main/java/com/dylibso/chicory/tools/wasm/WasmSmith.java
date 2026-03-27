@@ -14,22 +14,16 @@ import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public final class WasmSmith {
 
     private WasmSmith() {}
-
-    private static final long TIMEOUT_SECONDS = 30;
 
     private static final Logger logger =
             new SystemLogger() {
@@ -43,26 +37,10 @@ public final class WasmSmith {
     public static byte[] run(
             byte[] seed, Map<String, String> properties, String allowedInstructions)
             throws WasmSmithException {
-
-        Callable<byte[]> task = () -> runInternal(seed, properties, allowedInstructions);
-
-        var executor = Executors.newSingleThreadExecutor();
         try {
-            var future = executor.submit(task);
-            return future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            throw new WasmSmithException("wasm-smith timed out after " + TIMEOUT_SECONDS + "s", e);
-        } catch (ExecutionException e) {
-            var cause = e.getCause();
-            if (cause instanceof WasmSmithException) {
-                throw (WasmSmithException) cause;
-            }
-            throw new WasmSmithException("wasm-smith failed: " + cause.getMessage(), cause);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new WasmSmithException("wasm-smith interrupted", e);
-        } finally {
-            executor.shutdownNow();
+            return runInternal(seed, properties, allowedInstructions);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
