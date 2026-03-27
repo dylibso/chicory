@@ -7,9 +7,7 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -17,13 +15,6 @@ import java.util.function.Function;
 public class ChicoryRunner implements WasmRunner {
 
     private static final long TIMEOUT_SECONDS = 10;
-
-    private static final ThreadFactory DAEMON_THREAD_FACTORY =
-            r -> {
-                var t = new Thread(r, "chicory-fuzz-runner");
-                t.setDaemon(true);
-                return t;
-            };
 
     private final Function<Instance, Machine> machineFactory;
 
@@ -63,9 +54,7 @@ public class ChicoryRunner implements WasmRunner {
                     return sb.toString();
                 };
 
-        // Use daemon threads so leaked threads (from timeouts where the WASM
-        // execution doesn't respond to interrupts) don't prevent JVM exit.
-        ExecutorService executor = Executors.newSingleThreadExecutor(DAEMON_THREAD_FACTORY);
+        var executor = Executors.newSingleThreadExecutor();
         try {
             var future = executor.submit(task);
             return future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
