@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -40,13 +42,22 @@ public final class WasmSmith {
             };
     private static final WasmModule MODULE = WasmToolsModule.load();
 
+    private static final ThreadFactory DAEMON_THREAD_FACTORY =
+            r -> {
+                var t = new Thread(r, "wasm-smith");
+                t.setDaemon(true);
+                return t;
+            };
+
     public static byte[] run(
             byte[] seed, Map<String, String> properties, String allowedInstructions)
             throws WasmSmithException {
 
         Callable<byte[]> task = () -> runInternal(seed, properties, allowedInstructions);
 
-        var executor = Executors.newSingleThreadExecutor();
+        // Use daemon threads so leaked threads (from timeouts where the interpreter
+        // doesn't respond to interrupts) don't prevent JVM exit.
+        ExecutorService executor = Executors.newSingleThreadExecutor(DAEMON_THREAD_FACTORY);
         try {
             var future = executor.submit(task);
             return future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
