@@ -36,9 +36,7 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
     /**
      * the target folder to generate classes
      */
-    @Parameter(
-            required = true,
-            defaultValue = "${project.build.directory}/generated-resources/chicory-compiler")
+    @Parameter(required = true, defaultValue = "${project.build.outputDirectory}")
     private File targetClassFolder;
 
     /**
@@ -129,7 +127,7 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
         }
 
         Resource resource = new Resource();
-        resource.setDirectory(targetClassFolder.getPath());
+        resource.setDirectory(targetWasmFolder.getPath());
         project.addResource(resource);
         project.addCompileSourceRoot(targetSourceFolder.getPath());
     }
