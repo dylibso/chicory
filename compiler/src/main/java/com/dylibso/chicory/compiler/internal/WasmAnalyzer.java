@@ -181,6 +181,16 @@ final class WasmAnalyzer {
 
                 exitBlockDepth = -1;
                 if (ins.opcode() == OpCode.END) {
+                    // Emit try-catch handler labels even in unreachable code,
+                    // otherwise ASM's computeAllFrames fails with NPE because
+                    // visitTryCatchBlock was called but the handler label was
+                    // never visited.
+                    if (ins.scope().opcode() == OpCode.TRY_TABLE) {
+                        var tryCatchBlock = tryCatchBlocks.remove(ins.scope().address());
+                        if (tryCatchBlock != null) {
+                            analyzeTryCatchEnd(result, tryCatchBlock);
+                        }
+                    }
                     stack.scopeRestore();
                 }
             }
