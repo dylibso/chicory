@@ -3030,6 +3030,7 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void BR_TABLE(StackFrame frame, MStack stack, AnnotatedInstruction instruction) {
+        checkInterruption();
         var pred = (int) stack.pop();
 
         var defaultIdx = instruction.operandCount() - 1;
@@ -3044,6 +3045,7 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void BR_IF(StackFrame frame, MStack stack, AnnotatedInstruction instruction) {
+        checkInterruption();
         var pred = (int) stack.pop();
 
         if (pred == 0) {

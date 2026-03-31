@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.ChicoryInterruptedException;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -13,8 +12,7 @@ import com.dylibso.chicory.wasm.types.ExternalType;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -26,7 +24,11 @@ public class FuzzTest extends TestModule {
     private final WasmRunner interpreterRunner = new ChicoryRunner();
     private final WasmRunner compilerRunner = new ChicoryRunner(MachineFactoryCompiler::compile);
 
-    @Timeout(value = 5, unit = TimeUnit.MINUTES, threadMode = Timeout.ThreadMode.SEPARATE_THREAD)
+    @AfterEach
+    void tearDown() {
+        shutdown();
+    }
+
     @ParameterizedTest
     @EnumSource(
             value = InstructionType.class,
@@ -44,9 +46,6 @@ public class FuzzTest extends TestModule {
         var smithFailures = 0;
 
         for (int i = 0; i < ITERATIONS; i++) {
-            if (Thread.currentThread().isInterrupted()) {
-                throw new ChicoryInterruptedException("Thread interrupted");
-            }
             logger.info(
                     String.format("Iteration %d of %d for %s", i + 1, ITERATIONS, type.value()));
 
