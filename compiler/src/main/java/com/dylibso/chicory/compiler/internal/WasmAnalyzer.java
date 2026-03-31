@@ -88,6 +88,8 @@ final class WasmAnalyzer {
         // types of values below the try scope that need to be saved/restored
         int savedStackSlotBase;
         List<ValType> savedStackTypes;
+        // set to true when TRY_CATCH_BLOCK was emitted (i.e., block is reachable)
+        boolean registered;
 
         public TryCatchBlock(
                 AnnotatedInstruction ins,
@@ -152,12 +154,6 @@ final class WasmAnalyzer {
 
                 var block = new TryCatchBlock(ins, start, end, handle, after, afterCatchLabels);
                 tryCatchBlocks.put(ins.address(), block);
-                result.add(
-                        new CompilerInstruction(
-                                CompilerOpCode.TRY_CATCH_BLOCK,
-                                block.start,
-                                block.end,
-                                block.handler));
             }
         }
 
@@ -187,7 +183,10 @@ final class WasmAnalyzer {
                     // never visited.
                     if (ins.scope().opcode() == OpCode.TRY_TABLE) {
                         var tryCatchBlock = tryCatchBlocks.remove(ins.scope().address());
-                        if (tryCatchBlock != null) {
+                        if (tryCatchBlock != null && tryCatchBlock.registered) {
+                            // TRY_TABLE was reachable but END is unreachable —
+                            // still need to emit handler labels since the
+                            // try-catch range was already registered with ASM
                             analyzeTryCatchEnd(result, tryCatchBlock);
                         }
                     }
@@ -367,6 +366,17 @@ final class WasmAnalyzer {
                         }
 
                         stack.enterScope(ins.scope(), blockType(ins));
+                        // Emit TRY_CATCH_BLOCK here (in the forward pass) rather than
+                        // in the backward pass, so we only register try-catch ranges
+                        // for reachable TRY_TABLE blocks. Unreachable TRY_TABLEs are
+                        // skipped, avoiding ASM NPE from unvisited labels.
+                        tryCatchBlock.registered = true;
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.TRY_CATCH_BLOCK,
+                                        tryCatchBlock.start,
+                                        tryCatchBlock.end,
+                                        tryCatchBlock.handler));
                         result.add(
                                 new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.start));
                         break;

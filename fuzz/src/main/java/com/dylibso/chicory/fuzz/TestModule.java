@@ -2,6 +2,7 @@ package com.dylibso.chicory.fuzz;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.ChicoryInterruptedException;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -50,7 +51,12 @@ public class TestModule {
 
             String oracleResult;
             try {
+                logger.info("  Running oracle (interpreter) ...");
+                long start = System.currentTimeMillis();
                 oracleResult = oracle.run(targetWasm, export.name(), params);
+                logger.info("  Oracle finished in " + (System.currentTimeMillis() - start) + " ms");
+            } catch (ChicoryInterruptedException e) {
+                throw e; // propagate interrupt to let JUnit @Timeout work
             } catch (RuntimeException e) {
                 logger.error("Failed to run oracle, skip the check: " + e);
                 continue;
@@ -58,7 +64,13 @@ public class TestModule {
 
             String subjectResult;
             try {
+                logger.info("  Running subject (compiler) ...");
+                long start = System.currentTimeMillis();
                 subjectResult = subject.run(targetWasm, export.name(), params);
+                logger.info(
+                        "  Subject finished in " + (System.currentTimeMillis() - start) + " ms");
+            } catch (ChicoryInterruptedException e) {
+                throw e; // propagate interrupt to let JUnit @Timeout work
             } catch (RuntimeException e) {
                 logger.warn("Failed to run subject, but oracle succeeded: " + e);
                 subjectResult = null;

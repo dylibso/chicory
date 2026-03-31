@@ -4,11 +4,11 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     TRYCATCHBLOCK L0 L1 L2 com/dylibso/chicory/runtime/WasmException
     TRYCATCHBLOCK L3 L4 L2 com/dylibso/chicory/runtime/WasmException
     TRYCATCHBLOCK L5 L6 L2 com/dylibso/chicory/runtime/WasmException
+    TRYCATCHBLOCK L7 L8 L2 com/dylibso/chicory/runtime/WasmException
+    TRYCATCHBLOCK L9 L10 L2 com/dylibso/chicory/runtime/WasmException
     TRYCATCHBLOCK L0 L1 L7 com/dylibso/chicory/runtime/WasmException
     TRYCATCHBLOCK L3 L4 L7 com/dylibso/chicory/runtime/WasmException
     TRYCATCHBLOCK L5 L6 L7 com/dylibso/chicory/runtime/WasmException
-    TRYCATCHBLOCK L2 L8 L7 com/dylibso/chicory/runtime/WasmException
-    TRYCATCHBLOCK L9 L10 L7 com/dylibso/chicory/runtime/WasmException
    L0
     ILOAD 0
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_EQZ (I)I
@@ -51,7 +51,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     NOP
     NOP
     ATHROW
-   L2
+   L7
     ASTORE 3
     ALOAD 3
     ICONST_0
@@ -70,7 +70,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ICONST_3
    L10
     GOTO L13
-   L7
+   L2
     ASTORE 3
     ALOAD 3
     ICONST_1
@@ -147,15 +147,15 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_1 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-   L1
-    GOTO L3
-   L2
+   L3
+    GOTO L1
+   L4
     ASTORE 3
     ALOAD 3
     ATHROW
-   L3
+   L1
     GOTO L5
-   L4
+   L2
     ASTORE 3
     ALOAD 3
     ICONST_0

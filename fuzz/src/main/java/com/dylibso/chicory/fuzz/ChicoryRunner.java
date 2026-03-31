@@ -1,5 +1,6 @@
 package com.dylibso.chicory.fuzz;
 
+import com.dylibso.chicory.runtime.ChicoryInterruptedException;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
@@ -21,6 +22,9 @@ public class ChicoryRunner implements WasmRunner {
 
     @Override
     public String run(File wasmFile, String functionName, List<String> params) throws Exception {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new ChicoryInterruptedException("Thread interrupted");
+        }
         var module = Parser.parse(wasmFile);
         var builder = Instance.builder(module).withInitialize(true).withStart(false);
         if (machineFactory != null) {

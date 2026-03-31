@@ -30,6 +30,7 @@ public class RegressionTest extends TestModule {
                             return dirs != null ? Arrays.stream(dirs) : Stream.<File>empty();
                         })
                 .filter(f -> f.isDirectory() && f.getName().startsWith("crash"))
+                .filter(f -> new File(f, "test.wasm").exists())
                 .map(d -> Arguments.of(d));
     }
 
@@ -37,6 +38,10 @@ public class RegressionTest extends TestModule {
     @MethodSource("crashFolders")
     void regressionTests(File folder) throws Exception {
         var targetWasm = new File(folder.getAbsolutePath() + "/test.wasm");
+        if (!targetWasm.exists()) {
+            throw new IllegalStateException(
+                    "Missing test.wasm in crash reproducer folder: " + folder);
+        }
 
         // Check if this is a parse failure reproducer
         var propsFile = new File(folder, "crash-info.properties");
