@@ -115,6 +115,12 @@ final class WasmAnalyzer {
         int nextLabel = body.instructions().size();
         int trySaveSlotOffset = 0;
         List<CompilerInstruction> result = new ArrayList<>();
+        // Collect TRY_CATCH_BLOCK instructions during the forward pass and
+        // prepend them in reverse order at the end. JVM tries exception handlers
+        // in registration order, so inner (nested) handlers must come before
+        // outer ones. The forward pass encounters outer try_tables first, so we
+        // reverse the collected list to get inner-first order.
+        List<CompilerInstruction> tryCatchBlockInstructions = new ArrayList<>();
 
         // find label targets
         Set<Integer> labels = new HashSet<>();
@@ -366,12 +372,11 @@ final class WasmAnalyzer {
                         }
 
                         stack.enterScope(ins.scope(), blockType(ins));
-                        // Emit TRY_CATCH_BLOCK here (in the forward pass) rather than
-                        // in the backward pass, so we only register try-catch ranges
-                        // for reachable TRY_TABLE blocks. Unreachable TRY_TABLEs are
-                        // skipped, avoiding ASM NPE from unvisited labels.
+                        // Collect TRY_CATCH_BLOCK (emitted at end in reverse order).
+                        // Only register reachable TRY_TABLE blocks — unreachable ones
+                        // are skipped, avoiding ASM NPE from unvisited labels.
                         tryCatchBlock.registered = true;
-                        result.add(
+                        tryCatchBlockInstructions.add(
                                 new CompilerInstruction(
                                         CompilerOpCode.TRY_CATCH_BLOCK,
                                         tryCatchBlock.start,
@@ -676,6 +681,12 @@ final class WasmAnalyzer {
         result.add(new CompilerInstruction(CompilerOpCode.RETURN, ids(functionType.returns())));
 
         stack.verifyEmpty();
+
+        // Prepend TRY_CATCH_BLOCK instructions in reverse order so that inner
+        // (nested) handlers are registered before outer ones in the JVM.
+        reverse(tryCatchBlockInstructions);
+        result.addAll(0, tryCatchBlockInstructions);
+
         return new AnalysisResult(result, computeMaxTempSlots(result));
     }
 
