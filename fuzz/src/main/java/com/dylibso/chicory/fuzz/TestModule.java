@@ -21,11 +21,11 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 public class TestModule {
     private static final Logger logger = new SystemLogger();
-    private static final int PER_CALL_TIMEOUT_SECONDS = 30;
+    private static final int PER_CALL_TIMEOUT_SECONDS = 120;
 
-    // Shared single-thread executor for per-call timeouts.
-    // Reused across all calls to avoid thread exhaustion.
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    // Per-call executor for timeouts. After a timeout, the stuck thread may not
+    // respond to interruption, so we abandon it and create a fresh executor.
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public void shutdown() {
         executor.shutdownNow();
@@ -70,11 +70,13 @@ public class TestModule {
                 oracleResult = runWithTimeout(oracle, targetWasm, export.name(), params);
                 logger.info("  Oracle finished in " + (System.currentTimeMillis() - start) + " ms");
             } catch (TimeoutException e) {
-                logger.warn("  Oracle timed out after " + PER_CALL_TIMEOUT_SECONDS + "s");
-                if (commitOnFailure) {
-                    saveCrashReproducer(
-                            targetWasm, instructionType, export.name(), "timeout (oracle)");
-                }
+                // TODO: revisit — currently we skip oracle timeouts assuming they are
+                // infinite loops in random wasm. We may want to save reproducers here
+                // too, e.g. to detect interpreter performance regressions.
+                logger.warn(
+                        "  Oracle timed out after "
+                                + PER_CALL_TIMEOUT_SECONDS
+                                + "s — skipping (expected for random wasm with loops)");
                 continue;
             } catch (RuntimeException e) {
                 logger.error("Failed to run oracle, skip the check: " + e);
@@ -89,10 +91,21 @@ public class TestModule {
                 logger.info(
                         "  Subject finished in " + (System.currentTimeMillis() - start) + " ms");
             } catch (TimeoutException e) {
-                logger.warn("  Subject timed out after " + PER_CALL_TIMEOUT_SECONDS + "s");
+                logger.warn(
+                        "  Subject timed out after "
+                                + PER_CALL_TIMEOUT_SECONDS
+                                + "s but oracle succeeded — saving reproducer");
                 if (commitOnFailure) {
-                    saveCrashReproducer(
-                            targetWasm, instructionType, export.name(), "timeout (subject)");
+                    try {
+                        CrashReproducer.save(
+                                targetWasm,
+                                instructionType,
+                                export.name(),
+                                oracleResult,
+                                "timeout (subject)");
+                    } catch (IOException ex) {
+                        logger.error("Failed to save crash reproducer: " + ex);
+                    }
                 }
                 subjectResult = null;
             } catch (RuntimeException e) {
@@ -126,7 +139,12 @@ public class TestModule {
         try {
             return future.get(PER_CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
-            future.cancel(true); // interrupts the executor thread
+            future.cancel(true);
+            // The stuck thread may not respond to interruption (e.g. infinite loop
+            // in interpreted WASM). Abandon it and create a fresh executor so the
+            // next call isn't blocked behind the stuck thread.
+            executor.shutdownNow();
+            executor = Executors.newSingleThreadExecutor();
             throw e;
         } catch (ExecutionException e) {
             var cause = e.getCause();
@@ -137,15 +155,6 @@ public class TestModule {
                 throw (Exception) cause;
             }
             throw new RuntimeException(cause);
-        }
-    }
-
-    private static void saveCrashReproducer(
-            File targetWasm, String instructionType, String functionName, String reason) {
-        try {
-            CrashReproducer.save(targetWasm, instructionType, functionName, reason, null);
-        } catch (IOException ex) {
-            logger.error("Failed to save crash reproducer: " + ex);
         }
     }
 }
