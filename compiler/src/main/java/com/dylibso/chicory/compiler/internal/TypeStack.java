@@ -81,7 +81,7 @@ final class TypeStack {
         types.push(restore.getFirst());
     }
 
-    public int scopeStackSize(Instruction scope) {
+    public Integer scopeStackSize(Instruction scope) {
         return scopes.get(scope);
     }
 

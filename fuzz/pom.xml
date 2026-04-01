@@ -11,13 +11,10 @@
   <packaging>jar</packaging>
 
   <name>Chicory - Fuzz</name>
-  <description>Fuzzying Chicory</description>
+  <description>Fuzz testing Chicory</description>
 
   <properties>
     <skipTests>true</skipTests>
-
-    <fuzz.test.numeric>10</fuzz.test.numeric>
-    <fuzz.test.table>10</fuzz.test.table>
   </properties>
 
   <dependencies>
@@ -34,19 +31,17 @@
       <artifactId>wasm</artifactId>
     </dependency>
     <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm-tools</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
     </dependency>
-
-    <!-- make sure that the executable is available -->
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>cli-experimental</artifactId>
-      <scope>runtime</scope>
+      <artifactId>compiler</artifactId>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
@@ -65,21 +60,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>templating-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>filtering-java-templates</id>
-            <goals>
-              <goal>filter-sources</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>

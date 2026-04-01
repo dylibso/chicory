@@ -30,3 +30,5 @@ scripts/jmh-tmp
 /zig-install
 /zig-source
 /zig-testsuite
+
+.claude

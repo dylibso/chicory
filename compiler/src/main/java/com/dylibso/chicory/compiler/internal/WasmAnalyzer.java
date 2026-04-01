@@ -88,6 +88,8 @@ final class WasmAnalyzer {
         // types of values below the try scope that need to be saved/restored
         int savedStackSlotBase;
         List<ValType> savedStackTypes;
+        // set to true when TRY_CATCH_BLOCK was emitted (i.e., block is reachable)
+        boolean registered;
 
         public TryCatchBlock(
                 AnnotatedInstruction ins,
@@ -113,6 +115,12 @@ final class WasmAnalyzer {
         int nextLabel = body.instructions().size();
         int trySaveSlotOffset = 0;
         List<CompilerInstruction> result = new ArrayList<>();
+        // Collect TRY_CATCH_BLOCK instructions during the forward pass and
+        // prepend them in reverse order at the end. JVM tries exception handlers
+        // in registration order, so inner (nested) handlers must come before
+        // outer ones. The forward pass encounters outer try_tables first, so we
+        // reverse the collected list to get inner-first order.
+        List<CompilerInstruction> tryCatchBlockInstructions = new ArrayList<>();
 
         // find label targets
         Set<Integer> labels = new HashSet<>();
@@ -152,12 +160,6 @@ final class WasmAnalyzer {
 
                 var block = new TryCatchBlock(ins, start, end, handle, after, afterCatchLabels);
                 tryCatchBlocks.put(ins.address(), block);
-                result.add(
-                        new CompilerInstruction(
-                                CompilerOpCode.TRY_CATCH_BLOCK,
-                                block.start,
-                                block.end,
-                                block.handler));
             }
         }
 
@@ -181,6 +183,19 @@ final class WasmAnalyzer {
 
                 exitBlockDepth = -1;
                 if (ins.opcode() == OpCode.END) {
+                    // Emit try-catch handler labels even in unreachable code,
+                    // otherwise ASM's computeAllFrames fails with NPE because
+                    // visitTryCatchBlock was called but the handler label was
+                    // never visited.
+                    if (ins.scope().opcode() == OpCode.TRY_TABLE) {
+                        var tryCatchBlock = tryCatchBlocks.remove(ins.scope().address());
+                        if (tryCatchBlock != null && tryCatchBlock.registered) {
+                            // TRY_TABLE was reachable but END is unreachable —
+                            // still need to emit handler labels since the
+                            // try-catch range was already registered with ASM
+                            analyzeTryCatchEnd(result, tryCatchBlock);
+                        }
+                    }
                     stack.scopeRestore();
                 }
             }
@@ -357,6 +372,16 @@ final class WasmAnalyzer {
                         }
 
                         stack.enterScope(ins.scope(), blockType(ins));
+                        // Collect TRY_CATCH_BLOCK (emitted at end in reverse order).
+                        // Only register reachable TRY_TABLE blocks — unreachable ones
+                        // are skipped, avoiding ASM NPE from unvisited labels.
+                        tryCatchBlock.registered = true;
+                        tryCatchBlockInstructions.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.TRY_CATCH_BLOCK,
+                                        tryCatchBlock.start,
+                                        tryCatchBlock.end,
+                                        tryCatchBlock.handler));
                         result.add(
                                 new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.start));
                         break;
@@ -656,6 +681,12 @@ final class WasmAnalyzer {
         result.add(new CompilerInstruction(CompilerOpCode.RETURN, ids(functionType.returns())));
 
         stack.verifyEmpty();
+
+        // Prepend TRY_CATCH_BLOCK instructions in reverse order so that inner
+        // (nested) handlers are registered before outer ones in the JVM.
+        reverse(tryCatchBlockInstructions);
+        result.addAll(0, tryCatchBlockInstructions);
+
         return new AnalysisResult(result, computeMaxTempSlots(result));
     }
 
@@ -1513,8 +1544,14 @@ final class WasmAnalyzer {
         var types = forward ? blockType.returns() : blockType.params();
         int keep = types.size();
 
+        // scope may have been exited already (unreachable code after unconditional branch)
+        var scopeSize = stack.scopeStackSize(scope);
+        if (scopeSize == null) {
+            return Optional.empty();
+        }
+
         // for a backward jump, the initial loop parameters are dropped
-        int drop = stack.types().size() - stack.scopeStackSize(scope);
+        int drop = stack.types().size() - scopeSize;
 
         // do not drop the return values for a forward jump
         if (forward) {
