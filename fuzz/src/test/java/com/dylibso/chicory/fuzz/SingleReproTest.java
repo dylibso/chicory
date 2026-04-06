@@ -2,6 +2,7 @@ package com.dylibso.chicory.fuzz;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import java.nio.file.Files;
@@ -13,7 +14,9 @@ public class SingleReproTest extends TestModule {
     private static final String CHICORY_FUZZ_SEED_KEY = "CHICORY_FUZZ_SEED";
     private static final String CHICORY_FUZZ_TYPES_KEY = "CHICORY_FUZZ_TYPES";
 
-    WasmSmithWrapper smith = new WasmSmithWrapper();
+    private final WasmSmithWrapper smith = new WasmSmithWrapper();
+    private final WasmRunner interpreterRunner = new ChicoryRunner();
+    private final WasmRunner compilerRunner = new ChicoryRunner(MachineFactoryCompiler::compile);
 
     boolean enableSingleReproducer() {
         return System.getenv(CHICORY_FUZZ_SEED_KEY) != null
@@ -31,8 +34,7 @@ public class SingleReproTest extends TestModule {
         var module = Parser.parse(targetWasm);
         var instance = Instance.builder(module).withInitialize(true).withStart(false).build();
 
-        testModule(targetWasm, module, instance);
-        // Sanity check that the starting function doesn't break
+        testModule(targetWasm, module, instance, interpreterRunner, compilerRunner, "repro", true);
         assertDoesNotThrow(() -> Instance.builder(module).build());
     }
 }

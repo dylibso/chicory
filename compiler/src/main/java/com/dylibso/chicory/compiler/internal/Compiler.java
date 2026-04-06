@@ -547,15 +547,23 @@ public final class Compiler {
         }
 
         // value_xxx() bridges for multi-value return
+        // Deduplicate by method name, not by type list, because different
+        // reference types (e.g. RefNull(funcref) vs RefNull(externref)) produce
+        // the same JVM method name and signature.
+        var seenValueMethods = new java.util.HashSet<String>();
         var returnTypes =
                 functionTypes.stream()
                         .map(FunctionType::returns)
                         .filter(types -> types.size() > 1)
                         .collect(toSet());
         for (var types : returnTypes) {
+            var methodName = valueMethodName(types);
+            if (!seenValueMethods.add(methodName)) {
+                continue;
+            }
             emitFunction(
                     classWriter,
-                    valueMethodName(types),
+                    methodName,
                     valueMethodType(types),
                     true,
                     asm -> {

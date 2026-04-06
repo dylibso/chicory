@@ -11,7 +11,6 @@ import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.ArrayType;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.CompType;
-import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FieldType;
@@ -138,7 +137,6 @@ final class Validator {
 
         this.declaredFunctions =
                 module.elementSection().stream()
-                        .filter(DeclarativeElement.class::isInstance)
                         .flatMap(element -> element.initializers().stream())
                         .flatMap(this::declaredFunctions)
                         .collect(toSet());

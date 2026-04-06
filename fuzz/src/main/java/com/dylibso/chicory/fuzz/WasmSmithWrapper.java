@@ -4,24 +4,20 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.tools.wasm.WasmSmith;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.LinkedHashMap;
 import org.apache.commons.lang3.RandomStringUtils;
 
 public class WasmSmithWrapper {
 
     private static final Logger logger = new SystemLogger();
 
-    public static final List<String> BINARY_NAME = List.of("wasm-tools", "smith");
-
-    private int BASE_SEED_SIZE = 1000;
+    private static final int BASE_SEED_SIZE = 1000;
     private String seed = getSeed(BASE_SEED_SIZE);
 
-    // A smaller size of the seed speeds up the execution
     @SuppressWarnings("deprecation")
     private static String getSeed(int size) {
         return RandomStringUtils.randomAlphabetic(size);
@@ -47,70 +43,52 @@ public class WasmSmithWrapper {
         var targetFile = new File(targetSubfolder + "/" + fileName);
         var seedFile = new File(targetSubfolder + "/seed.txt");
 
-        var command = new ArrayList<>(BINARY_NAME);
-        // --ensure-termination true -> breaks the execution
-        var defaultProperties = new ArrayList<String>();
+        // Parse properties
+        var properties = new LinkedHashMap<String, String>();
         var propsFile =
                 new String(getClass().getResourceAsStream(smithProperties).readAllBytes(), UTF_8);
         var props = propsFile.split("\n");
         for (var prop : props) {
             if (!prop.isEmpty()) {
                 var split = prop.split("=");
-                defaultProperties.add("--" + split[0]);
-                defaultProperties.add(split[1]);
+                properties.put(split[0], split[1]);
             }
         }
-        command.addAll(defaultProperties);
-        command.addAll(
-                List.of(
-                        "--allowed-instructions",
-                        instructionTypes.toString(),
-                        "--output",
-                        targetFile.getAbsolutePath()));
-        logger.info(
-                "Going to execute command:\n"
-                        + String.join(" ", command)
-                        + " < "
-                        + seedFile.getAbsolutePath());
 
-        var retry = 3;
-        // Trying to use the smallest possible seed for speed reasons
+        var retry = 5;
         var seedSize = BASE_SEED_SIZE;
         while (retry > 0) {
-            ProcessBuilder pb = new ProcessBuilder(command);
-            pb.directory(new File("."));
-
-            // write the seed file
+            // Write the seed file for reproducibility
             try (var outputStream = new FileOutputStream(seedFile)) {
-                outputStream.write((seed).getBytes(UTF_8));
+                outputStream.write(seed.getBytes(UTF_8));
                 outputStream.flush();
             }
 
-            pb.redirectInput(seedFile);
-            Process ps;
-            try {
-                ps = pb.start();
-                ps.waitFor(10, TimeUnit.SECONDS);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            } finally {
-                // Renew the seed
-                seed = getSeed(seedSize);
-                seedSize = seedSize * 10;
-            }
+            logger.info(
+                    "Running wasm-smith with instructions="
+                            + instructionTypes
+                            + " seed-size="
+                            + seed.length());
 
-            if (ps.exitValue() != 0) {
-                logger.error("wasm-smith exiting with:" + ps.exitValue());
-                logger.error(new String(ps.getErrorStream().readAllBytes(), UTF_8));
+            try {
+                var wasmBytes =
+                        WasmSmith.run(
+                                seed.getBytes(UTF_8), properties, instructionTypes.toString());
+
+                try (var outputStream = new FileOutputStream(targetFile)) {
+                    outputStream.write(wasmBytes);
+                    outputStream.flush();
+                }
+                return targetFile;
+            } catch (RuntimeException e) {
+                logger.error("wasm-smith failed: " + e.getMessage());
                 retry--;
-            } else {
-                break;
+            } finally {
+                seed = getSeed(seedSize);
+                seedSize = Math.min(seedSize * 2, 100_000);
             }
         }
 
-        return targetFile;
+        throw new IOException("wasm-smith failed after 5 retries");
     }
 }
