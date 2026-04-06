@@ -119,6 +119,7 @@ If you have an interest in working on any of these please reach out in Zulip!
 - [A Go CEL Policy Engine in Java, with Quarkus Chicory](https://quarkus.io/blog/k8s-style-CEL-with-quarkus-chicory/) on [Quarkus Blog](https://quarkus.io/blog/)
 - [Introduction to the Chicory Native JVM WebAssembly Runtime](https://www.baeldung.com/chicory-native-jvm-webassembly-runtime) on [Baeldung](https://www.baeldung.com)
 - [Bring WebAssembly to the JVM. How Chicory Is Powering a New Generation of Java Libraries](https://www.javaadvent.com/2025/12/chicory-webassembly-on-the-jvm.html) on [Java Advent 2025](https://www.javaadvent.com/2025/12)
+- [The State of Zero-Dependency Wasm: A 2026 Update from Wazero and Chicory](https://www.youtube.com/watch?v=RjLXovPbU90) (Wasm I/O 2026)
 
 ## Prior Art
 
