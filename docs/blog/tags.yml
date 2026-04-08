@@ -17,3 +17,8 @@ release:
   label: Release
   permalink: /release
   description: Release tag description
+
+redline:
+  label: Redline
+  permalink: /redline
+  description: Chicory Redline
