@@ -5,6 +5,9 @@ on:
     - cron: "0 0 * * *" # every day at midnight
   workflow_dispatch: # allow manual triggering
 
+permissions:
+  contents: read
+
 jobs:
   fuzz:
     name: Fuzz
