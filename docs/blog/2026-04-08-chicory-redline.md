@@ -7,7 +7,7 @@ tags: [wasm, chicory, redline]
 
 ![Chicory Redline](chicory-redline.png)
 
-Chicory Redline brings native speed Wasm execution to the JVM by using Cranelift behind the curtains.
+[Chicory Redline](https://github.com/roastedroot/chicory-redline) brings native speed Wasm execution to the JVM by using Cranelift behind the curtains.
 
 <!-- truncate -->
 
