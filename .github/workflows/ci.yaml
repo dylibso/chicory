@@ -160,7 +160,7 @@ jobs:
               ;;
           esac
       - name: Create badge
-        uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
+        uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325
         if: steps.publish.outputs.badge
         with:
           label: 'Tests ${{ env.NAME }}'
