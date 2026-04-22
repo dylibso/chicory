@@ -365,7 +365,42 @@ public interface Memory {
 
     byte read(int addr);
 
-    byte[] readBytes(int addr, int len);
+    /**
+     * Reads an arbitrary number of bytes returning a filled buffer.
+     *
+     * @param addr the start address
+     * @param len how many bytes to read
+     * @return the read bytes (length will be equal to {@code len})
+     * @throws WasmRuntimeException if the address and length specify an out-of-bounds memory range
+     */
+    default byte[] readBytes(int addr, int len) {
+        byte[] result = new byte[len];
+        readBytesInto(addr, result, 0, len);
+        return result;
+    }
+
+    /**
+     * Reads an arbitrary number of bytes, sending them to the destination buffer starting from the offset.
+     *
+     * @param addr the start address
+     * @param buf the output buffer
+     * @param destOffset the offset in the output buffer from which to start writing
+     * @param len how many bytes to read
+     * @throws IndexOutOfBoundsException if {@code offset + len > buf.length}
+     * @throws WasmRuntimeException if the address and length specify an out-of-bounds memory range
+     */
+    void readBytesInto(int addr, byte[] buf, int destOffset, int len);
+
+    /**
+     * Reads an arbitrary number of bytes, completely filling the destination buffer.
+     *
+     * @param addr the start address
+     * @param buf the output buffer, whose length will be the number of bytes read
+     * @throws WasmRuntimeException if the address and buffer length specify an out-of-bounds memory range
+     */
+    default void readBytesInto(int addr, byte[] buf) {
+        readBytesInto(addr, buf, 0, buf.length);
+    }
 
     void writeI32(int addr, int data);
 

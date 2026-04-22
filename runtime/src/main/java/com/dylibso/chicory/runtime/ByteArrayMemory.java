@@ -386,22 +386,22 @@ public final class ByteArrayMemory implements Memory {
     }
 
     @Override
-    public byte[] readBytes(int addr, int len) {
+    public void readBytesInto(int addr, byte[] buf, int destOffset, int len) {
         checkBounds(addr, len, sizeInBytes(), WasmRuntimeException::new);
-        byte[] result = new byte[len];
-        int destOffset = 0;
+        if (destOffset < 0 || len > buf.length - destOffset) {
+            throw new IndexOutOfBoundsException();
+        }
         int remaining = len;
         int a = addr;
         while (remaining > 0) {
             int pageIdx = a >>> PAGE_SHIFT;
             int pageOffset = a & PAGE_MASK;
             int chunk = Math.min(remaining, PAGE_SIZE - pageOffset);
-            System.arraycopy(pages[pageIdx], pageOffset, result, destOffset, chunk);
+            System.arraycopy(pages[pageIdx], pageOffset, buf, destOffset, chunk);
             a += chunk;
             destOffset += chunk;
             remaining -= chunk;
         }
-        return result;
     }
 
     @Override

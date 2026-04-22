@@ -360,10 +360,11 @@ public final class ByteBufferMemory implements Memory {
     }
 
     @Override
-    public byte[] readBytes(int addr, int len) {
+    public void readBytesInto(int addr, byte[] buf, int destOffset, int len) {
         checkBounds(addr, len, sizeInBytes(), WasmRuntimeException::new);
-        byte[] result = new byte[len];
-        int destOffset = 0;
+        if (destOffset < 0 || len > buf.length - destOffset) {
+            throw new IndexOutOfBoundsException();
+        }
         int remaining = len;
         int a = addr;
         while (remaining > 0) {
@@ -371,12 +372,11 @@ public final class ByteBufferMemory implements Memory {
             int pageOffset = a & PAGE_MASK;
             int chunk = Math.min(remaining, PAGE_SIZE - pageOffset);
             pages[pageIdx].position(pageOffset);
-            pages[pageIdx].get(result, destOffset, chunk);
+            pages[pageIdx].get(buf, destOffset, chunk);
             a += chunk;
             destOffset += chunk;
             remaining -= chunk;
         }
-        return result;
     }
 
     @Override
