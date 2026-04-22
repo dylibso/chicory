@@ -4,6 +4,12 @@ import com.dylibso.chicory.wasm.types.DataSegment;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Direct access to the memory (or a memory, if there are multiple) of the WASM virtual machine.
+ * <p>
+ * By design, WASM is little-endian and methods that read and write numeric data types reflect that. For example,
+ * {@link #writeI32(int, int)} writes out the 4 bytes of an integer, starting with the least significant, at the address.
+ */
 public interface Memory {
 
     /**
