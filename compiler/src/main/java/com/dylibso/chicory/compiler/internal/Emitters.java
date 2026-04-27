@@ -190,6 +190,10 @@ final class Emitters {
                 funcId,
                 functionType);
 
+        if (ctx.needsTailCallCheck(funcId)) {
+            emitTailCallCheck(ctx, asm, functionType);
+        }
+
         if (functionType.returns().size() > 1) {
             emitUnboxResult(asm, ctx, functionType.returns());
         }
@@ -207,13 +211,16 @@ final class Emitters {
         asm.iconst(tableIdx);
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        // stack: arguments, funcTableIdx, tableIdx, memory, instance
 
         asm.invokestatic(
                 ctx.callIndirectClassName(typeId),
                 callIndirectMethodName(typeId),
                 callIndirectMethodType(functionType).toMethodDescriptorString(),
                 false);
+
+        if (ctx.needsTailCallCheckForType(typeId)) {
+            emitTailCallCheck(ctx, asm, functionType);
+        }
 
         if (functionType.returns().size() > 1) {
             emitUnboxResult(asm, ctx, functionType.returns());
@@ -1001,6 +1008,117 @@ final class Emitters {
         emitInvokeStatic(asm, method);
     }
 
+    public static void RETURN_CALL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int funcId = (int) ins.operand(0);
+        FunctionType calleeType = ctx.functionTypes().get(funcId);
+
+        emitBoxValuesOnStack(ctx, asm, calleeType.params());
+        asm.iconst(funcId);
+        asm.swap();
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.SET_TAIL_CALL);
+        emitDefaultReturn(ctx, asm);
+    }
+
+    public static void RETURN_CALL_INDIRECT(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeId = (int) ins.operand(0);
+        int tableIdx = (int) ins.operand(1);
+        FunctionType calleeType = ctx.types()[typeId];
+
+        int paramSlots = calleeType.params().stream().mapToInt(CompilerUtil::slotCount).sum();
+        int savedSlot = ctx.tempSlot() + paramSlots;
+        asm.store(savedSlot, INT_TYPE);
+
+        emitBoxValuesOnStack(ctx, asm, calleeType.params());
+        asm.load(savedSlot, INT_TYPE);
+        asm.iconst(typeId);
+        asm.iconst(tableIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.SET_TAIL_CALL_INDIRECT);
+        emitDefaultReturn(ctx, asm);
+    }
+
+    public static void RETURN_CALL_REF(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeId = (int) ins.operand(0);
+        FunctionType calleeType = ctx.types()[typeId];
+
+        int paramSlots = calleeType.params().stream().mapToInt(CompilerUtil::slotCount).sum();
+        int savedSlot = ctx.tempSlot() + paramSlots;
+        asm.store(savedSlot, INT_TYPE);
+
+        // null check
+        asm.load(savedSlot, INT_TYPE);
+        asm.iconst(REF_NULL_VALUE);
+        Label notNull = new Label();
+        asm.ificmpne(notNull);
+        emitInvokeStatic(asm, ShadedRefs.THROW_NULL_FUNCTION_REFERENCE);
+        asm.athrow();
+        asm.mark(notNull);
+
+        emitBoxValuesOnStack(ctx, asm, calleeType.params());
+        asm.load(savedSlot, INT_TYPE);
+        asm.swap();
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.SET_TAIL_CALL);
+        emitDefaultReturn(ctx, asm);
+    }
+
+    private static void emitDefaultReturn(Context ctx, InstructionAdapter asm) {
+        FunctionType type = ctx.getType();
+        if (type.returns().isEmpty()) {
+            asm.areturn(getType(void.class));
+        } else if (type.returns().size() == 1) {
+            Object defaultVal = CompilerUtil.defaultValue(type.returns().get(0));
+            if (defaultVal instanceof Integer) {
+                asm.iconst((int) defaultVal);
+            } else if (defaultVal instanceof Long) {
+                asm.lconst((long) defaultVal);
+            } else if (defaultVal instanceof Float) {
+                asm.fconst((float) defaultVal);
+            } else if (defaultVal instanceof Double) {
+                asm.dconst((double) defaultVal);
+            }
+            asm.areturn(getType(jvmReturnType(type)));
+        } else {
+            asm.aconst(null);
+            asm.areturn(OBJECT_TYPE);
+        }
+    }
+
+    private static void emitTailCallCheck(
+            Context ctx, InstructionAdapter asm, FunctionType functionType) {
+        Label noPending = new Label();
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.IS_TAIL_CALL_PENDING);
+        asm.ifeq(noPending);
+
+        List<ValType> returns = functionType.returns();
+
+        if (returns.size() == 1) {
+            emitPop(asm, returns.get(0));
+        } else if (returns.size() > 1) {
+            asm.pop();
+        }
+
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.RESOLVE_TAIL_CALL);
+
+        if (returns.isEmpty()) {
+            asm.pop();
+        } else if (returns.size() == 1) {
+            asm.iconst(0);
+            asm.aload(LONG_TYPE);
+            emitLongToJvm(asm, returns.get(0));
+        }
+        // For multi-value: leave long[] on stack — caller's emitUnboxResult will handle it
+
+        asm.mark(noPending);
+    }
+
+    // ========= Unbox Helpers =========
+
     private static void emitUnboxResult(InstructionAdapter asm, Context ctx, List<ValType> types) {
         emitUnboxResult(asm, types, ctx.tempSlot());
     }
@@ -1223,6 +1341,10 @@ final class Emitters {
                 callIndirectMethodName(typeId),
                 callIndirectMethodType(functionType).toMethodDescriptorString(),
                 false);
+
+        if (ctx.needsTailCallCheckForType(typeId)) {
+            emitTailCallCheck(ctx, asm, functionType);
+        }
 
         if (functionType.returns().size() > 1) {
             emitUnboxResult(asm, ctx, functionType.returns());

@@ -316,6 +316,9 @@ enum CompilerOpCode {
     I31_GET_U(OpCode.I31_GET_U),
     ANY_CONVERT_EXTERN(OpCode.ANY_CONVERT_EXTERN),
     EXTERN_CONVERT_ANY(OpCode.EXTERN_CONVERT_ANY),
+    RETURN_CALL,
+    RETURN_CALL_INDIRECT,
+    RETURN_CALL_REF,
     // GC internal (no OpCode mapping) - used for control flow decomposition
     BR_ON_NULL_CHECK,
     BR_ON_NON_NULL_CHECK,

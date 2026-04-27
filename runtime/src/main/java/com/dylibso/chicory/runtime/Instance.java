@@ -75,6 +75,10 @@ public class Instance {
     private final Map<Integer, WasmException> exnRefs;
     private final GcRefStore gcRefs;
 
+    private boolean tailCallPending;
+    private int tailCallFuncId;
+    private long[] tailCallArgs;
+
     Instance(
             WasmModule module,
             Global[] globalInitializers,
@@ -481,6 +485,29 @@ public class Instance {
 
     public Machine getMachine() {
         return machine;
+    }
+
+    public boolean isTailCallPending() {
+        return tailCallPending;
+    }
+
+    public int tailCallFuncId() {
+        return tailCallFuncId;
+    }
+
+    public long[] tailCallArgs() {
+        return tailCallArgs;
+    }
+
+    public void setTailCall(int funcId, long[] args) {
+        this.tailCallPending = true;
+        this.tailCallFuncId = funcId;
+        this.tailCallArgs = args;
+    }
+
+    public void clearTailCall() {
+        this.tailCallPending = false;
+        this.tailCallArgs = null;
     }
 
     void onExecution(Instruction instruction, MStack stack) {

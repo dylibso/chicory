@@ -100,7 +100,7 @@ public final class Compiler {
     private static final MethodType MACHINE_CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, int.class, long[].class);
 
-    private static final int MAX_MACHINE_CALL_METHODS = 1024; // must be power of two
+    private static final int MAX_MACHINE_CALL_METHODS = 1024;
     // 1024*12 was empirically determined to work for the 50K small wasm functions.
     // So lets start there and halve it until we find a size that works.
     // This should give us the biggest class size possible.
@@ -117,6 +117,8 @@ public final class Compiler {
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
     private final Set<Integer> callRefTypeIds;
+    private final boolean[] tailCallFunctions;
+    private final boolean[] tailCallTypes;
     private boolean useBridgeClasses;
     private IntFunction<String> callIndirectClassResolver;
 
@@ -151,7 +153,72 @@ public final class Compiler {
 
         this.functionTypes = analyzer.functionTypes();
         this.callRefTypeIds = collectCallRefTypeIds();
+        this.tailCallFunctions = collectTailCallFunctions();
+        this.tailCallTypes = collectTailCallTypes();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
+    }
+
+    private boolean[] collectTailCallFunctions() {
+        int totalFunctions = functionImports + module.functionSection().functionCount();
+        var result = new boolean[totalFunctions];
+        int funcCount = module.functionSection().functionCount();
+        for (int i = 0; i < funcCount; i++) {
+            var body = module.codeSection().getFunctionBody(i);
+            // Track dead code the same way WasmAnalyzer does, so that
+            // RETURN_CALL* in unreachable code does not falsely mark
+            // a function as tail-calling (which would inhibit check
+            // elimination at all call sites).
+            int exitBlockDepth = -1;
+            for (var ins : body.instructions()) {
+                if (exitBlockDepth >= 0) {
+                    if (ins.depth() > exitBlockDepth
+                            || (ins.opcode() != OpCode.ELSE && ins.opcode() != OpCode.END)) {
+                        continue;
+                    }
+                    exitBlockDepth = -1;
+                }
+                switch (ins.opcode()) {
+                    case RETURN_CALL:
+                    case RETURN_CALL_INDIRECT:
+                    case RETURN_CALL_REF:
+                        result[functionImports + i] = true;
+                        break;
+                    case UNREACHABLE:
+                    case BR:
+                    case BR_TABLE:
+                    case RETURN:
+                        exitBlockDepth = ins.depth();
+                        break;
+                    default:
+                        break;
+                }
+                if (result[functionImports + i]) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    private boolean[] collectTailCallTypes() {
+        var types = module.typeSection().types();
+        var result = new boolean[types.length];
+        for (int funcId = 0; funcId < tailCallFunctions.length; funcId++) {
+            if (!tailCallFunctions[funcId]) {
+                continue;
+            }
+            int funcTypeId = analyzer.functionTypeIndex(funcId);
+            for (int typeId = 0; typeId < types.length; typeId++) {
+                if (types[typeId] == null) {
+                    continue;
+                }
+                if (funcTypeId == typeId
+                        || ValType.heapTypeSubtype(funcTypeId, typeId, module.typeSection())) {
+                    result[typeId] = true;
+                }
+            }
+        }
+        return result;
     }
 
     private Set<Integer> collectCallRefTypeIds() {
@@ -727,30 +794,69 @@ public final class Compiler {
             asm.mark(invalid);
         }
 
-        // try block
         Label start = new Label();
         Label end = new Label();
-        asm.visitTryCatchBlock(start, end, end, getInternalName(StackOverflowError.class));
+        Label soeCatch = new Label();
+        asm.visitTryCatchBlock(start, end, soeCatch, getInternalName(StackOverflowError.class));
         asm.mark(start);
 
-        // prepare arguments
         asm.load(0, OBJECT_TYPE);
         asm.getfield(internalClassName, "instance", getDescriptor(Instance.class));
+        asm.store(3, OBJECT_TYPE);
+
+        Label loopStart = new Label();
+        asm.mark(loopStart);
+
+        asm.load(3, OBJECT_TYPE);
         asm.dup();
         emitInvokeVirtual(asm, INSTANCE_MEMORY);
         asm.load(1, INT_TYPE);
         asm.load(2, OBJECT_TYPE);
 
-        // return MachineCall.call(instance, memory, funcId, args);
         asm.invokestatic(
                 internalClassName + "MachineCall",
                 "call",
                 MACHINE_CALL_METHOD_TYPE.toMethodDescriptorString(),
                 false);
+
+        asm.load(3, OBJECT_TYPE);
+        asm.invokevirtual(
+                getInternalName(Instance.class),
+                "isTailCallPending",
+                getMethodDescriptor(Type.BOOLEAN_TYPE),
+                false);
+        Label returnResult = new Label();
+        asm.ifeq(returnResult);
+
+        asm.pop();
+        asm.load(3, OBJECT_TYPE);
+        asm.invokevirtual(
+                getInternalName(Instance.class),
+                "tailCallFuncId",
+                getMethodDescriptor(INT_TYPE),
+                false);
+        asm.store(1, INT_TYPE);
+        asm.load(3, OBJECT_TYPE);
+        asm.invokevirtual(
+                getInternalName(Instance.class),
+                "tailCallArgs",
+                getMethodDescriptor(getType(long[].class)),
+                false);
+        asm.store(2, OBJECT_TYPE);
+        asm.load(3, OBJECT_TYPE);
+        asm.invokevirtual(
+                getInternalName(Instance.class),
+                "clearTailCall",
+                getMethodDescriptor(VOID_TYPE),
+                false);
+        asm.goTo(loopStart);
+
+        asm.mark(returnResult);
+        asm.mark(end);
         asm.areturn(OBJECT_TYPE);
 
         // catch StackOverflow
-        asm.mark(end);
+        asm.mark(soeCatch);
         emitInvokeStatic(asm, THROW_CALL_STACK_EXHAUSTED);
         asm.athrow();
     }
@@ -1282,6 +1388,8 @@ public final class Compiler {
                         funcId,
                         type,
                         body,
+                        tailCallFunctions,
+                        tailCallTypes,
                         useBridgeClasses ? callIndirectClassResolver : typeId -> internalClassName,
                         analysis.maxTempSlots());
 

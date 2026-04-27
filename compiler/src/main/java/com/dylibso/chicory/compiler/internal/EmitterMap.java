@@ -18,6 +18,9 @@ final class EmitterMap {
                     // ====== Control Flow ======
                     .intrinsic(CompilerOpCode.CALL, Emitters::CALL)
                     .intrinsic(CompilerOpCode.CALL_INDIRECT, Emitters::CALL_INDIRECT)
+                    .intrinsic(CompilerOpCode.RETURN_CALL, Emitters::RETURN_CALL)
+                    .intrinsic(CompilerOpCode.RETURN_CALL_INDIRECT, Emitters::RETURN_CALL_INDIRECT)
+                    .intrinsic(CompilerOpCode.RETURN_CALL_REF, Emitters::RETURN_CALL_REF)
 
                     // ====== Exception Handling ======
                     .intrinsic(CompilerOpCode.THROW, Emitters::THROW)
