@@ -104,6 +104,11 @@ public class ApprovalTest {
     }
 
     @Test
+    public void verifyTailCall() {
+        verifyGeneratedBytecode("tail_call_return_call.wat.wasm");
+    }
+
+    @Test
     public void verifyGc() {
         verifyGeneratedBytecode("gc.wat.wasm", (name) -> !name.contains("FuncGroup"));
     }

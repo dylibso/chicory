@@ -11,34 +11,17 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     RETURN
 
   public call(I[J)[J
-    TRYCATCHBLOCK L0 L1 L2 java/lang/StackOverflowError
+    TRYCATCHBLOCK L0 L1 L1 java/lang/StackOverflowError
    L0
     ALOAD 0
     GETFIELD com/dylibso/chicory/$gen/CompiledMachine.instance : Lcom/dylibso/chicory/runtime/Instance;
-    ASTORE 3
-   L3
-    ALOAD 3
     DUP
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory ()Lcom/dylibso/chicory/runtime/Memory;
     ILOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMachineCall.call (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
-    ALOAD 3
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.isTailCallPending ()Z
-    IFEQ L1
-    POP
-    ALOAD 3
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.tailCallFuncId ()I
-    ISTORE 1
-    ALOAD 3
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.tailCallArgs ()[J
-    ASTORE 2
-    ALOAD 3
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.clearTailCall ()V
-    GOTO L3
-   L1
     ARETURN
-   L2
+   L1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
     ATHROW
 
@@ -163,16 +146,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.isTailCallPending (Lcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L0
-    POP
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.resolveTailCall (Lcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-   L0
     IRETURN
 
   public static call_1(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
@@ -201,16 +174,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_1 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.isTailCallPending (Lcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L0
-    POP
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.resolveTailCall (Lcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-   L0
     IRETURN
 
   public static call_2(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
@@ -239,16 +202,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_2 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.isTailCallPending (Lcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L0
-    POP
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.resolveTailCall (Lcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-   L0
     IRETURN
 
   public static call_3(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
@@ -277,16 +230,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_3 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.isTailCallPending (Lcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L0
-    POP
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.resolveTailCall (Lcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-   L0
     IRETURN
 
   public static call_4(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
@@ -318,16 +261,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_4 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.isTailCallPending (Lcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L0
-    POP
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.resolveTailCall (Lcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-   L0
     IRETURN
 
   public static call_5(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
@@ -356,16 +289,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_5 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.isTailCallPending (Lcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L0
-    POP
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.resolveTailCall (Lcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-   L0
     IRETURN
 
   public static call_6(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
@@ -394,16 +317,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_6 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.isTailCallPending (Lcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L0
-    POP
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.resolveTailCall (Lcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-   L0
     IRETURN
 
   public static call_7(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
@@ -432,16 +345,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_7 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.isTailCallPending (Lcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L0
-    POP
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.resolveTailCall (Lcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-   L0
     IRETURN
 
   public static call_8(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
@@ -470,16 +373,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_8 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.isTailCallPending (Lcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L0
-    POP
-    ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.resolveTailCall (Lcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-   L0
     IRETURN
 
   public static call_9(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J

@@ -75,9 +75,17 @@ public class Instance {
     private final Map<Integer, WasmException> exnRefs;
     private final GcRefStore gcRefs;
 
-    private boolean tailCallPending;
-    private int tailCallFuncId;
-    private long[] tailCallArgs;
+    private TailCallPending tailCallPending;
+
+    static final class TailCallPending {
+        final int funcId;
+        final long[] args;
+
+        TailCallPending(int funcId, long[] args) {
+            this.funcId = funcId;
+            this.args = args;
+        }
+    }
 
     Instance(
             WasmModule module,
@@ -488,26 +496,23 @@ public class Instance {
     }
 
     public boolean isTailCallPending() {
-        return tailCallPending;
+        return tailCallPending != null;
     }
 
     public int tailCallFuncId() {
-        return tailCallFuncId;
+        return tailCallPending.funcId;
     }
 
     public long[] tailCallArgs() {
-        return tailCallArgs;
+        return tailCallPending.args;
     }
 
     public void setTailCall(int funcId, long[] args) {
-        this.tailCallPending = true;
-        this.tailCallFuncId = funcId;
-        this.tailCallArgs = args;
+        this.tailCallPending = new TailCallPending(funcId, args);
     }
 
     public void clearTailCall() {
-        this.tailCallPending = false;
-        this.tailCallArgs = null;
+        this.tailCallPending = null;
     }
 
     void onExecution(Instruction instruction, MStack stack) {

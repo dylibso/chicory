@@ -61,6 +61,8 @@ final class WasmAnalyzer {
     private final List<FunctionType> functionTypes;
     private final List<ValType> tableTypes;
     private final int functionImports;
+    private final boolean[] tailCallFunctions;
+    private final boolean hasTailCalls;
 
     public WasmAnalyzer(WasmModule module) {
         this.module = module;
@@ -68,6 +70,8 @@ final class WasmAnalyzer {
         this.functionTypes = getFunctionTypes(module);
         this.tableTypes = getTableTypes(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.tailCallFunctions = scanTailCallFunctions();
+        this.hasTailCalls = anyTrue(tailCallFunctions);
     }
 
     public List<ValType> globalTypes() {
@@ -76,6 +80,82 @@ final class WasmAnalyzer {
 
     public List<FunctionType> functionTypes() {
         return functionTypes;
+    }
+
+    public boolean[] tailCallFunctions() {
+        return tailCallFunctions;
+    }
+
+    public boolean[] tailCallTypes() {
+        var types = module.typeSection().types();
+        var result = new boolean[types.length];
+        for (int funcId = 0; funcId < tailCallFunctions.length; funcId++) {
+            if (!tailCallFunctions[funcId]) {
+                continue;
+            }
+            int funcTypeId = functionTypeIndex(funcId);
+            for (int typeId = 0; typeId < types.length; typeId++) {
+                if (types[typeId] == null) {
+                    continue;
+                }
+                if (funcTypeId == typeId
+                        || ValType.heapTypeSubtype(funcTypeId, typeId, module.typeSection())) {
+                    result[typeId] = true;
+                }
+            }
+        }
+        return result;
+    }
+
+    public boolean hasTailCalls() {
+        return hasTailCalls;
+    }
+
+    private boolean[] scanTailCallFunctions() {
+        int totalFunctions = functionImports + module.functionSection().functionCount();
+        boolean[] result = new boolean[totalFunctions];
+        int funcCount = module.functionSection().functionCount();
+        for (int i = 0; i < funcCount; i++) {
+            FunctionBody body = module.codeSection().getFunctionBody(i);
+            int exitBlockDepth = -1;
+            for (AnnotatedInstruction ins : body.instructions()) {
+                if (exitBlockDepth >= 0) {
+                    if (ins.depth() > exitBlockDepth
+                            || (ins.opcode() != OpCode.ELSE && ins.opcode() != OpCode.END)) {
+                        continue;
+                    }
+                    exitBlockDepth = -1;
+                }
+                switch (ins.opcode()) {
+                    case RETURN_CALL:
+                    case RETURN_CALL_INDIRECT:
+                    case RETURN_CALL_REF:
+                        result[functionImports + i] = true;
+                        break;
+                    case UNREACHABLE:
+                    case BR:
+                    case BR_TABLE:
+                    case RETURN:
+                        exitBlockDepth = ins.depth();
+                        break;
+                    default:
+                        break;
+                }
+                if (result[functionImports + i]) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static boolean anyTrue(boolean[] array) {
+        for (boolean b : array) {
+            if (b) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static class TryCatchBlock {

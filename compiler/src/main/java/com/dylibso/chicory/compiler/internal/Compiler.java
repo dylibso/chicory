@@ -119,6 +119,7 @@ public final class Compiler {
     private final Set<Integer> callRefTypeIds;
     private final boolean[] tailCallFunctions;
     private final boolean[] tailCallTypes;
+    private final boolean moduleHasTailCalls;
     private boolean useBridgeClasses;
     private IntFunction<String> callIndirectClassResolver;
 
@@ -153,72 +154,10 @@ public final class Compiler {
 
         this.functionTypes = analyzer.functionTypes();
         this.callRefTypeIds = collectCallRefTypeIds();
-        this.tailCallFunctions = collectTailCallFunctions();
-        this.tailCallTypes = collectTailCallTypes();
+        this.tailCallFunctions = analyzer.tailCallFunctions();
+        this.tailCallTypes = analyzer.tailCallTypes();
+        this.moduleHasTailCalls = analyzer.hasTailCalls();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
-    }
-
-    private boolean[] collectTailCallFunctions() {
-        int totalFunctions = functionImports + module.functionSection().functionCount();
-        var result = new boolean[totalFunctions];
-        int funcCount = module.functionSection().functionCount();
-        for (int i = 0; i < funcCount; i++) {
-            var body = module.codeSection().getFunctionBody(i);
-            // Track dead code the same way WasmAnalyzer does, so that
-            // RETURN_CALL* in unreachable code does not falsely mark
-            // a function as tail-calling (which would inhibit check
-            // elimination at all call sites).
-            int exitBlockDepth = -1;
-            for (var ins : body.instructions()) {
-                if (exitBlockDepth >= 0) {
-                    if (ins.depth() > exitBlockDepth
-                            || (ins.opcode() != OpCode.ELSE && ins.opcode() != OpCode.END)) {
-                        continue;
-                    }
-                    exitBlockDepth = -1;
-                }
-                switch (ins.opcode()) {
-                    case RETURN_CALL:
-                    case RETURN_CALL_INDIRECT:
-                    case RETURN_CALL_REF:
-                        result[functionImports + i] = true;
-                        break;
-                    case UNREACHABLE:
-                    case BR:
-                    case BR_TABLE:
-                    case RETURN:
-                        exitBlockDepth = ins.depth();
-                        break;
-                    default:
-                        break;
-                }
-                if (result[functionImports + i]) {
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-
-    private boolean[] collectTailCallTypes() {
-        var types = module.typeSection().types();
-        var result = new boolean[types.length];
-        for (int funcId = 0; funcId < tailCallFunctions.length; funcId++) {
-            if (!tailCallFunctions[funcId]) {
-                continue;
-            }
-            int funcTypeId = analyzer.functionTypeIndex(funcId);
-            for (int typeId = 0; typeId < types.length; typeId++) {
-                if (types[typeId] == null) {
-                    continue;
-                }
-                if (funcTypeId == typeId
-                        || ValType.heapTypeSubtype(funcTypeId, typeId, module.typeSection())) {
-                    result[typeId] = true;
-                }
-            }
-        }
-        return result;
     }
 
     private Set<Integer> collectCallRefTypeIds() {
@@ -794,6 +733,40 @@ public final class Compiler {
             asm.mark(invalid);
         }
 
+        if (moduleHasTailCalls) {
+            compileMachineCallWithTailCalls(internalClassName, asm);
+        } else {
+            compileMachineCallSimple(internalClassName, asm);
+        }
+    }
+
+    private void compileMachineCallSimple(String internalClassName, InstructionAdapter asm) {
+        Label start = new Label();
+        Label end = new Label();
+        asm.visitTryCatchBlock(start, end, end, getInternalName(StackOverflowError.class));
+        asm.mark(start);
+
+        asm.load(0, OBJECT_TYPE);
+        asm.getfield(internalClassName, "instance", getDescriptor(Instance.class));
+        asm.dup();
+        emitInvokeVirtual(asm, INSTANCE_MEMORY);
+        asm.load(1, INT_TYPE);
+        asm.load(2, OBJECT_TYPE);
+
+        asm.invokestatic(
+                internalClassName + "MachineCall",
+                "call",
+                MACHINE_CALL_METHOD_TYPE.toMethodDescriptorString(),
+                false);
+        asm.areturn(OBJECT_TYPE);
+
+        // catch StackOverflow
+        asm.mark(end);
+        emitInvokeStatic(asm, THROW_CALL_STACK_EXHAUSTED);
+        asm.athrow();
+    }
+
+    private void compileMachineCallWithTailCalls(String internalClassName, InstructionAdapter asm) {
         Label start = new Label();
         Label end = new Label();
         Label soeCatch = new Label();
