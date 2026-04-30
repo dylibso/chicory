@@ -100,7 +100,7 @@ public final class Compiler {
     private static final MethodType MACHINE_CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, int.class, long[].class);
 
-    private static final int MAX_MACHINE_CALL_METHODS = 1024;
+    private static final int MAX_MACHINE_CALL_METHODS = 1024; // must be power of two
     // 1024*12 was empirically determined to work for the 50K small wasm functions.
     // So lets start there and halve it until we find a size that works.
     // This should give us the biggest class size possible.
@@ -766,6 +766,20 @@ public final class Compiler {
         asm.athrow();
     }
 
+    // Generates a trampoline loop equivalent to:
+    //
+    //   Instance inst = this.instance;
+    //   while (true) {
+    //       try {
+    //           long[] result = MachineCall.call(inst, inst.memory(), funcId, args);
+    //           if (!inst.isTailCallPending()) return result;
+    //           funcId = inst.tailCallFuncId();
+    //           args = inst.tailCallArgs();
+    //           inst.clearTailCall();
+    //       } catch (StackOverflowError e) {
+    //           throw throwCallStackExhausted(e);
+    //       }
+    //   }
     private void compileMachineCallWithTailCalls(String internalClassName, InstructionAdapter asm) {
         Label start = new Label();
         Label end = new Label();

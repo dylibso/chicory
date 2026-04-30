@@ -208,6 +208,7 @@ final class Emitters {
             emitBoxValuesOnStack(ctx, asm, functionType.params());
         }
 
+        // stack: arguments, funcTableIdx, tableIdx, memory, instance
         asm.iconst(tableIdx);
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
@@ -1008,6 +1009,8 @@ final class Emitters {
         emitInvokeStatic(asm, method);
     }
 
+    // Callee side: boxes params, signals tail call, returns a dummy value.
+    // Equivalent to: Shaded.setTailCall(funcId, box(params...), instance); return default;
     public static void RETURN_CALL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int funcId = (int) ins.operand(0);
         FunctionType calleeType = ctx.functionTypes().get(funcId);

@@ -16,4 +16,4 @@ com.dylibso.chicory.testing.Test3MachineFuncGroup_0.func_3
 com.dylibso.chicory.testing.Test3MachineFuncGroup_0.call_3
 com.dylibso.chicory.testing.Test3MachineMachineCall.call
 com.dylibso.chicory.testing.Test3Machine.call
-com.dylibso.chicory.runtime.Instance$Exports.lambda$0
+com.dylibso.chicory.runtime.Instance$Exports.lambda$function$0
