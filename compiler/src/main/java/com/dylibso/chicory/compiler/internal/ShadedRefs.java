@@ -134,6 +134,12 @@ public final class ShadedRefs {
     static final Method MEMORY_ATOMIC_NOTIFY;
     static final Method MEMORY_ATOMIC_FENCE;
 
+    // Tail calls
+    static final Method SET_TAIL_CALL;
+    static final Method SET_TAIL_CALL_INDIRECT;
+    static final Method IS_TAIL_CALL_PENDING;
+    static final Method RESOLVE_TAIL_CALL;
+
     // GC
     static final Method STRUCT_NEW;
     static final Method STRUCT_NEW_DEFAULT;
@@ -713,6 +719,20 @@ public final class ShadedRefs {
                     Shaded.class.getMethod(
                             "memoryAtomicNotify", int.class, int.class, int.class, Memory.class);
             MEMORY_ATOMIC_FENCE = Shaded.class.getMethod("memoryAtomicFence", Memory.class);
+
+            // Tail calls
+            SET_TAIL_CALL =
+                    Shaded.class.getMethod("setTailCall", int.class, long[].class, Instance.class);
+            SET_TAIL_CALL_INDIRECT =
+                    Shaded.class.getMethod(
+                            "setTailCallIndirect",
+                            long[].class,
+                            int.class,
+                            int.class,
+                            int.class,
+                            Instance.class);
+            IS_TAIL_CALL_PENDING = Shaded.class.getMethod("isTailCallPending", Instance.class);
+            RESOLVE_TAIL_CALL = Shaded.class.getMethod("resolveTailCall", Instance.class);
 
             // GC
             STRUCT_NEW =

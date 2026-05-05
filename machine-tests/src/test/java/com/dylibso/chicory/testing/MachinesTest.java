@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.corpus.CorpusResources;
+import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportTable;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
@@ -24,6 +25,7 @@ import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.ValType;
@@ -335,5 +337,136 @@ public final class MachinesTest {
         var ex = assertThrows(TrapException.class, instance.export("call-other-fail")::apply);
         var className = ex.getStackTrace()[0].getClassName();
         assertTrue(className.contains("InterpreterMachine"), className);
+    }
+
+    @Test
+    public void tailcallReturnCallAot() {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_return_call.wat.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("f");
+
+        assertEquals(55, function.apply(10, 0, 1)[0]);
+        assertEquals(6765, function.apply(20, 0, 1)[0]);
+        assertEquals(0x80dbbba8, function.apply(318, 0, 1)[0]);
+    }
+
+    @Test
+    public void tailcallReturnCallCountAot() {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_return_call_count.wat.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("f");
+
+        assertEquals(1000_000, function.apply(1000_000, 0)[0]);
+    }
+
+    @Test
+    public void tailcallReturnCallCountAccAot() {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_return_call_count_acc.wat.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("f");
+
+        var result = function.apply(1000_000, 0);
+        assertEquals(0, result[0]);
+        assertEquals(1000_000, result[1]);
+    }
+
+    @Test
+    public void tailcallCompatibleSignaturesAot() {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_compatible_signatures.wat.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("f");
+
+        assertEquals(33, function.apply(2, 3, 4, 5)[0]);
+        assertEquals(24, function.apply(5, 2, 3, 4)[0]);
+    }
+
+    @Test
+    public void tailcallMoreParamsAot() {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_more_params.wat.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("f");
+
+        var result = function.apply();
+        assertEquals(10, result[0]);
+        assertEquals(35, result[1]);
+    }
+
+    @Test
+    public void tailcallSqlitePatternAot() {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_sqlite_pattern.wat.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("f");
+
+        assertEquals(156, function.apply(1, 2, 3, 4, 5, 6, 7)[0]);
+    }
+
+    @Test
+    public void tailcallImportAot() {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_import.wat.wasm"))
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addFunction(
+                                                new HostFunction(
+                                                        "env",
+                                                        "imported_callee",
+                                                        FunctionType.of(
+                                                                List.of(
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32),
+                                                                List.of(ValType.I32)),
+                                                        (inst, args) ->
+                                                                new long[] {
+                                                                    args[0] + args[1] + args[2]
+                                                                            + args[3] + args[4]
+                                                                            + args[5] + args[6]
+                                                                            + args[7]
+                                                                }))
+                                        .build())
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("f");
+
+        assertEquals(156, function.apply(1, 2, 3, 4, 5, 6, 7)[0]);
+    }
+
+    @Test
+    public void tailcallDeepReturnCallDoesNotGrowStack() {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_return_call_count.wat.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("f");
+
+        assertEquals(10_000_000, function.apply(10_000_000, 0)[0]);
+    }
+
+    @Test
+    public void tailcallDeepReturnCallIndirectDoesNotGrowStack() {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_deep_stack.wat.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("run");
+
+        assertEquals(10_000_000, function.apply(10_000_000, 0)[0]);
     }
 }

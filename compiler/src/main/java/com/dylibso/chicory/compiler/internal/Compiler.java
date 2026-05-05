@@ -117,6 +117,9 @@ public final class Compiler {
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
     private final Set<Integer> callRefTypeIds;
+    private final boolean[] tailCallFunctions;
+    private final boolean[] tailCallTypes;
+    private final boolean moduleHasTailCalls;
     private boolean useBridgeClasses;
     private IntFunction<String> callIndirectClassResolver;
 
@@ -151,6 +154,9 @@ public final class Compiler {
 
         this.functionTypes = analyzer.functionTypes();
         this.callRefTypeIds = collectCallRefTypeIds();
+        this.tailCallFunctions = analyzer.tailCallFunctions();
+        this.tailCallTypes = analyzer.tailCallTypes();
+        this.moduleHasTailCalls = analyzer.hasTailCalls();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
     }
 
@@ -727,13 +733,19 @@ public final class Compiler {
             asm.mark(invalid);
         }
 
-        // try block
+        if (moduleHasTailCalls) {
+            compileMachineCallWithTailCalls(internalClassName, asm);
+        } else {
+            compileMachineCallSimple(internalClassName, asm);
+        }
+    }
+
+    private void compileMachineCallSimple(String internalClassName, InstructionAdapter asm) {
         Label start = new Label();
         Label end = new Label();
         asm.visitTryCatchBlock(start, end, end, getInternalName(StackOverflowError.class));
         asm.mark(start);
 
-        // prepare arguments
         asm.load(0, OBJECT_TYPE);
         asm.getfield(internalClassName, "instance", getDescriptor(Instance.class));
         asm.dup();
@@ -741,7 +753,6 @@ public final class Compiler {
         asm.load(1, INT_TYPE);
         asm.load(2, OBJECT_TYPE);
 
-        // return MachineCall.call(instance, memory, funcId, args);
         asm.invokestatic(
                 internalClassName + "MachineCall",
                 "call",
@@ -751,6 +762,88 @@ public final class Compiler {
 
         // catch StackOverflow
         asm.mark(end);
+        emitInvokeStatic(asm, THROW_CALL_STACK_EXHAUSTED);
+        asm.athrow();
+    }
+
+    // Generates a trampoline loop equivalent to:
+    //
+    //   Instance inst = this.instance;
+    //   while (true) {
+    //       try {
+    //           long[] result = MachineCall.call(inst, inst.memory(), funcId, args);
+    //           if (!inst.isTailCallPending()) return result;
+    //           funcId = inst.tailCallFuncId();
+    //           args = inst.tailCallArgs();
+    //           inst.clearTailCall();
+    //       } catch (StackOverflowError e) {
+    //           throw throwCallStackExhausted(e);
+    //       }
+    //   }
+    private void compileMachineCallWithTailCalls(String internalClassName, InstructionAdapter asm) {
+        Label start = new Label();
+        Label end = new Label();
+        Label soeCatch = new Label();
+        asm.visitTryCatchBlock(start, end, soeCatch, getInternalName(StackOverflowError.class));
+        asm.mark(start);
+
+        asm.load(0, OBJECT_TYPE);
+        asm.getfield(internalClassName, "instance", getDescriptor(Instance.class));
+        asm.store(3, OBJECT_TYPE);
+
+        Label loopStart = new Label();
+        asm.mark(loopStart);
+
+        asm.load(3, OBJECT_TYPE);
+        asm.dup();
+        emitInvokeVirtual(asm, INSTANCE_MEMORY);
+        asm.load(1, INT_TYPE);
+        asm.load(2, OBJECT_TYPE);
+
+        asm.invokestatic(
+                internalClassName + "MachineCall",
+                "call",
+                MACHINE_CALL_METHOD_TYPE.toMethodDescriptorString(),
+                false);
+
+        asm.load(3, OBJECT_TYPE);
+        asm.invokevirtual(
+                getInternalName(Instance.class),
+                "isTailCallPending",
+                getMethodDescriptor(Type.BOOLEAN_TYPE),
+                false);
+        Label returnResult = new Label();
+        asm.ifeq(returnResult);
+
+        asm.pop();
+        asm.load(3, OBJECT_TYPE);
+        asm.invokevirtual(
+                getInternalName(Instance.class),
+                "tailCallFuncId",
+                getMethodDescriptor(INT_TYPE),
+                false);
+        asm.store(1, INT_TYPE);
+        asm.load(3, OBJECT_TYPE);
+        asm.invokevirtual(
+                getInternalName(Instance.class),
+                "tailCallArgs",
+                getMethodDescriptor(getType(long[].class)),
+                false);
+        asm.store(2, OBJECT_TYPE);
+        asm.load(3, OBJECT_TYPE);
+        asm.invokevirtual(
+                getInternalName(Instance.class),
+                "clearTailCall",
+                getMethodDescriptor(VOID_TYPE),
+                false);
+        asm.goTo(loopStart);
+
+        asm.mark(returnResult);
+        asm.mark(end);
+        asm.areturn(OBJECT_TYPE);
+
+        // catch StackOverflow
+        asm.mark(soeCatch);
         emitInvokeStatic(asm, THROW_CALL_STACK_EXHAUSTED);
         asm.athrow();
     }
@@ -1282,6 +1375,8 @@ public final class Compiler {
                         funcId,
                         type,
                         body,
+                        tailCallFunctions,
+                        tailCallTypes,
                         useBridgeClasses ? callIndirectClassResolver : typeId -> internalClassName,
                         analysis.maxTempSlots());
 

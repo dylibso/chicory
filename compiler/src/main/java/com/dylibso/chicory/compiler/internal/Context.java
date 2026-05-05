@@ -28,6 +28,8 @@ final class Context {
     private final int funcId;
     private final FunctionType type;
     private final FunctionBody body;
+    private final boolean[] tailCallFunctions;
+    private final boolean[] tailCallTypes;
     private final List<Integer> slots;
     private final int memorySlot;
     private final int instanceSlot;
@@ -45,6 +47,8 @@ final class Context {
             int funcId,
             FunctionType type,
             FunctionBody body,
+            boolean[] tailCallFunctions,
+            boolean[] tailCallTypes,
             IntFunction<String> callIndirectClassResolver,
             int maxTempSlots) {
         this.module = module;
@@ -55,6 +59,8 @@ final class Context {
         this.funcId = funcId;
         this.type = type;
         this.body = body;
+        this.tailCallFunctions = tailCallFunctions;
+        this.tailCallTypes = tailCallTypes;
         this.callIndirectClassResolver = callIndirectClassResolver;
 
         // compute JVM slot indices for WASM locals
@@ -136,6 +142,14 @@ final class Context {
 
     public FunctionBody getBody() {
         return body;
+    }
+
+    public boolean needsTailCallCheck(int funcId) {
+        return funcId >= 0 && funcId < tailCallFunctions.length && tailCallFunctions[funcId];
+    }
+
+    public boolean needsTailCallCheckForType(int typeId) {
+        return typeId >= 0 && typeId < tailCallTypes.length && tailCallTypes[typeId];
     }
 
     public int localSlotIndex(int localIndex) {

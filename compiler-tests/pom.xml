@@ -280,7 +280,6 @@
             <wast>utf8-invalid-encoding.wast</wast>
           </includedWasts>
           <!-- Skip Binary as there is a THROW_REF in a Global initializer -->
-          <!-- Skip stack-overflows in tail calls -->
           <excludedTests>
             SpecV1BinaryTest.test40,
             SpecV1DataTest.test10,
@@ -291,33 +290,6 @@
             SpecV1GlobalTest.test77,
             <!-- GC: matches interpreter exclusion -->
             SpecV1GcElemTest.test103,
-            <!-- GC: tail call not supported in compiler -->
-            SpecV1GcReturnCallIndirectTest.test40,
-            SpecV1GcReturnCallIndirectTest.test41,
-            SpecV1GcReturnCallIndirectTest.test46,
-            SpecV1GcReturnCallIndirectTest.test47,
-            SpecV1GcReturnCallRefTest.test20,
-            SpecV1GcReturnCallRefTest.test25,
-            SpecV1GcReturnCallRefTest.test26,
-            SpecV1GcReturnCallRefTest.test31,
-            SpecV1GcReturnCallRefTest.test32,
-            SpecV1GcReturnCallTest.test19,
-            SpecV1GcReturnCallTest.test24,
-            SpecV1GcReturnCallTest.test25,
-            SpecV1GcReturnCallTest.test30,
-            SpecV1GcReturnCallTest.test31,
-            SpecV1TailCallReturnCallTest.test19,
-            SpecV1TailCallReturnCallTest.test24,
-            SpecV1TailCallReturnCallTest.test25,
-            SpecV1TailCallReturnCallTest.test30,
-            SpecV1TailCallReturnCallTest.test31,
-            SpecV1TailCallReturnCallIndirectTest.test40,
-            SpecV1TailCallReturnCallIndirectTest.test41,
-            SpecV1TailCallReturnCallIndirectTest.test46,
-            SpecV1TailCallReturnCallIndirectTest.test47,
-            <!-- Skip exception tests with tail calls -->
-            SpecV1ExceptionHandlingTryTableTest.test39,
-            SpecV1ExceptionHandlingTryTableTest.test40,
             <!-- Investigate why this one fails -->
             SpecV1EhBinaryTest.test40,
             <!-- Testing an old behavior around multiple tables -->

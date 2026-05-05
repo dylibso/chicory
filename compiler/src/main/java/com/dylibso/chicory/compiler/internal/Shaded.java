@@ -9,6 +9,7 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.MemCopyWorkaround;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
+import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.WasmArray;
 import com.dylibso.chicory.runtime.WasmException;
@@ -45,6 +46,39 @@ public final class Shaded {
     public static long[] callHostFunction(Instance instance, int funcId, long[] args) {
         var imprt = instance.imports().function(funcId);
         return imprt.handle().apply(instance, args);
+    }
+
+    public static void setTailCall(int funcId, long[] args, Instance instance) {
+        instance.setTailCall(funcId, args);
+    }
+
+    public static void setTailCallIndirect(
+            long[] args, int funcTableIdx, int typeId, int tableIdx, Instance instance) {
+        TableInstance table = instance.table(tableIdx);
+        int funcId = table.requiredRef(funcTableIdx);
+        Instance refInstance = table.instance(funcTableIdx);
+        if (refInstance != null && refInstance != instance) {
+            throw new ChicoryException(
+                    "Indirect tail-call to a different Machine implementation is not supported");
+        }
+        int actualTypeIdx = instance.functionType(funcId);
+        if (actualTypeIdx != typeId
+                && !ValType.heapTypeSubtype(
+                        actualTypeIdx, typeId, instance.module().typeSection())) {
+            throw throwIndirectCallTypeMismatch();
+        }
+        instance.setTailCall(funcId, args);
+    }
+
+    public static boolean isTailCallPending(Instance instance) {
+        return instance.isTailCallPending();
+    }
+
+    public static long[] resolveTailCall(Instance instance) {
+        int funcId = instance.tailCallFuncId();
+        long[] args = instance.tailCallArgs();
+        instance.clearTailCall();
+        return instance.getMachine().call(funcId, args);
     }
 
     public static boolean isRefNull(int ref) {

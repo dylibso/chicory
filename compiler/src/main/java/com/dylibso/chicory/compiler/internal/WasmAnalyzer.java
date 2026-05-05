@@ -61,6 +61,8 @@ final class WasmAnalyzer {
     private final List<FunctionType> functionTypes;
     private final List<ValType> tableTypes;
     private final int functionImports;
+    private final boolean[] tailCallFunctions;
+    private final boolean hasTailCalls;
 
     public WasmAnalyzer(WasmModule module) {
         this.module = module;
@@ -68,6 +70,8 @@ final class WasmAnalyzer {
         this.functionTypes = getFunctionTypes(module);
         this.tableTypes = getTableTypes(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.tailCallFunctions = scanTailCallFunctions();
+        this.hasTailCalls = anyTrue(tailCallFunctions);
     }
 
     public List<ValType> globalTypes() {
@@ -76,6 +80,82 @@ final class WasmAnalyzer {
 
     public List<FunctionType> functionTypes() {
         return functionTypes;
+    }
+
+    public boolean[] tailCallFunctions() {
+        return tailCallFunctions;
+    }
+
+    public boolean[] tailCallTypes() {
+        var types = module.typeSection().types();
+        var result = new boolean[types.length];
+        for (int funcId = 0; funcId < tailCallFunctions.length; funcId++) {
+            if (!tailCallFunctions[funcId]) {
+                continue;
+            }
+            int funcTypeId = functionTypeIndex(funcId);
+            for (int typeId = 0; typeId < types.length; typeId++) {
+                if (types[typeId] == null) {
+                    continue;
+                }
+                if (funcTypeId == typeId
+                        || ValType.heapTypeSubtype(funcTypeId, typeId, module.typeSection())) {
+                    result[typeId] = true;
+                }
+            }
+        }
+        return result;
+    }
+
+    public boolean hasTailCalls() {
+        return hasTailCalls;
+    }
+
+    private boolean[] scanTailCallFunctions() {
+        int totalFunctions = functionImports + module.functionSection().functionCount();
+        boolean[] result = new boolean[totalFunctions];
+        int funcCount = module.functionSection().functionCount();
+        for (int i = 0; i < funcCount; i++) {
+            FunctionBody body = module.codeSection().getFunctionBody(i);
+            int exitBlockDepth = -1;
+            for (AnnotatedInstruction ins : body.instructions()) {
+                if (exitBlockDepth >= 0) {
+                    if (ins.depth() > exitBlockDepth
+                            || (ins.opcode() != OpCode.ELSE && ins.opcode() != OpCode.END)) {
+                        continue;
+                    }
+                    exitBlockDepth = -1;
+                }
+                switch (ins.opcode()) {
+                    case RETURN_CALL:
+                    case RETURN_CALL_INDIRECT:
+                    case RETURN_CALL_REF:
+                        result[functionImports + i] = true;
+                        break;
+                    case UNREACHABLE:
+                    case BR:
+                    case BR_TABLE:
+                    case RETURN:
+                        exitBlockDepth = ins.depth();
+                        break;
+                    default:
+                        break;
+                }
+                if (result[functionImports + i]) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static boolean anyTrue(boolean[] array) {
+        for (boolean b : array) {
+            if (b) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static class TryCatchBlock {
@@ -221,44 +301,33 @@ final class WasmAnalyzer {
                                     CompilerOpCode.RETURN, ids(functionType.returns())));
                     break;
                 case RETURN_CALL:
-                    // The JVM does not support proper tail calls, so we desugar RETURN_CALL
-                    // into a CALL + RETURN.
-
-                    // [p*] -> [r*]
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.of(OpCode.CALL), ins.operands()));
-                    updateStack(stack, functionTypes.get((int) ins.operand(0)));
-
-                    exitBlockDepth = ins.depth();
-                    for (var type : reversed(functionType.returns())) {
-                        stack.pop(type);
+                    {
+                        int calleeId = (int) ins.operand(0);
+                        FunctionType calleeType = functionTypes.get(calleeId);
+                        for (var type : reversed(calleeType.params())) {
+                            stack.pop(type);
+                        }
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.RETURN_CALL, ins.operands()));
+                        exitBlockDepth = ins.depth();
+                        break;
                     }
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.RETURN, ids(functionType.returns())));
-                    break;
 
                 case RETURN_CALL_INDIRECT:
-                    // The JVM does not support proper tail calls, so we desugar
-                    // RETURN_CALL_INDIRECT into a CALL_INDIRECT + RETURN.
-
-                    // [p* I32] -> [r*]
-                    stack.pop(ValType.I32);
-                    updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.of(OpCode.CALL_INDIRECT), ins.operands()));
-
-                    exitBlockDepth = ins.depth();
-                    for (var type : reversed(functionType.returns())) {
-                        stack.pop(type);
+                    {
+                        stack.pop(ValType.I32);
+                        FunctionType calleeType =
+                                module.typeSection().getType((int) ins.operand(0));
+                        for (var type : reversed(calleeType.params())) {
+                            stack.pop(type);
+                        }
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.RETURN_CALL_INDIRECT, ins.operands()));
+                        exitBlockDepth = ins.depth();
+                        break;
                     }
-
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.RETURN, ids(functionType.returns())));
-                    break;
 
                 case IF:
                     stack.pop(ValType.I32);
@@ -436,21 +505,16 @@ final class WasmAnalyzer {
                     }
                 case RETURN_CALL_REF:
                     {
-                        // Desugar into CALL_REF + RETURN
                         stack.popRef(); // funcref
                         int typeIdx = (int) ins.operand(0);
                         var callRefType = module.typeSection().getType(typeIdx);
-                        updateStack(stack, callRefType);
-                        result.add(
-                                new CompilerInstruction(CompilerOpCode.CALL_REF, ins.operands()));
-
-                        exitBlockDepth = ins.depth();
-                        for (var type : reversed(functionType.returns())) {
+                        for (var type : reversed(callRefType.params())) {
                             stack.pop(type);
                         }
                         result.add(
                                 new CompilerInstruction(
-                                        CompilerOpCode.RETURN, ids(functionType.returns())));
+                                        CompilerOpCode.RETURN_CALL_REF, ins.operands()));
+                        exitBlockDepth = ins.depth();
                         break;
                     }
                 case BR_ON_NULL:
@@ -748,6 +812,35 @@ final class WasmAnalyzer {
                                                     .mapToInt(CompilerUtil::slotCount)
                                                     .sum());
                         }
+                        max = Math.max(max, slots);
+                        break;
+                    }
+                case RETURN_CALL_INDIRECT:
+                    {
+                        // paramSlots for boxing + 1 for funcTableIdx saved beyond boxing area
+                        var type = module.typeSection().getType((int) ins.operand(0));
+                        int slots =
+                                type.params().stream().mapToInt(CompilerUtil::slotCount).sum() + 1;
+                        max = Math.max(max, slots);
+                        break;
+                    }
+                case RETURN_CALL_REF:
+                    {
+                        // paramSlots for boxing + 1 for funcref saved beyond boxing area
+                        var type = module.typeSection().getType((int) ins.operand(0));
+                        int slots =
+                                type.params().stream().mapToInt(CompilerUtil::slotCount).sum() + 1;
+                        max = Math.max(max, slots);
+                        break;
+                    }
+                case RETURN_CALL:
+                    {
+                        // paramSlots for boxing
+                        var calleeType = functionTypes.get((int) ins.operand(0));
+                        int slots =
+                                calleeType.params().stream()
+                                        .mapToInt(CompilerUtil::slotCount)
+                                        .sum();
                         max = Math.max(max, slots);
                         break;
                     }
