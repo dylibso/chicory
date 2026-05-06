@@ -100,7 +100,17 @@ public final class Compiler {
     private static final MethodType MACHINE_CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, int.class, long[].class);
 
-    private static final int MAX_MACHINE_CALL_METHODS = 1024; // must be power of two
+    // C2 JIT's HugeMethodLimit (default 8KB) — methods exceeding this get degraded optimization.
+    // Dispatch chunks are sized to stay under this limit for full C2 compilation.
+    private static final int HUGE_METHOD_LIMIT =
+            Integer.getInteger("chicory.hugeMethodLimit", 8000);
+    // Estimated upper bound: tableswitch offset (4) + label + invokestatic (~5) + areturn (1) +
+    // overhead
+    private static final int ESTIMATED_BYTES_PER_DISPATCH_ENTRY = 40;
+    private static final int MAX_DISPATCH_METHODS =
+            Integer.highestOneBit(
+                    HUGE_METHOD_LIMIT / ESTIMATED_BYTES_PER_DISPATCH_ENTRY); // must be power of two
+    private static final int MAX_CALL_INDIRECT_METHODS = 1024; // must be power of two
     // 1024*12 was empirically determined to work for the 50K small wasm functions.
     // So lets start there and halve it until we find a size that works.
     // This should give us the biggest class size possible.
@@ -874,11 +884,11 @@ public final class Compiler {
 
         // static implementation for Machine.call()
         Consumer<InstructionAdapter> callMethod;
-        if (functionTypes.size() < MAX_MACHINE_CALL_METHODS) {
+        if (functionTypes.size() < MAX_DISPATCH_METHODS) {
             callMethod = asm -> compileMachineCallInvoke(asm, 0, functionTypes.size());
         } else {
             // Best value that worked with the 50K small wasm functions
-            var maxMachineCallMethods = MAX_MACHINE_CALL_METHODS << 2;
+            var maxMachineCallMethods = MAX_DISPATCH_METHODS << 2;
             maxMachineCallMethods =
                     loadChunkedClass(
                             functionTypes.size(),
@@ -1135,7 +1145,7 @@ public final class Compiler {
         asm.load(instance, OBJECT_TYPE);
 
         // Can we fit the impl in a single method?
-        if (validIds.size() <= MAX_MACHINE_CALL_METHODS) {
+        if (validIds.size() <= MAX_CALL_INDIRECT_METHODS) {
 
             int[] keys = validIds.stream().mapToInt(x -> x).toArray();
             Label[] labels = validIds.stream().map(x -> new Label()).toArray(Label[]::new);
@@ -1162,10 +1172,10 @@ public final class Compiler {
                             .appendParameterTypes(Memory.class, Instance.class, int.class);
 
             // Best value that worked with the 50K small wasm functions
-            var maxMachineCallMethods = MAX_MACHINE_CALL_METHODS << 2;
+            var maxCallIndirectMethods = MAX_CALL_INDIRECT_METHODS << 2;
             loadChunkedClass(
                     functionTypes.size(),
-                    maxMachineCallMethods,
+                    maxCallIndirectMethods,
                     (collector, start, end, chunkSize) ->
                             compileExtraClass(
                                     collector,
@@ -1186,8 +1196,8 @@ public final class Compiler {
                                                                 end));
                                     }));
 
-            assert Integer.bitCount(maxMachineCallMethods) == 1; // power of two
-            int shift = Integer.numberOfTrailingZeros(maxMachineCallMethods);
+            assert Integer.bitCount(maxCallIndirectMethods) == 1; // power of two
+            int shift = Integer.numberOfTrailingZeros(maxCallIndirectMethods);
 
             // switch (funcId >> shift)
             Label[] labels = new Label[((functionTypes.size() - 1) >> shift) + 1];
