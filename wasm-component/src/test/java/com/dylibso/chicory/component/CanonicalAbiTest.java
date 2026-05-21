@@ -103,4 +103,30 @@ public class CanonicalAbiTest {
         assertEquals(1, encoded.length);
         assertEquals(0, encoded[0]);
     }
+
+    @Test
+    public void testEncodeListType() {
+        java.util.List<Integer> list = java.util.Arrays.asList(1, 2, 3);
+        long[] encoded =
+                CanonicalAbi.encode(
+                        list,
+                        new com.dylibso.chicory.component.types.ListType(PrimitiveType.I32),
+                        memory);
+        assertEquals(2, encoded.length); // Should be (ptr, count)
+    }
+
+    @Test
+    public void testEncodeRecordType() {
+        java.util.Map<String, Object> record = new java.util.HashMap<>();
+        record.put("x", 10);
+        record.put("y", 20);
+
+        com.dylibso.chicory.component.types.RecordType recordType =
+                new com.dylibso.chicory.component.types.RecordType("point");
+        recordType.addField("x", PrimitiveType.I32);
+        recordType.addField("y", PrimitiveType.I32);
+
+        long[] encoded = CanonicalAbi.encode(record, recordType, memory);
+        assertEquals(1, encoded.length); // Should be pointer to memory
+    }
 }

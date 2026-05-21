@@ -168,11 +168,61 @@ public class WitParser {
             return new ListType(elementType);
         }
 
+        // Check for inline record type
+        if (typeStr.startsWith("record") && typeStr.contains("{")) {
+            int openBrace = typeStr.indexOf('{');
+            int closeBrace = typeStr.lastIndexOf('}');
+            if (openBrace >= 0 && closeBrace > openBrace) {
+                String fieldsStr = typeStr.substring(openBrace + 1, closeBrace);
+                RecordType record = new RecordType("anonymous");
+                parseRecordFields(fieldsStr, definition, record);
+                return record;
+            }
+        }
+
+        // Check for inline variant type
+        if (typeStr.startsWith("variant") && typeStr.contains("{")) {
+            int openBrace = typeStr.indexOf('{');
+            int closeBrace = typeStr.lastIndexOf('}');
+            if (openBrace >= 0 && closeBrace > openBrace) {
+                String casesStr = typeStr.substring(openBrace + 1, closeBrace);
+                VariantType variant = new VariantType("anonymous");
+                parseVariantCases(casesStr, definition, variant);
+                return variant;
+            }
+        }
+
         // Check for registered custom type
         final String finalTypeStr = typeStr;
         return definition
                 .typeRegistry()
                 .lookup(finalTypeStr)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown type: " + finalTypeStr));
+    }
+
+    private void parseRecordFields(
+            String fieldsStr, ComponentDefinition definition, RecordType record) {
+        // Parse "x: i32, y: i32" into fields
+        String[] fieldParts = fieldsStr.split(",");
+        for (String fieldPart : fieldParts) {
+            String field = fieldPart.trim();
+            Matcher fieldMatcher = FUNCTION_PARAM_PATTERN.matcher(field);
+            if (fieldMatcher.find()) {
+                String fieldName = fieldMatcher.group(1);
+                String fieldType = fieldMatcher.group(2);
+                WitType type = parseType(fieldType, definition);
+                record.addField(fieldName, type);
+            }
+        }
+    }
+
+    private void parseVariantCases(
+            String casesStr, ComponentDefinition definition, VariantType variant) {
+        // Parse variant cases (simplified: no payloads for now)
+        String[] caseParts = casesStr.split(",");
+        for (String casePart : caseParts) {
+            String caseName = casePart.trim();
+            variant.addCase(caseName, java.util.Optional.empty());
+        }
     }
 }
