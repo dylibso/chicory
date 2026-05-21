@@ -16,26 +16,11 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>log</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>annotations</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <!-- fake dependency for reactor build order -->
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>annotations-processor</artifactId>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
