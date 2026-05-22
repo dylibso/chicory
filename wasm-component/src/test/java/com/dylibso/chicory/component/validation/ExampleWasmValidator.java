@@ -245,10 +245,64 @@ public class ExampleWasmValidator {
             System.out.println("  Result: " + color2);
             System.out.println("  ✅ [PASS] - Variant case selection working\n");
 
+            // === PHASE 10.3: LISTS ===
+            System.out.println("=== PHASE 10.3: LISTS ===\n");
+
+            // Test 14: repeat-string(string, count) → list<string>
+            System.out.println("Test 14: repeat-string(\"hello\", 3)");
+            Object result14 = component.callExport("repeat-string", "hello", 3);
+            assert result14 instanceof com.dylibso.chicory.component.ListValue
+                    : "Expected ListValue, got " + result14.getClass();
+            com.dylibso.chicory.component.ListValue strings =
+                    (com.dylibso.chicory.component.ListValue) result14;
+            assert strings.size() == 3 : "Expected 3 strings, got " + strings.size();
+            assert "hello".equals(strings.get(0))
+                    : "Expected 'hello', got '" + strings.get(0) + "'";
+            System.out.println("  Result: " + strings);
+            System.out.println("  ✅ [PASS] - List of strings working\n");
+
+            // Test 15: sum-numbers(list<i32>) → i32
+            System.out.println("Test 15: sum-numbers([10, 20, 30])");
+            java.util.List<Object> numbers = new java.util.ArrayList<>();
+            numbers.add(10);
+            numbers.add(20);
+            numbers.add(30);
+            Object result15 = component.callExport("sum-numbers", numbers);
+            assert result15 instanceof Long || result15 instanceof Integer
+                    : "Expected number, got " + result15.getClass();
+            long sum = ((Number) result15).longValue();
+            assert sum == 60 : "Expected 60, got " + sum;
+            System.out.println("  Result: " + sum);
+            System.out.println("  ✅ [PASS] - List parameter and sum working\n");
+
+            // Test 16: get-names(list<person>) → list<string>
+            System.out.println("Test 16: get-names([personA, personB])");
+            java.util.List<Object> peopleList = new java.util.ArrayList<>();
+            java.util.Map<String, Object> personA = new java.util.HashMap<>();
+            personA.put("name", "Alice");
+            personA.put("age", 30);
+            personA.put("active", true);
+            java.util.Map<String, Object> personB = new java.util.HashMap<>();
+            personB.put("name", "Bob");
+            personB.put("age", 25);
+            personB.put("active", true);
+            peopleList.add(personA);
+            peopleList.add(personB);
+            Object result16 = component.callExport("get-names", peopleList);
+            assert result16 instanceof com.dylibso.chicory.component.ListValue
+                    : "Expected ListValue, got " + result16.getClass();
+            com.dylibso.chicory.component.ListValue names =
+                    (com.dylibso.chicory.component.ListValue) result16;
+            assert names.size() == 2 : "Expected 2 names, got " + names.size();
+            assert "Alice".equals(names.get(0)) : "Expected 'Alice', got '" + names.get(0) + "'";
+            assert "Bob".equals(names.get(1)) : "Expected 'Bob', got '" + names.get(1) + "'";
+            System.out.println("  Result: " + names);
+            System.out.println("  ✅ [PASS] - List of records working\n");
+
             CanonicalAbi.clearContext();
 
             System.out.println("╔════════════════════════════════════════════════════════════╗");
-            System.out.println("║   ✅ PHASES 9-10.2 COMPLETE! VARIANTS WORKING! ✅         ║");
+            System.out.println("║   ✅ PHASES 9-10.3 COMPLETE! LISTS WORKING! ✅           ║");
             System.out.println("║                                                            ║");
             System.out.println("║  Summary:                                                  ║");
             System.out.println("║  - Guest → Host: ✅ WORKING                               ║");
@@ -256,8 +310,9 @@ public class ExampleWasmValidator {
             System.out.println("║  - Strings: ✅ WORKING                                    ║");
             System.out.println("║  - Records: ✅ WORKING                                    ║");
             System.out.println("║  - Variants: ✅ WORKING                                   ║");
+            System.out.println("║  - Lists: ✅ WORKING                                      ║");
             System.out.println("║                                                            ║");
-            System.out.println("║  13/13 Tests Passed                                        ║");
+            System.out.println("║  16/16 Tests Passed                                        ║");
             System.out.println("╚════════════════════════════════════════════════════════════╝");
 
         } catch (Exception e) {

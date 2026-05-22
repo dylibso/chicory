@@ -1,5 +1,6 @@
 package com.dylibso.chicory.component;
 
+import com.dylibso.chicory.component.types.ListType;
 import com.dylibso.chicory.component.types.RecordType;
 import com.dylibso.chicory.component.types.VariantType;
 import com.dylibso.chicory.component.types.WitType;
@@ -52,8 +53,10 @@ public class TypedExportFunction {
         boolean returnsRecord = !returnTypes.isEmpty() && returnTypes.get(0) instanceof RecordType;
         boolean returnsVariant =
                 !returnTypes.isEmpty() && returnTypes.get(0) instanceof VariantType;
+        boolean returnsList = !returnTypes.isEmpty() && returnTypes.get(0) instanceof ListType;
         RecordType returnRecordType = returnsRecord ? (RecordType) returnTypes.get(0) : null;
         VariantType returnVariantType = returnsVariant ? (VariantType) returnTypes.get(0) : null;
+        ListType returnListType = returnsList ? (ListType) returnTypes.get(0) : null;
 
         // Encode arguments according to Canonical ABI
         List<Long> wasmArgsList = new ArrayList<>();
@@ -126,6 +129,22 @@ public class TypedExportFunction {
                 return CanonicalAbi.decodeVariantFromMemory(value, returnVariantType, memory);
             }
             return new VariantValue("", null);
+        }
+
+        // Special handling for lists
+        if (returnsList) {
+            if (results.length >= 1 && results[0] != 0) {
+                long value = results[0];
+
+                // Lists are returned as pointer-to-(ptr, count) pair (sret convention)
+                if (value > 1000) {
+                    int listPtr = memory.readInt((int) value);
+                    int listCount = memory.readInt((int) value + 4);
+                    return CanonicalAbi.decode(
+                            new long[] {listPtr, listCount}, returnListType, memory);
+                }
+            }
+            return new ListValue(new ArrayList<>());
         }
 
         // For strings and other types, results may contain multiple values

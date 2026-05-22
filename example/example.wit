@@ -38,6 +38,11 @@ world example {
   export get-result: func() -> operation-result;
   export pick-color: func(index: s32) -> color;
   
+  // Exports that test list support
+  export repeat-string: func(text: string, count: s32) -> list<string>;
+  export sum-numbers: func(numbers: list<s32>) -> s32;
+  export get-names: func(people: list<person>) -> list<string>;
+  
   // Imports: Functions guest needs from host
   import host-log: func(msg: string);
   import host-get-input: func() -> string;

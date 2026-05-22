@@ -60,4 +60,16 @@ impl Guest for Example {
             _ => Color::Blue,
         }
     }
+
+    fn repeat_string(text: String, count: i32) -> Vec<String> {
+        (0..count).map(|_| text.clone()).collect()
+    }
+
+    fn sum_numbers(numbers: Vec<i32>) -> i32 {
+        numbers.iter().sum()
+    }
+
+    fn get_names(people: Vec<Person>) -> Vec<String> {
+        people.iter().map(|p| p.name.clone()).collect()
+    }
 }

@@ -291,64 +291,262 @@ public class CanonicalAbi {
             return new long[] {0, 0};
         }
 
+        java.util.List<?> list = null;
+
         if (value instanceof java.util.List) {
-            java.util.List<?> list = (java.util.List<?>) value;
-            ExportFunction realloc = REALLOC_CONTEXT.get();
-
-            if (realloc != null) {
-                int elementSize = 8;
-                int totalSize = list.size() * elementSize;
-
-                long[] result = realloc.apply(0, 0, 8, totalSize);
-                long ptr = result[0];
-                long count = list.size() & 0xFFFFFFFFL;
-
-                return new long[] {ptr, count};
-            } else {
-                long count = list.size() & 0xFFFFFFFFL;
-                return new long[] {0, count};
-            }
+            list = (java.util.List<?>) value;
+        } else if (value instanceof Object[]) {
+            list = java.util.Arrays.asList((Object[]) value);
+        } else if (value instanceof ListValue) {
+            list = ((ListValue) value).elements();
+        } else {
+            throw new IllegalArgumentException("Cannot encode list from: " + value.getClass());
         }
 
-        if (value instanceof Object[]) {
-            Object[] arr = (Object[]) value;
-            ExportFunction realloc = REALLOC_CONTEXT.get();
-
-            if (realloc != null) {
-                int elementSize = 8;
-                int totalSize = arr.length * elementSize;
-
-                long[] result = realloc.apply(0, 0, 8, totalSize);
-                long ptr = result[0];
-                long count = arr.length & 0xFFFFFFFFL;
-
-                return new long[] {ptr, count};
-            } else {
-                long count = arr.length & 0xFFFFFFFFL;
-                return new long[] {0, count};
-            }
+        if (list.isEmpty()) {
+            return new long[] {0, 0};
         }
 
-        throw new IllegalArgumentException("Cannot encode list from: " + value.getClass());
+        WitType elementType = type.elementType();
+        ExportFunction realloc = REALLOC_CONTEXT.get();
+
+        if (realloc == null) {
+            // Without realloc, can't allocate memory
+            return new long[] {0, list.size() & 0xFFFFFFFFL};
+        }
+
+        // Calculate element size based on type
+        int elementSize = calculateElementSize(elementType);
+        int totalSize = list.size() * elementSize;
+
+        // Allocate memory for all elements
+        long[] allocResult = realloc.apply(0, 0, elementSize, totalSize);
+        long ptr = allocResult[0];
+
+        // Encode each element into memory
+        for (int i = 0; i < list.size(); i++) {
+            Object element = list.get(i);
+            long offset = ptr + (i * elementSize);
+            encodeElementToMemory(element, elementType, offset, elementSize, memory);
+        }
+
+        return new long[] {ptr, list.size() & 0xFFFFFFFFL};
     }
 
     private static Object decodeList(long[] encoded, ListType type, Memory memory) {
         if (encoded.length < 2 || (encoded[0] == 0 && encoded[1] == 0)) {
-            return new java.util.ArrayList<>();
+            return new ListValue(new java.util.ArrayList<>());
         }
 
         int ptr = (int) encoded[0];
         int count = (int) encoded[1];
 
         if (count <= 0) {
-            return new java.util.ArrayList<>();
+            return new ListValue(new java.util.ArrayList<>());
         }
 
+        WitType elementType = type.elementType();
+        int elementSize = calculateElementSize(elementType);
         java.util.List<Object> result = new java.util.ArrayList<>();
+
         for (int i = 0; i < count; i++) {
-            result.add(null);
+            long offset = ptr + (i * elementSize);
+            Object element = decodeElementFromMemory(elementType, offset, elementSize, memory);
+            result.add(element);
         }
-        return result;
+
+        return new ListValue(result);
+    }
+
+    /**
+     * Calculate the byte size of an element based on its type.
+     */
+    private static int calculateElementSize(WitType elementType) {
+        if (elementType instanceof PrimitiveType) {
+            switch ((PrimitiveType) elementType) {
+                case I32:
+                case F32:
+                    return 4;
+                case I64:
+                case F64:
+                    return 8;
+                case BOOL:
+                case CHAR:
+                    return 1;
+                case STRING:
+                    // Strings are (ptr, len) pairs = 8 bytes each
+                    return 8;
+                default:
+                    return 8;
+            }
+        } else if (elementType instanceof RecordType) {
+            // Records have fixed size based on their layout
+            RecordLayout layout = new RecordLayout((RecordType) elementType);
+            return layout.getRecordSize();
+        } else if (elementType instanceof VariantType) {
+            // Variants: discriminant (4) + max payload size
+            // For simplicity, use 8 bytes (discriminant + one i64)
+            return 8;
+        } else if (elementType instanceof ListType) {
+            // Lists are (ptr, count) = 8 bytes
+            return 8;
+        }
+        return 8; // Default
+    }
+
+    /**
+     * Encode a single list element into memory at a given offset.
+     */
+    private static void encodeElementToMemory(
+            Object element, WitType elementType, long offset, int elementSize, Memory memory) {
+        if (elementType instanceof PrimitiveType) {
+            encodePrimitiveToMemory(element, (PrimitiveType) elementType, offset, memory);
+        } else if (elementType instanceof RecordType) {
+            encodeRecordToMemory(element, (RecordType) elementType, offset, memory);
+        } else if (elementType instanceof VariantType) {
+            encodeVariantToMemory(element, (VariantType) elementType, offset, memory);
+        } else if (elementType instanceof ListType) {
+            encodeListToMemory(element, (ListType) elementType, offset, memory);
+        }
+    }
+
+    /**
+     * Decode a single list element from memory at a given offset.
+     */
+    private static Object decodeElementFromMemory(
+            WitType elementType, long offset, int elementSize, Memory memory) {
+        if (elementType instanceof PrimitiveType) {
+            return decodePrimitiveFromMemory((PrimitiveType) elementType, (int) offset, memory);
+        } else if (elementType instanceof RecordType) {
+            return decodeRecordFromMemory(offset, (RecordType) elementType, memory);
+        } else if (elementType instanceof VariantType) {
+            return decodeVariantFromMemory(offset, (VariantType) elementType, memory);
+        } else if (elementType instanceof ListType) {
+            return decodeListFromMemory((int) offset, (ListType) elementType, memory);
+        }
+        return null;
+    }
+
+    private static void encodePrimitiveToMemory(
+            Object value, PrimitiveType type, long offset, Memory memory) {
+        switch (type) {
+            case I32:
+                memory.writeI32((int) offset, ((Number) value).intValue());
+                break;
+            case I64:
+                memory.writeLong((int) offset, ((Number) value).longValue());
+                break;
+            case F32:
+                memory.writeF32((int) offset, ((Number) value).floatValue());
+                break;
+            case F64:
+                memory.writeF64((int) offset, ((Number) value).doubleValue());
+                break;
+            case BOOL:
+                memory.writeByte((int) offset, (byte) (((Boolean) value) ? 1 : 0));
+                break;
+            case CHAR:
+                memory.writeByte((int) offset, (byte) ((Character) value).charValue());
+                break;
+            case STRING:
+                if (value instanceof String) {
+                    byte[] bytes = ((String) value).getBytes(StandardCharsets.UTF_8);
+                    ExportFunction realloc = REALLOC_CONTEXT.get();
+                    if (realloc != null) {
+                        long[] result = realloc.apply(0, 0, 1, bytes.length);
+                        long ptr = result[0];
+                        memory.write((int) ptr, bytes);
+                        memory.writeI32((int) offset, (int) ptr);
+                        memory.writeI32((int) offset + 4, bytes.length);
+                    }
+                }
+                break;
+        }
+    }
+
+    private static Object decodePrimitiveFromMemory(PrimitiveType type, int offset, Memory memory) {
+        switch (type) {
+            case I32:
+                return memory.readInt(offset);
+            case I64:
+                return memory.readLong(offset);
+            case F32:
+                return memory.readFloat(offset);
+            case F64:
+                return memory.readDouble(offset);
+            case BOOL:
+                return memory.read(offset) != 0;
+            case CHAR:
+                return (char) memory.read(offset);
+            case STRING:
+                int ptr = memory.readInt(offset);
+                int len = memory.readInt(offset + 4);
+                return memory.readString(ptr, len);
+            default:
+                return null;
+        }
+    }
+
+    private static void encodeRecordToMemory(
+            Object element, RecordType recordType, long offset, Memory memory) {
+        // For records in lists, we need to encode the record data directly at the offset
+        // This is similar to record layout encoding
+        if (element instanceof java.util.Map) {
+            java.util.Map<?, ?> map = (java.util.Map<?, ?>) element;
+            RecordLayout layout = new RecordLayout(recordType);
+            for (RecordLayout.FieldLayout field : layout.getFieldLayouts()) {
+                Object fieldValue = map.get(field.name);
+                long fieldOffset = offset + field.offset;
+                int fieldSize = RecordLayout.getTypeSize(field.type);
+                encodeElementToMemory(fieldValue, field.type, fieldOffset, fieldSize, memory);
+            }
+        }
+    }
+
+    private static void encodeVariantToMemory(
+            Object element, VariantType variantType, long offset, Memory memory) {
+        // For variants in lists, encode discriminant + data
+        if (element instanceof VariantValue) {
+            VariantValue variant = (VariantValue) element;
+            java.util.List<VariantType.Case> cases = variantType.cases();
+
+            // Find discriminant for this case
+            int discriminant = -1;
+            VariantType.Case caseInfo = null;
+            for (int i = 0; i < cases.size(); i++) {
+                if (cases.get(i).name.equals(variant.caseName())) {
+                    discriminant = i;
+                    caseInfo = cases.get(i);
+                    break;
+                }
+            }
+
+            if (discriminant >= 0) {
+                // Write discriminant
+                memory.writeI32((int) offset, discriminant);
+
+                // Write data if present
+                if (caseInfo.type.isPresent() && variant.data() != null) {
+                    int dataSize = RecordLayout.getTypeSize(caseInfo.type.get());
+                    encodeElementToMemory(
+                            variant.data(), caseInfo.type.get(), offset + 4, dataSize, memory);
+                }
+            }
+        }
+    }
+
+    private static void encodeListToMemory(
+            Object element, ListType listType, long offset, Memory memory) {
+        // For lists in lists, encode as (ptr, count)
+        long[] encoded = encodeList(element, listType, memory);
+        memory.writeI32((int) offset, (int) encoded[0]);
+        memory.writeI32((int) offset + 4, (int) encoded[1]);
+    }
+
+    private static Object decodeListFromMemory(int offset, ListType listType, Memory memory) {
+        int ptr = memory.readInt(offset);
+        int count = memory.readInt(offset + 4);
+        return decodeList(new long[] {ptr, count}, listType, memory);
     }
 
     private static long[] encodeRecord(Object value, RecordType type, Memory memory) {
