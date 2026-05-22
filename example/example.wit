@@ -8,6 +8,10 @@ world example {
   export greet: func(name: string) -> string;
   export process-text: func(text: string) -> string;
   
+  // New: Exports that test calling imported functions
+  export test-host-call-log: func(msg: string);
+  export test-host-call-get-input: func() -> string;
+  
   // Imports: Functions guest needs from host
   import host-log: func(msg: string);
   import host-get-input: func() -> string;

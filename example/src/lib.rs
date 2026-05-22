@@ -28,4 +28,12 @@ impl Guest for Example {
     fn process_text(text: String) -> String {
         text.to_uppercase()
     }
+
+    fn test_host_call_log(msg: String) {
+        host_log(&msg);
+    }
+
+    fn test_host_call_get_input() -> String {
+        host_get_input()
+    }
 }
