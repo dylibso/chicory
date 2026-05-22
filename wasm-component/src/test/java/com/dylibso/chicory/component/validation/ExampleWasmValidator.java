@@ -5,6 +5,9 @@ import com.dylibso.chicory.component.ComponentModel;
 import com.dylibso.chicory.component.HostFunctionProvider;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
+import com.example.generated.Color;
+import com.example.generated.OperationResult;
+import com.example.generated.Person;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -176,74 +179,65 @@ public class ExampleWasmValidator {
             // ===== RECORDS (Phase 10) =====
             System.out.println("=== PHASE 10: RECORDS ===\n");
 
-            // Test 9: describe-person with record parameter
+            // Test 9: describe-person with record parameter (using generated Person POJO)
             System.out.println("Test 9: describe-person(person)");
-            java.util.Map<String, Object> person1 = new java.util.HashMap<>();
-            person1.put("name", "Alice");
-            person1.put("age", 30);
-            person1.put("active", true);
+            Person person1 = new Person("Alice", 30, true);
             Object result9 = component.callExport("describe-person", person1);
             String expected9 = "Alice is 30 years old (active: true)";
             assert result9.equals(expected9)
                     : "Expected '" + expected9 + "', got '" + result9 + "'";
             System.out.println("  Result: " + result9);
-            System.out.println("  ✅ [PASS] - Record parameter working\n");
+            System.out.println("  ✅ [PASS] - Record parameter working (using Person POJO)\n");
 
-            // Test 10: create-person returning record
+            // Test 10: create-person returning record (returns Person POJO)
             System.out.println("Test 10: create-person(\"Bob\", 25)");
             Object result10 = component.callExport("create-person", "Bob", 25);
-            assert result10 instanceof java.util.Map : "Expected Map, got " + result10.getClass();
-            java.util.Map<String, Object> person2 = (java.util.Map<String, Object>) result10;
-            assert "Bob".equals(person2.get("name"))
-                    : "Expected name='Bob', got '" + person2.get("name") + "'";
-            assert 25 == (Integer) person2.get("age")
-                    : "Expected age=25, got " + person2.get("age");
-            assert true == (Boolean) person2.get("active")
-                    : "Expected active=true, got " + person2.get("active");
+            assert result10 instanceof Person : "Expected Person, got " + result10.getClass();
+            Person person2 = (Person) result10;
+            assert "Bob".equals(person2.getName())
+                    : "Expected name='Bob', got '" + person2.getName() + "'";
+            assert 25 == person2.getAge() : "Expected age=25, got " + person2.getAge();
+            assert true == person2.getActive() : "Expected active=true, got " + person2.getActive();
             System.out.println("  Result: " + person2);
-            System.out.println("  ✅ [PASS] - Record return value working\n");
+            System.out.println("  ✅ [PASS] - Record return value working (Person POJO)\n");
 
             // ===== VARIANTS (Phase 10.2) =====
             System.out.println("=== PHASE 10.2: VARIANTS ===\n");
 
-            // Test 11: get-result returning variant with data
+            // Test 11: get-result returning variant with data (using generated OperationResult
+            // POJO)
             System.out.println("Test 11: get-result()");
             Object result11 = component.callExport("get-result");
-            assert result11 instanceof com.dylibso.chicory.component.VariantValue
-                    : "Expected VariantValue, got " + result11.getClass();
-            com.dylibso.chicory.component.VariantValue variant1 =
-                    (com.dylibso.chicory.component.VariantValue) result11;
-            assert "ok".equals(variant1.caseName())
-                    : "Expected case='ok', got '" + variant1.caseName() + "'";
-            assert "Success!".equals(variant1.data())
-                    : "Expected data='Success!', got '" + variant1.data() + "'";
-            System.out.println("  Result: " + variant1);
-            System.out.println("  ✅ [PASS] - Variant with data working\n");
+            assert result11 instanceof OperationResult
+                    : "Expected OperationResult, got " + result11.getClass();
+            OperationResult result11Typed = (OperationResult) result11;
+            assert result11Typed instanceof OperationResult.Ok
+                    : "Expected Ok case, got " + result11Typed.getCaseName();
+            OperationResult.Ok okResult = (OperationResult.Ok) result11Typed;
+            assert "Success!".equals(okResult.value)
+                    : "Expected data='Success!', got '" + okResult.value + "'";
+            System.out.println("  Result: " + okResult);
+            System.out.println(
+                    "  ✅ [PASS] - Variant with data working (OperationResult.Ok POJO)\n");
 
-            // Test 12: pick-color returning variant without data
+            // Test 12: pick-color returning variant without data (using generated Color POJO)
             System.out.println("Test 12: pick-color(0)");
             Object result12 = component.callExport("pick-color", 0);
-            assert result12 instanceof com.dylibso.chicory.component.VariantValue
-                    : "Expected VariantValue, got " + result12.getClass();
-            com.dylibso.chicory.component.VariantValue color1 =
-                    (com.dylibso.chicory.component.VariantValue) result12;
-            assert "red".equals(color1.caseName())
-                    : "Expected case='red', got '" + color1.caseName() + "'";
-            assert color1.isEmpty() : "Expected empty variant, got data: " + color1.data();
+            assert result12 instanceof Color : "Expected Color, got " + result12.getClass();
+            Color color1 = (Color) result12;
+            assert color1 instanceof Color.Red : "Expected Red case, got " + color1.getCaseName();
             System.out.println("  Result: " + color1);
-            System.out.println("  ✅ [PASS] - Empty variant working\n");
+            System.out.println("  ✅ [PASS] - Empty variant working (Color.Red POJO)\n");
 
             // Test 13: pick-color with different index
             System.out.println("Test 13: pick-color(1)");
             Object result13 = component.callExport("pick-color", 1);
-            assert result13 instanceof com.dylibso.chicory.component.VariantValue
-                    : "Expected VariantValue, got " + result13.getClass();
-            com.dylibso.chicory.component.VariantValue color2 =
-                    (com.dylibso.chicory.component.VariantValue) result13;
-            assert "green".equals(color2.caseName())
-                    : "Expected case='green', got '" + color2.caseName() + "'";
+            assert result13 instanceof Color : "Expected Color, got " + result13.getClass();
+            Color color2 = (Color) result13;
+            assert color2 instanceof Color.Green
+                    : "Expected Green case, got " + color2.getCaseName();
             System.out.println("  Result: " + color2);
-            System.out.println("  ✅ [PASS] - Variant case selection working\n");
+            System.out.println("  ✅ [PASS] - Variant case selection working (Color.Green POJO)\n");
 
             // === PHASE 10.3: LISTS ===
             System.out.println("=== PHASE 10.3: LISTS ===\n");

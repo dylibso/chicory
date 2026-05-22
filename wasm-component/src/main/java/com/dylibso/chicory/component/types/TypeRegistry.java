@@ -1,6 +1,9 @@
 package com.dylibso.chicory.component.types;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -35,5 +38,35 @@ public class TypeRegistry {
 
     public boolean isDefined(String name) {
         return types.containsKey(name);
+    }
+
+    /**
+     * Get all record types registered in this registry.
+     *
+     * @return collection of all record types
+     */
+    public Collection<RecordType> getAllRecordTypes() {
+        List<RecordType> records = new ArrayList<>();
+        for (WitType type : types.values()) {
+            if (type instanceof RecordType) {
+                records.add((RecordType) type);
+            }
+        }
+        return records;
+    }
+
+    /**
+     * Get all variant types registered in this registry.
+     *
+     * @return collection of all variant types
+     */
+    public Collection<VariantType> getAllVariantTypes() {
+        List<VariantType> variants = new ArrayList<>();
+        for (WitType type : types.values()) {
+            if (type instanceof VariantType) {
+                variants.add((VariantType) type);
+            }
+        }
+        return variants;
     }
 }
