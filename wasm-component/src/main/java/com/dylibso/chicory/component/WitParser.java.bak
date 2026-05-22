@@ -12,9 +12,18 @@ import java.util.regex.Pattern;
 
 /**
  * Parses WIT (WebAssembly Interface Types) definitions from text format.
- * Supports Component Model world syntax with records, variants, lists.
+ * Supports both simple format: "functionname: function(...)"
+ * And Component Model world syntax:
+ * <pre>
+ * package example:example;
+ * world example {
+ *   export functionname: func(a: s32, b: s32) -> s32;
+ *   import hostfn: func(x: i32);
+ * }
+ * </pre>
  */
 public class WitParser {
+    // Pattern for both simple and world format functions
     private static final Pattern WORLD_EXPORT_PATTERN =
             Pattern.compile(
                     "export\\s+([\\w-]+)\\s*:\\s*func\\s*\\(([^)]*)\\)\\s*(?:->\\s*([^;\\n"
@@ -30,18 +39,29 @@ public class WitParser {
                     "([\\w-]+)\\s*:\\s*function\\s*\\(([^)]*)\\)\\s*(?:->\\s*([^\\n]+?))?(?=\\n|$)",
                     Pattern.MULTILINE);
     private static final Pattern FUNCTION_PARAM_PATTERN =
-            Pattern.compile("([\\w-]+)\\s*:\\s*([\\w<>]+)");
+            Pattern.compile("([\\w-]+)\\s*:\\s*([\\w<>,]+)");
 
+    /**
+     * Parse WIT source code.
+     * Detects format and handles both simple and Component Model world syntax.
+     *
+     * @param witText WIT source in text format
+     * @return Parsed component definition
+     * @throws IllegalArgumentException if WIT source is invalid
+     */
     public ComponentDefinition parse(String witText) {
+        // Extract package and world/interface names from WIT header
         String packageName = "default";
         String interfaceName = "component";
 
+        // Try to extract from WIT header
         Pattern packagePattern = Pattern.compile("package\\s+([\\w:]+)\\s*;");
         Matcher pkgMatcher = packagePattern.matcher(witText);
         if (pkgMatcher.find()) {
             packageName = pkgMatcher.group(1);
         }
 
+        // Try to extract world name
         Pattern worldPattern = Pattern.compile("world\\s+(\\w+)\\s*\\{");
         Matcher worldMatcher = worldPattern.matcher(witText);
         if (worldMatcher.find()) {
@@ -50,8 +70,10 @@ public class WitParser {
 
         ComponentDefinition definition = new ComponentDefinition(packageName, interfaceName);
 
+        // Parse type definitions
         parseTypeDefinitions(witText, definition);
 
+        // Detect format and parse function signatures
         boolean isWorldFormat = witText.contains("world") && witText.contains("{");
         if (isWorldFormat) {
             parseWorldFunctionSignatures(witText, definition);
@@ -63,7 +85,7 @@ public class WitParser {
     }
 
     private void parseTypeDefinitions(String witText, ComponentDefinition definition) {
-        // Parse records with multi-line support
+        // Match record type definitions with multi-line support
         Pattern recordPattern =
                 Pattern.compile(
                         "record\\s+(\\w+)\\s*\\{([^}]*)\\}", Pattern.MULTILINE | Pattern.DOTALL);
@@ -74,7 +96,7 @@ public class WitParser {
             parseRecord(recordName, recordBody, definition);
         }
 
-        // Parse variants
+        // Match variant type definitions
         Pattern variantPattern =
                 Pattern.compile(
                         "variant\\s+(\\w+)\\s*\\{([^}]*)\\}", Pattern.MULTILINE | Pattern.DOTALL);
@@ -85,7 +107,7 @@ public class WitParser {
             parseVariant(variantName, variantBody, definition);
         }
 
-        // Parse resources
+        // Match resource type definitions
         Pattern resourcePattern = Pattern.compile("resource\\s+(\\w+)");
         Matcher resourceMatcher = resourcePattern.matcher(witText);
         while (resourceMatcher.find()) {
@@ -93,7 +115,7 @@ public class WitParser {
             definition.typeRegistry().register(resourceName, new ResourceType(resourceName));
         }
 
-        // Parse type aliases
+        // Match type alias definitions
         Pattern typePattern = Pattern.compile("type\\s+(\\w+)\\s*=\\s*([\\w<>,]+);");
         Matcher typeMatcher = typePattern.matcher(witText);
         while (typeMatcher.find()) {
@@ -106,7 +128,8 @@ public class WitParser {
 
     private void parseRecord(String recordName, String recordBody, ComponentDefinition definition) {
         RecordType record = new RecordType(recordName);
-        Pattern fieldPattern = Pattern.compile("([\\w-]+)\\s*:\\s*([\\w<>]+?)(?=[,}])");
+        // Parse field definitions: field-name: type
+        Pattern fieldPattern = Pattern.compile("([\\w-]+)\\s*:\\s*([\\w<>,]+)");
         Matcher fieldMatcher = fieldPattern.matcher(recordBody);
         while (fieldMatcher.find()) {
             String fieldName = fieldMatcher.group(1);
@@ -120,6 +143,7 @@ public class WitParser {
     private void parseVariant(
             String variantName, String variantBody, ComponentDefinition definition) {
         VariantType variant = new VariantType(variantName);
+        // Parse variant cases: case-name or case-name(type)
         Pattern casePattern = Pattern.compile("([\\w-]+)(?:\\(([^)]*)\\))?");
         Matcher caseMatcher = casePattern.matcher(variantBody);
         while (caseMatcher.find()) {
@@ -127,15 +151,16 @@ public class WitParser {
             String caseTypeStr = caseMatcher.group(2);
             if (caseTypeStr != null && !caseTypeStr.trim().isEmpty()) {
                 WitType caseType = parseType(caseTypeStr, definition);
-                variant.addCase(caseName, Optional.of(caseType));
+                variant.addCase(caseName, caseType);
             } else {
-                variant.addCase(caseName, Optional.empty());
+                variant.addCase(caseName, null);
             }
         }
         definition.typeRegistry().register(variantName, variant);
     }
 
     private void parseWorldFunctionSignatures(String witText, ComponentDefinition definition) {
+        // Parse exports
         Matcher exportMatcher = WORLD_EXPORT_PATTERN.matcher(witText);
         while (exportMatcher.find()) {
             String funcName = exportMatcher.group(1);
@@ -147,6 +172,7 @@ public class WitParser {
             definition.addExport(sig);
         }
 
+        // Parse imports
         Matcher importMatcher = WORLD_IMPORT_PATTERN.matcher(witText);
         while (importMatcher.find()) {
             String funcName = importMatcher.group(1);
@@ -177,18 +203,18 @@ public class WitParser {
         ComponentDefinition.FunctionSignature sig =
                 new ComponentDefinition.FunctionSignature(funcName);
 
+        // Parse parameters
         if (paramsStr != null && !paramsStr.trim().isEmpty()) {
             Matcher paramMatcher = FUNCTION_PARAM_PATTERN.matcher(paramsStr);
             while (paramMatcher.find()) {
                 String paramName = paramMatcher.group(1);
                 String paramTypeStr = paramMatcher.group(2);
-                paramTypeStr =
-                        paramTypeStr.replaceAll("[,\\s]+$", ""); // Remove trailing commas/spaces
                 WitType paramType = parseType(paramTypeStr, definition);
                 sig.addParameter(paramName, paramType);
             }
         }
 
+        // Parse return type
         if (returnStr != null && !returnStr.trim().isEmpty()) {
             WitType returnType = parseType(returnStr.trim(), definition);
             sig.addReturnType(returnType);
@@ -197,52 +223,33 @@ public class WitParser {
         return sig;
     }
 
+    /**
+     * Parse a WIT type from string representation.
+     * Handles: primitives, strings, records, variants, lists.
+     */
     public WitType parseType(String typeStr, ComponentDefinition definition) {
         typeStr = typeStr.trim();
 
-        // Normalize WIT type names to primitive types (s32 -> i32, etc)
-        typeStr = normalizeType(typeStr);
-
+        // Check primitives first
         try {
             return PrimitiveType.fromName(typeStr);
         } catch (IllegalArgumentException e) {
-            // Not a primitive
+            // Not a primitive, continue
         }
 
+        // Check list type: list<T>
         if (typeStr.startsWith("list<") && typeStr.endsWith(">")) {
             String elementTypeStr = typeStr.substring(5, typeStr.length() - 1);
             WitType elementType = parseType(elementTypeStr, definition);
             return new ListType(elementType);
         }
 
+        // Check for registered types (records, variants, resources, type aliases)
         Optional<WitType> registered = definition.typeRegistry().lookup(typeStr);
         if (registered.isPresent()) {
             return registered.get();
         }
 
         throw new IllegalArgumentException("Unknown type: " + typeStr);
-    }
-
-    private String normalizeType(String typeStr) {
-        switch (typeStr) {
-            case "s8":
-                return "i32"; // signed 8-bit
-            case "u8":
-                return "i32"; // unsigned 8-bit
-            case "s16":
-                return "i32"; // signed 16-bit
-            case "u16":
-                return "i32"; // unsigned 16-bit
-            case "s32":
-                return "i32"; // signed 32-bit
-            case "u32":
-                return "i32"; // unsigned 32-bit
-            case "s64":
-                return "i64"; // signed 64-bit
-            case "u64":
-                return "i64"; // unsigned 64-bit
-            default:
-                return typeStr;
-        }
     }
 }

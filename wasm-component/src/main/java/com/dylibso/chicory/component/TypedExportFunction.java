@@ -1,11 +1,13 @@
 package com.dylibso.chicory.component;
 
+import com.dylibso.chicory.component.types.RecordType;
 import com.dylibso.chicory.component.types.WitType;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Memory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Typed wrapper around guest export function.
@@ -48,7 +50,16 @@ public class TypedExportFunction {
         List<Long> wasmArgsList = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             WitType paramType = params.get(i).type;
-            long[] encoded = CanonicalAbi.encode(args[i], paramType, memory);
+            long[] encoded;
+
+            // Special handling for records: flatten them into individual parameters
+            if (paramType instanceof RecordType && args[i] instanceof Map) {
+                encoded =
+                        RecordFlattener.flattenRecord(
+                                (Map<String, Object>) args[i], (RecordType) paramType, memory);
+            } else {
+                encoded = CanonicalAbi.encode(args[i], paramType, memory);
+            }
 
             // Add all encoded values (strings use 2 values: ptr, len)
             for (long value : encoded) {
@@ -73,7 +84,12 @@ public class TypedExportFunction {
 
         WitType returnType = returnTypes.get(0);
 
-        // For strings and complex types, results may contain multiple values
+        // Special handling for records: unflatten them from individual return values
+        if (returnType instanceof RecordType) {
+            return RecordFlattener.unflattenRecord(results, (RecordType) returnType, memory);
+        }
+
+        // For strings and other types, results may contain multiple values
         return CanonicalAbi.decode(
                 Arrays.copyOf(results, Math.max(1, results.length)), returnType, memory);
     }
