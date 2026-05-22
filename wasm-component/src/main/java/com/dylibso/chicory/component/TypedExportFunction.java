@@ -3,6 +3,7 @@ package com.dylibso.chicory.component;
 import com.dylibso.chicory.component.types.WitType;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Memory;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -44,11 +45,21 @@ public class TypedExportFunction {
         }
 
         // Encode arguments according to Canonical ABI
-        long[] wasmArgs = new long[args.length];
+        List<Long> wasmArgsList = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             WitType paramType = params.get(i).type;
             long[] encoded = CanonicalAbi.encode(args[i], paramType, memory);
-            wasmArgs[i] = encoded[0]; // Take first encoded value
+
+            // Add all encoded values (strings use 2 values: ptr, len)
+            for (long value : encoded) {
+                wasmArgsList.add(value);
+            }
+        }
+
+        // Convert to array
+        long[] wasmArgs = new long[wasmArgsList.size()];
+        for (int i = 0; i < wasmArgsList.size(); i++) {
+            wasmArgs[i] = wasmArgsList.get(i);
         }
 
         // Call the export function
@@ -61,6 +72,8 @@ public class TypedExportFunction {
         }
 
         WitType returnType = returnTypes.get(0);
+
+        // For strings and complex types, results may contain multiple values
         return CanonicalAbi.decode(
                 Arrays.copyOf(results, Math.max(1, results.length)), returnType, memory);
     }

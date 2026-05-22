@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
  * End-to-end integration tests with real Wasm modules.
  * Tests ComponentModel works with actual guest modules from the test corpus.
  */
+@SuppressWarnings("deprecation")
 public class RealWasmIntegrationTest {
 
     private WasmModule loadModule(String fileName) {
@@ -85,8 +86,9 @@ public class RealWasmIntegrationTest {
         long[] encoded = CanonicalAbi.encode("hello", PrimitiveType.STRING, null);
 
         // Should return length as fallback
-        assertEquals(1, encoded.length);
-        assertEquals(5, encoded[0]); // "hello".length()
+        assertEquals(2, encoded.length);
+        assertEquals(0, encoded[0]); // No ptr when no realloc
+        assertEquals(5, encoded[1]);
     }
 
     @Test
@@ -99,8 +101,9 @@ public class RealWasmIntegrationTest {
             long[] encoded = CanonicalAbi.encode("test", PrimitiveType.STRING, null);
 
             // Should return (ptr << 32) | len
-            int ptr = (int) (encoded[0] >>> 32);
-            int len = (int) encoded[0];
+            // Now returns [ptr, len] directly
+            int ptr = (int) encoded[0];
+            int len = (int) encoded[1];
 
             assertEquals(1024, ptr); // First allocation from mock
             assertEquals(4, len); // "test".length()

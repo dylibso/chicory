@@ -20,4 +20,12 @@ impl Guest for Example {
     fn is_positive(x: i32) -> bool {
         x > 0
     }
+
+    fn greet(name: String) -> String {
+        format!("Hello, {}!", name)
+    }
+
+    fn process_text(text: String) -> String {
+        text.to_uppercase()
+    }
 }

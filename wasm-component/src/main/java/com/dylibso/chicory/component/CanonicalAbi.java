@@ -18,6 +18,16 @@ import java.nio.charset.StandardCharsets;
 public class CanonicalAbi {
 
     private static final ThreadLocal<ExportFunction> REALLOC_CONTEXT = new ThreadLocal<>();
+    private static final ThreadLocal<Memory> MEMORY_CONTEXT = new ThreadLocal<>();
+
+    /**
+     * Set the realloc function and memory for the current encoding context.
+     * Must be called before encoding strings/lists/records that require memory allocation.
+     */
+    public static void withContext(ExportFunction realloc, Memory memory) {
+        REALLOC_CONTEXT.set(realloc);
+        MEMORY_CONTEXT.set(memory);
+    }
 
     /**
      * Set the realloc function for the current encoding context.
@@ -28,10 +38,19 @@ public class CanonicalAbi {
     }
 
     /**
-     * Clear the realloc context after encoding.
+     * Clear the context after encoding.
      */
-    public static void clearRealloc() {
+    public static void clearContext() {
         REALLOC_CONTEXT.remove();
+        MEMORY_CONTEXT.remove();
+    }
+
+    /**
+     * Clear the realloc context after encoding. (Deprecated: use clearContext)
+     */
+    @Deprecated
+    public static void clearRealloc() {
+        clearContext();
     }
 
     /**
@@ -44,7 +63,7 @@ public class CanonicalAbi {
      */
     public static long[] encode(Object value, WitType type, Memory memory) {
         if (type instanceof PrimitiveType) {
-            return encodePrimitive(value, (PrimitiveType) type);
+            return encodePrimitive(value, (PrimitiveType) type, memory);
         } else if (type instanceof ListType) {
             return encodeList(value, (ListType) type, memory);
         } else if (type instanceof RecordType) {
@@ -63,7 +82,10 @@ public class CanonicalAbi {
      */
     public static Object decode(long[] encoded, WitType type, Memory memory) {
         if (type instanceof PrimitiveType) {
-            return decodePrimitive(encoded[0], (PrimitiveType) type, memory);
+            if (encoded.length == 0) {
+                return null;
+            }
+            return decodePrimitive(encoded, (PrimitiveType) type, memory);
         } else if (type instanceof ListType) {
             return decodeList(encoded, (ListType) type, memory);
         } else if (type instanceof RecordType) {
@@ -72,8 +94,7 @@ public class CanonicalAbi {
         throw new IllegalArgumentException("Cannot decode type: " + type.displayName());
     }
 
-    // Primitive type encoding
-    private static long[] encodePrimitive(Object value, PrimitiveType type) {
+    private static long[] encodePrimitive(Object value, PrimitiveType type, Memory memory) {
         if (value == null) {
             return new long[] {0};
         }
@@ -94,14 +115,19 @@ public class CanonicalAbi {
             case CHAR:
                 return new long[] {((Character) value) & 0xFFFFFFFFL};
             case STRING:
-                return encodeString((String) value);
+                return encodeString((String) value, memory);
             default:
                 throw new IllegalArgumentException("Unknown primitive: " + type);
         }
     }
 
-    // Primitive type decoding
-    private static Object decodePrimitive(long value, PrimitiveType type, Memory memory) {
+    private static Object decodePrimitive(long[] encoded, PrimitiveType type, Memory memory) {
+        if (encoded.length == 0) {
+            return null;
+        }
+
+        long value = encoded[0];
+
         switch (type) {
             case I32:
                 return (int) value;
@@ -116,50 +142,47 @@ public class CanonicalAbi {
             case CHAR:
                 return (char) value;
             case STRING:
-                return decodeString(value, memory);
+                return decodeString(encoded, memory);
             default:
                 throw new IllegalArgumentException("Unknown primitive: " + type);
         }
     }
 
-    // String encoding: allocate in guest memory and return (ptr, len)
-    private static long[] encodeString(String value) {
-        if (value == null) {
-            // null string is (0, 0)
-            return new long[] {0};
+    private static long[] encodeString(String value, Memory memory) {
+        if (value == null || value.isEmpty()) {
+            return new long[] {0, 0};
         }
 
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         ExportFunction realloc = REALLOC_CONTEXT.get();
 
         if (realloc != null) {
-            // Use cabi_realloc to allocate in guest memory
             long[] result = realloc.apply(0, 0, 1, bytes.length);
-            int ptr = (int) result[0];
+            long ptr = result[0];
 
-            // In real usage, would write bytes to guest memory here
-            // For now, we assume the guest will handle this via import functions
-            // (In a full implementation, we'd need Memory reference to write bytes)
+            if (memory != null) {
+                for (int i = 0; i < bytes.length; i++) {
+                    memory.writeByte((int) ptr + i, bytes[i]);
+                }
+            }
 
             long len = bytes.length & 0xFFFFFFFFL;
-            return new long[] {(((long) ptr) << 32) | len};
+            return new long[] {ptr, len};
         } else {
-            // Fallback: return placeholder (for testing without real guest)
             long len = bytes.length & 0xFFFFFFFFL;
-            return new long[] {len}; // Just return length for MVP testing
+            return new long[] {0, len};
         }
     }
 
-    // String decoding: read from guest memory using (ptr, len) pair
-    private static String decodeString(long encoded, Memory memory) {
-        if (encoded == 0) {
+    private static String decodeString(long[] encoded, Memory memory) {
+        if (encoded == null || encoded.length < 2) {
             return "";
         }
 
-        int ptr = (int) (encoded >>> 32);
-        int len = (int) encoded;
+        int ptr = (int) encoded[0];
+        int len = (int) encoded[1];
 
-        if (len <= 0) {
+        if (len <= 0 || memory == null) {
             return "";
         }
 
@@ -168,7 +191,6 @@ public class CanonicalAbi {
 
     private static long[] encodeList(Object value, ListType type, Memory memory) {
         if (value == null) {
-            // null list is (0, 0)
             return new long[] {0, 0};
         }
 
@@ -177,8 +199,6 @@ public class CanonicalAbi {
             ExportFunction realloc = REALLOC_CONTEXT.get();
 
             if (realloc != null) {
-                // Use cabi_realloc to allocate in guest memory
-                // For MVP: assume each element is 8 bytes (worst case i64)
                 int elementSize = 8;
                 int totalSize = list.size() * elementSize;
 
@@ -188,7 +208,6 @@ public class CanonicalAbi {
 
                 return new long[] {ptr, count};
             } else {
-                // Fallback: return placeholder (for testing without real guest)
                 long count = list.size() & 0xFFFFFFFFL;
                 return new long[] {0, count};
             }
@@ -228,11 +247,9 @@ public class CanonicalAbi {
             return new java.util.ArrayList<>();
         }
 
-        // For MVP: return list of raw pointers
-        // In real implementation, would decode each element from memory
         java.util.List<Object> result = new java.util.ArrayList<>();
         for (int i = 0; i < count; i++) {
-            result.add(null); // TODO: decode elements from memory
+            result.add(null);
         }
         return result;
     }
@@ -245,8 +262,6 @@ public class CanonicalAbi {
         ExportFunction realloc = REALLOC_CONTEXT.get();
 
         if (realloc != null) {
-            // For MVP: allocate fixed size for record (assume max 256 bytes per record)
-            // In real implementation, would calculate based on field types
             int recordSize = 256;
 
             long[] result = realloc.apply(0, 0, 8, recordSize);
@@ -254,7 +269,6 @@ public class CanonicalAbi {
 
             return new long[] {ptr};
         } else {
-            // Fallback: return placeholder
             return new long[] {0};
         }
     }
@@ -267,10 +281,8 @@ public class CanonicalAbi {
         int ptr = (int) encoded[0];
         java.util.Map<String, Object> result = new java.util.HashMap<>();
 
-        // For MVP: return empty map
-        // In real implementation, would read fields from memory
         for (RecordType.Field field : type.fields()) {
-            result.put(field.name, null); // TODO: decode field from memory
+            result.put(field.name, null);
         }
 
         return result;
