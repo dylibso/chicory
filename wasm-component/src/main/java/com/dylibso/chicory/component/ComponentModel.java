@@ -30,13 +30,18 @@ public class ComponentModel {
     private final Instance guestInstance;
     private final Map<String, TypedExportFunction> exports;
     private final String moduleName;
+    private final HostFunctionProvider hostFunctions;
 
     private ComponentModel(
-            ComponentDefinition definition, Instance guestInstance, String moduleName) {
+            ComponentDefinition definition,
+            Instance guestInstance,
+            String moduleName,
+            HostFunctionProvider hostFunctions) {
         this.definition = definition;
         this.guestInstance = guestInstance;
         this.moduleName = moduleName;
         this.exports = new HashMap<>();
+        this.hostFunctions = hostFunctions;
     }
 
     /**
@@ -47,7 +52,7 @@ public class ComponentModel {
      * @return Component model instance
      */
     public static ComponentModel load(String witSource, WasmModule wasmModule) {
-        return load(witSource, wasmModule, "component");
+        return load(witSource, wasmModule, "component", new HostFunctionProvider());
     }
 
     /**
@@ -59,36 +64,59 @@ public class ComponentModel {
      * @return Component model instance
      */
     public static ComponentModel load(String witSource, WasmModule wasmModule, String moduleName) {
+        return load(witSource, wasmModule, moduleName, new HostFunctionProvider());
+    }
+
+    /**
+     * Load a component from WIT source and Wasm module with host functions.
+     *
+     * @param witSource WIT definition text
+     * @param wasmModule Compiled Wasm module
+     * @param hostFunctions Host function provider with implementations
+     * @return Component model instance
+     */
+    public static ComponentModel load(
+            String witSource, WasmModule wasmModule, HostFunctionProvider hostFunctions) {
+        return load(witSource, wasmModule, "component", hostFunctions);
+    }
+
+    /**
+     * Load a component from WIT source, Wasm module, module name, and host functions.
+     *
+     * @param witSource WIT definition text
+     * @param wasmModule Compiled Wasm module
+     * @param moduleName Module name to use for host functions
+     * @param hostFunctions Host function provider with implementations
+     * @return Component model instance
+     */
+    public static ComponentModel load(
+            String witSource,
+            WasmModule wasmModule,
+            String moduleName,
+            HostFunctionProvider hostFunctions) {
         // Parse WIT
         WitParser parser = new WitParser();
         ComponentDefinition definition = parser.parse(witSource);
 
-        // Create Chicory store and instantiate module
+        // Create Chicory store with host function bindings
         Store store = new Store();
+        ImportBinder.bindHostFunctions(store, hostFunctions, definition, moduleName);
+
+        // Instantiate module
         Instance instance = store.instantiate("component", wasmModule);
 
-        return new ComponentModel(definition, instance, moduleName);
+        return new ComponentModel(definition, instance, moduleName, hostFunctions);
     }
 
     /**
-     * Add a host function that can be called by the guest.
+     * Register a host function that can be called by the guest.
      *
      * @param functionName Name of the function in the WIT definition
      * @param handler The Java implementation of the function
      */
-    public void addHostFunction(
-            String functionName, ComponentFunctionBinder.ComponentFunctionHandler handler) {
-        Optional<ComponentDefinition.FunctionSignature> sig = definition.importByName(functionName);
-        if (sig.isEmpty()) {
-            // Also check exports if not explicitly marked as import
-            sig = definition.exportByName(functionName);
-        }
-        if (sig.isEmpty()) {
-            throw new IllegalArgumentException("Function not found in WIT: " + functionName);
-        }
-
-        // Note: In real usage, this would be called during instantiation
-        // For now, this is documented for future implementation
+    public void registerHostFunction(
+            String functionName, HostFunctionProvider.HostFunction handler) {
+        hostFunctions.register(functionName, handler);
     }
 
     /**
@@ -144,6 +172,13 @@ public class ComponentModel {
      */
     public Instance getInstance() {
         return guestInstance;
+    }
+
+    /**
+     * Get the host function provider.
+     */
+    public HostFunctionProvider getHostFunctions() {
+        return hostFunctions;
     }
 
     /**

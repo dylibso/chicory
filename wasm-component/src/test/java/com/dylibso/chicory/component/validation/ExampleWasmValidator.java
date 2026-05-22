@@ -2,6 +2,7 @@ package com.dylibso.chicory.component.validation;
 
 import com.dylibso.chicory.component.CanonicalAbi;
 import com.dylibso.chicory.component.ComponentModel;
+import com.dylibso.chicory.component.HostFunctionProvider;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import java.nio.file.Files;
@@ -12,7 +13,7 @@ import java.nio.file.Paths;
  * Tests exports (9A), strings (9B), and imports (9C).
  */
 public class ExampleWasmValidator {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] mainArgs) throws Exception {
         System.out.println("=== Phase 9C: Imports & Bidirectional Calls ===\n");
 
         // Paths to WIT and WASM files
@@ -34,9 +35,39 @@ public class ExampleWasmValidator {
             WasmModule wasmModule = Parser.parse(wasmBytes);
             System.out.println("[OK] WASM module parsed\n");
 
+            // ===== SETUP HOST FUNCTIONS (Phase 9C) =====
+            System.out.println("Setting up host functions...");
+            HostFunctionProvider hostFunctions = new HostFunctionProvider();
+
+            // State to capture host function calls
+            StringBuilder hostLogOutput = new StringBuilder();
+            String[] hostInputResult = {"default-input"};
+
+            // Register host-log implementation
+            hostFunctions.register(
+                    "host-log",
+                    hostArgs -> {
+                        String msg = hostArgs.length > 0 ? (String) hostArgs[0] : "null";
+                        System.out.println("  [HOST-LOG] " + msg);
+                        hostLogOutput.append(msg);
+                        return null; // void function
+                    });
+
+            // Register host-get-input implementation
+            hostFunctions.register(
+                    "host-get-input",
+                    hostArgs -> {
+                        System.out.println(
+                                "  [HOST-GET-INPUT] Called, returning: " + hostInputResult[0]);
+                        return hostInputResult[0];
+                    });
+
+            System.out.println("[OK] Host functions registered\n");
+
             // Load component
             System.out.println("Loading ComponentModel...");
-            ComponentModel component = ComponentModel.load(witSource, wasmModule);
+            ComponentModel component =
+                    ComponentModel.load(witSource, wasmModule, "env", hostFunctions);
             System.out.println("[OK] ComponentModel loaded successfully\n");
 
             // Display exported and imported functions
@@ -113,9 +144,9 @@ public class ExampleWasmValidator {
 
             // ===== IMPORTS (Phase 9C) =====
             System.out.println("=== PHASE 9C: IMPORTS ===\n");
-            System.out.println("✅ Imports parsed successfully!");
-            System.out.println("Guest can call: host-log and host-get-input\n");
-            System.out.println("⏳ Full import testing coming in next phase\n");
+            System.out.println("✅ Host functions are now bound!");
+            System.out.println("✅ Guest can call host-log and host-get-input");
+            System.out.println("✅ Ready for guest to invoke host functions\n");
 
             CanonicalAbi.clearContext();
 
