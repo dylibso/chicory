@@ -175,18 +175,23 @@ public class CanonicalAbi {
     }
 
     private static String decodeString(long[] encoded, Memory memory) {
-        if (encoded == null || encoded.length < 2) {
+        if (encoded == null || encoded.length == 0 || memory == null) {
             return "";
         }
 
-        int ptr = (int) encoded[0];
-        int len = (int) encoded[1];
+        // wit-bindgen returns a pointer to a (ptr, len) pair structure
+        // encoded[0] = pointer to the structure
+        int structPtr = (int) encoded[0];
 
-        if (len <= 0 || memory == null) {
+        // Read the (ptr, len) pair from the structure
+        int stringPtr = memory.readInt(structPtr);
+        int stringLen = memory.readInt(structPtr + 4);
+
+        if (stringLen <= 0) {
             return "";
         }
 
-        return memory.readString(ptr, len, StandardCharsets.UTF_8);
+        return memory.readString(stringPtr, stringLen, StandardCharsets.UTF_8);
     }
 
     private static long[] encodeList(Object value, ListType type, Memory memory) {
