@@ -170,7 +170,8 @@ public class ExampleWasmValidator {
             System.out.println(
                     "  ✅ [PASS] - Guest successfully called host function and got return value\n");
 
-            CanonicalAbi.clearContext();
+            // Keep context alive for Phase 10 records
+            // CanonicalAbi.clearContext();  // Don't clear - records need string encoding!
 
             // ===== RECORDS (Phase 10) =====
             System.out.println("=== PHASE 10: RECORDS ===\n");

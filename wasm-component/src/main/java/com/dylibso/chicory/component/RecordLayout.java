@@ -131,6 +131,17 @@ public class RecordLayout {
         return 1; // Placeholder
     }
 
+    /**
+     * Calculate the total size needed to store a record in memory.
+     * Convenience method for statically calculating record size without creating a layout object.
+     *
+     * @param recordType Record type
+     * @return Size in bytes needed to store the record
+     */
+    public static int calculateRecordSize(RecordType recordType) {
+        return new RecordLayout(recordType).getRecordSize();
+    }
+
     // Getters
     public int getRecordSize() {
         return recordSize;

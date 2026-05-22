@@ -46,8 +46,15 @@ public class TypedExportFunction {
                     String.format("Expected %d arguments, got %d", params.size(), args.length));
         }
 
+        // Check if this function returns a record
+        List<WitType> returnTypes = signature.returns();
+        boolean returnsRecord = !returnTypes.isEmpty() && returnTypes.get(0) instanceof RecordType;
+        RecordType returnRecordType = returnsRecord ? (RecordType) returnTypes.get(0) : null;
+
         // Encode arguments according to Canonical ABI
         List<Long> wasmArgsList = new ArrayList<>();
+
+        // Add regular parameters (no sret for records - WASM allocates and returns pointer)
         for (int i = 0; i < args.length; i++) {
             WitType paramType = params.get(i).type;
             long[] encoded;
@@ -77,16 +84,19 @@ public class TypedExportFunction {
         long[] results = exportFunction.apply(wasmArgs);
 
         // Decode and return the result
-        List<WitType> returnTypes = signature.returns();
         if (returnTypes.isEmpty()) {
             return null;
         }
 
         WitType returnType = returnTypes.get(0);
 
-        // Special handling for records: unflatten them from individual return values
-        if (returnType instanceof RecordType) {
-            return RecordFlattener.unflattenRecord(results, (RecordType) returnType, memory);
+        // Special handling for records: decode from pointer returned by WASM
+        if (returnsRecord) {
+            // For records, WASM returns a pointer to the record in memory
+            if (results.length > 0 && results[0] != 0) {
+                return CanonicalAbi.decodeRecordFromMemory(results[0], returnRecordType, memory);
+            }
+            return new java.util.HashMap<>();
         }
 
         // For strings and other types, results may contain multiple values

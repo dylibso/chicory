@@ -54,6 +54,29 @@ public class CanonicalAbi {
     }
 
     /**
+     * Get the current realloc function from context.
+     *
+     * @return Current realloc function, or null if not set
+     */
+    public static ExportFunction getReallocFunction() {
+        return REALLOC_CONTEXT.get();
+    }
+
+    /**
+     * Decode a record directly from guest memory (sret convention).
+     * Used when a function returns a record via structured return (sret).
+     *
+     * @param memoryPtr Pointer to record data in guest memory
+     * @param recordType Record type specification
+     * @param memory Guest's linear memory
+     * @return Java Map representing the record with field names and values
+     */
+    public static Object decodeRecordFromMemory(
+            long memoryPtr, RecordType recordType, Memory memory) {
+        return decodeRecord(new long[] {memoryPtr}, recordType, memory);
+    }
+
+    /**
      * Encode a Java value to WIT representation (as long[] for function arguments).
      *
      * @param value Java value to encode
@@ -339,11 +362,37 @@ public class CanonicalAbi {
         for (RecordLayout.FieldLayout field : layout.getFieldLayouts()) {
             long fieldAddr = recordPtr + field.offset;
             long[] fieldEncoded = readFieldFromMemory(memory, fieldAddr, field.type);
-            Object fieldValue = decode(fieldEncoded, field.type, memory);
+
+            // Special handling for STRING fields in records
+            // In records, strings are stored as (ptr, len) pairs directly
+            // (not as pointers to structures like in function returns)
+            Object fieldValue;
+            if (field.type instanceof PrimitiveType
+                    && ((PrimitiveType) field.type) == PrimitiveType.STRING) {
+                if (fieldEncoded.length >= 2) {
+                    fieldValue = decodeStringFromPair(fieldEncoded[0], fieldEncoded[1], memory);
+                } else {
+                    fieldValue = "";
+                }
+            } else {
+                fieldValue = decode(fieldEncoded, field.type, memory);
+            }
+
             record.put(field.name, fieldValue);
         }
 
         return record;
+    }
+
+    /**
+     * Decode a string directly from (ptr, len) pair (used in records).
+     * This is different from decodeString which expects a pointer to the pair.
+     */
+    private static String decodeStringFromPair(long ptr, long len, Memory memory) {
+        if (len <= 0 || memory == null) {
+            return "";
+        }
+        return memory.readString((int) ptr, (int) len, StandardCharsets.UTF_8);
     }
 
     /**
@@ -360,7 +409,7 @@ public class CanonicalAbi {
                 case F64:
                     return new long[] {memory.readLong((int) fieldAddr)};
                 case STRING:
-                    // String is (ptr, len) pair
+                    // String is (ptr, len) pair stored directly in record memory
                     long ptr = memory.readInt((int) fieldAddr);
                     long len = memory.readInt((int) fieldAddr + 4);
                     return new long[] {ptr, len};
