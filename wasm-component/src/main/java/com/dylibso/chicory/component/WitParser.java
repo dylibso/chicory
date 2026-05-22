@@ -63,10 +63,10 @@ public class WitParser {
     }
 
     private void parseTypeDefinitions(String witText, ComponentDefinition definition) {
-        // Parse records with multi-line support
+        // Parse records with multi-line support (allow hyphens in names)
         Pattern recordPattern =
                 Pattern.compile(
-                        "record\\s+(\\w+)\\s*\\{([^}]*)\\}", Pattern.MULTILINE | Pattern.DOTALL);
+                        "record\\s+([-\\w]+)\\s*\\{([^}]*)\\}", Pattern.MULTILINE | Pattern.DOTALL);
         Matcher recordMatcher = recordPattern.matcher(witText);
         while (recordMatcher.find()) {
             String recordName = recordMatcher.group(1);
@@ -74,10 +74,11 @@ public class WitParser {
             parseRecord(recordName, recordBody, definition);
         }
 
-        // Parse variants
+        // Parse variants (allow hyphens in names)
         Pattern variantPattern =
                 Pattern.compile(
-                        "variant\\s+(\\w+)\\s*\\{([^}]*)\\}", Pattern.MULTILINE | Pattern.DOTALL);
+                        "variant\\s+([-\\w]+)\\s*\\{([^}]*)\\}",
+                        Pattern.MULTILINE | Pattern.DOTALL);
         Matcher variantMatcher = variantPattern.matcher(witText);
         while (variantMatcher.find()) {
             String variantName = variantMatcher.group(1);
@@ -86,7 +87,7 @@ public class WitParser {
         }
 
         // Parse resources
-        Pattern resourcePattern = Pattern.compile("resource\\s+(\\w+)");
+        Pattern resourcePattern = Pattern.compile("resource\\s+([-\\w]+)");
         Matcher resourceMatcher = resourcePattern.matcher(witText);
         while (resourceMatcher.find()) {
             String resourceName = resourceMatcher.group(1);
@@ -94,7 +95,7 @@ public class WitParser {
         }
 
         // Parse type aliases
-        Pattern typePattern = Pattern.compile("type\\s+(\\w+)\\s*=\\s*([\\w<>,]+);");
+        Pattern typePattern = Pattern.compile("type\\s+([-\\w]+)\\s*=\\s*([\\w<>,]+);");
         Matcher typeMatcher = typePattern.matcher(witText);
         while (typeMatcher.find()) {
             String typeName = typeMatcher.group(1);

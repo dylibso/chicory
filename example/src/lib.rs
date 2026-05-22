@@ -48,4 +48,16 @@ impl Guest for Example {
             active: age >= 18,
         }
     }
+
+    fn get_result() -> OperationResult {
+        OperationResult::Ok("Success!".to_string())
+    }
+
+    fn pick_color(index: i32) -> Color {
+        match index % 3 {
+            0 => Color::Red,
+            1 => Color::Green,
+            _ => Color::Blue,
+        }
+    }
 }

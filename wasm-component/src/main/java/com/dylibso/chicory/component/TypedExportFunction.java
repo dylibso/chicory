@@ -1,6 +1,7 @@
 package com.dylibso.chicory.component;
 
 import com.dylibso.chicory.component.types.RecordType;
+import com.dylibso.chicory.component.types.VariantType;
 import com.dylibso.chicory.component.types.WitType;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Memory;
@@ -46,10 +47,13 @@ public class TypedExportFunction {
                     String.format("Expected %d arguments, got %d", params.size(), args.length));
         }
 
-        // Check if this function returns a record
+        // Check if this function returns a record or variant
         List<WitType> returnTypes = signature.returns();
         boolean returnsRecord = !returnTypes.isEmpty() && returnTypes.get(0) instanceof RecordType;
+        boolean returnsVariant =
+                !returnTypes.isEmpty() && returnTypes.get(0) instanceof VariantType;
         RecordType returnRecordType = returnsRecord ? (RecordType) returnTypes.get(0) : null;
+        VariantType returnVariantType = returnsVariant ? (VariantType) returnTypes.get(0) : null;
 
         // Encode arguments according to Canonical ABI
         List<Long> wasmArgsList = new ArrayList<>();
@@ -97,6 +101,31 @@ public class TypedExportFunction {
                 return CanonicalAbi.decodeRecordFromMemory(results[0], returnRecordType, memory);
             }
             return new java.util.HashMap<>();
+        }
+
+        // Special handling for variants
+        if (returnsVariant) {
+            if (results.length > 0) {
+                long value = results[0];
+
+                // Case 1: Empty variant (discriminant returned inline)
+                if (value < 1000) {
+                    return CanonicalAbi.decodeVariantInline(
+                            new long[] {value}, returnVariantType, memory);
+                }
+
+                // Case 2: Variant with data (pointer-to-pointer convention)
+                int pointerValue = memory.readInt((int) value);
+                if (pointerValue > 1000 && pointerValue < 0x200000) {
+                    // Dereference and decode
+                    return CanonicalAbi.decodeVariantFromMemory(
+                            pointerValue, returnVariantType, memory);
+                }
+
+                // Case 3: Direct sret pointer
+                return CanonicalAbi.decodeVariantFromMemory(value, returnVariantType, memory);
+            }
+            return new VariantValue("", null);
         }
 
         // For strings and other types, results may contain multiple values

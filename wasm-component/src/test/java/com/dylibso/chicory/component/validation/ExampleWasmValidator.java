@@ -203,18 +203,61 @@ public class ExampleWasmValidator {
             System.out.println("  Result: " + person2);
             System.out.println("  ✅ [PASS] - Record return value working\n");
 
+            // ===== VARIANTS (Phase 10.2) =====
+            System.out.println("=== PHASE 10.2: VARIANTS ===\n");
+
+            // Test 11: get-result returning variant with data
+            System.out.println("Test 11: get-result()");
+            Object result11 = component.callExport("get-result");
+            assert result11 instanceof com.dylibso.chicory.component.VariantValue
+                    : "Expected VariantValue, got " + result11.getClass();
+            com.dylibso.chicory.component.VariantValue variant1 =
+                    (com.dylibso.chicory.component.VariantValue) result11;
+            assert "ok".equals(variant1.caseName())
+                    : "Expected case='ok', got '" + variant1.caseName() + "'";
+            assert "Success!".equals(variant1.data())
+                    : "Expected data='Success!', got '" + variant1.data() + "'";
+            System.out.println("  Result: " + variant1);
+            System.out.println("  ✅ [PASS] - Variant with data working\n");
+
+            // Test 12: pick-color returning variant without data
+            System.out.println("Test 12: pick-color(0)");
+            Object result12 = component.callExport("pick-color", 0);
+            assert result12 instanceof com.dylibso.chicory.component.VariantValue
+                    : "Expected VariantValue, got " + result12.getClass();
+            com.dylibso.chicory.component.VariantValue color1 =
+                    (com.dylibso.chicory.component.VariantValue) result12;
+            assert "red".equals(color1.caseName())
+                    : "Expected case='red', got '" + color1.caseName() + "'";
+            assert color1.isEmpty() : "Expected empty variant, got data: " + color1.data();
+            System.out.println("  Result: " + color1);
+            System.out.println("  ✅ [PASS] - Empty variant working\n");
+
+            // Test 13: pick-color with different index
+            System.out.println("Test 13: pick-color(1)");
+            Object result13 = component.callExport("pick-color", 1);
+            assert result13 instanceof com.dylibso.chicory.component.VariantValue
+                    : "Expected VariantValue, got " + result13.getClass();
+            com.dylibso.chicory.component.VariantValue color2 =
+                    (com.dylibso.chicory.component.VariantValue) result13;
+            assert "green".equals(color2.caseName())
+                    : "Expected case='green', got '" + color2.caseName() + "'";
+            System.out.println("  Result: " + color2);
+            System.out.println("  ✅ [PASS] - Variant case selection working\n");
+
             CanonicalAbi.clearContext();
 
             System.out.println("╔════════════════════════════════════════════════════════════╗");
-            System.out.println("║   ✅ PHASES 9-10 COMPLETE! RECORDS WORKING! ✅            ║");
+            System.out.println("║   ✅ PHASES 9-10.2 COMPLETE! VARIANTS WORKING! ✅         ║");
             System.out.println("║                                                            ║");
             System.out.println("║  Summary:                                                  ║");
             System.out.println("║  - Guest → Host: ✅ WORKING                               ║");
             System.out.println("║  - Host → Guest: ✅ WORKING                               ║");
-            System.out.println("║  - String parameters: ✅ WORKING                          ║");
-            System.out.println("║  - Records (parameters & returns): ✅ WORKING             ║");
+            System.out.println("║  - Strings: ✅ WORKING                                    ║");
+            System.out.println("║  - Records: ✅ WORKING                                    ║");
+            System.out.println("║  - Variants: ✅ WORKING                                   ║");
             System.out.println("║                                                            ║");
-            System.out.println("║  10/10 Tests Passed                                        ║");
+            System.out.println("║  13/13 Tests Passed                                        ║");
             System.out.println("╚════════════════════════════════════════════════════════════╝");
 
         } catch (Exception e) {

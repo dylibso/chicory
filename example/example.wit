@@ -8,6 +8,17 @@ world example {
     active: bool,
   }
 
+  variant operation-result {
+    ok(string),
+    err(s32),
+  }
+
+  variant color {
+    red,
+    green,
+    blue,
+  }
+
   // Exports: Functions guest provides to host
   export add: func(a: s32, b: s32) -> s32;
   export multiply: func(a: s64, b: s64) -> s64;
@@ -22,6 +33,10 @@ world example {
   // Exports that test record support
   export describe-person: func(p: person) -> string;
   export create-person: func(name: string, age: s32) -> person;
+
+  // Exports that test variant support
+  export get-result: func() -> operation-result;
+  export pick-color: func(index: s32) -> color;
   
   // Imports: Functions guest needs from host
   import host-log: func(msg: string);

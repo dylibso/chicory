@@ -3,6 +3,7 @@ package com.dylibso.chicory.component;
 import com.dylibso.chicory.component.types.ListType;
 import com.dylibso.chicory.component.types.PrimitiveType;
 import com.dylibso.chicory.component.types.RecordType;
+import com.dylibso.chicory.component.types.VariantType;
 import com.dylibso.chicory.component.types.WitType;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Memory;
@@ -77,6 +78,70 @@ public class CanonicalAbi {
     }
 
     /**
+     * Decode a variant directly from guest memory.
+     * Used when a function returns a variant (wit-bindgen returns pointer to variant data).
+     *
+     * @param memoryPtr Pointer to variant data in guest memory
+     * @param variantType Variant type specification
+     * @param memory Guest's linear memory
+     * @return VariantValue representing the variant case and data
+     */
+    public static Object decodeVariantFromMemory(
+            long memoryPtr, VariantType variantType, Memory memory) {
+        // Read discriminant (u32) from memory
+        int discriminant = memory.readInt((int) memoryPtr);
+
+        // Remaining data follows the discriminant (at offset 4)
+        java.util.List<VariantType.Case> cases = variantType.cases();
+
+        if (discriminant < 0 || discriminant >= cases.size()) {
+            throw new IllegalArgumentException("Invalid variant discriminant: " + discriminant);
+        }
+
+        VariantType.Case caseInfo = cases.get(discriminant);
+
+        // Decode case data if present
+        Object caseData = null;
+        if (caseInfo.type.isPresent()) {
+            // Read data from memory starting at offset 4 (after discriminant)
+            long dataPtr = memoryPtr + 4;
+            long[] caseEncoded = readVariantDataFromMemory(memory, dataPtr, caseInfo.type.get());
+            caseData = decode(caseEncoded, caseInfo.type.get(), memory);
+        }
+
+        return new VariantValue(caseInfo.name, caseData);
+    }
+
+    /**
+     * Read variant case data from memory based on type.
+     */
+    private static long[] readVariantDataFromMemory(
+            Memory memory, long dataPtr, WitType fieldType) {
+        if (fieldType instanceof PrimitiveType) {
+            PrimitiveType prim = (PrimitiveType) fieldType;
+            switch (prim) {
+                case I32:
+                case F32:
+                    return new long[] {memory.readInt((int) dataPtr)};
+                case I64:
+                case F64:
+                    return new long[] {memory.readLong((int) dataPtr)};
+                case STRING:
+                    // String is (ptr, len) pair
+                    long ptr = memory.readInt((int) dataPtr);
+                    long len = memory.readInt((int) dataPtr + 4);
+                    return new long[] {ptr, len};
+                case BOOL:
+                case CHAR:
+                    return new long[] {memory.read((int) dataPtr)};
+                default:
+                    return new long[] {0};
+            }
+        }
+        return new long[] {0};
+    }
+
+    /**
      * Encode a Java value to WIT representation (as long[] for function arguments).
      *
      * @param value Java value to encode
@@ -91,6 +156,8 @@ public class CanonicalAbi {
             return encodeList(value, (ListType) type, memory);
         } else if (type instanceof RecordType) {
             return encodeRecord(value, (RecordType) type, memory);
+        } else if (type instanceof VariantType) {
+            return encodeVariant(value, (VariantType) type, memory);
         }
         throw new IllegalArgumentException("Cannot encode type: " + type.displayName());
     }
@@ -113,6 +180,8 @@ public class CanonicalAbi {
             return decodeList(encoded, (ListType) type, memory);
         } else if (type instanceof RecordType) {
             return decodeRecord(encoded, (RecordType) type, memory);
+        } else if (type instanceof VariantType) {
+            return decodeVariant(encoded, (VariantType) type, memory);
         }
         throw new IllegalArgumentException("Cannot decode type: " + type.displayName());
     }
@@ -421,5 +490,111 @@ public class CanonicalAbi {
             }
         }
         return new long[] {0};
+    }
+
+    /**
+     * Encode a VariantValue to WIT representation (discriminant + data).
+     */
+    private static long[] encodeVariant(Object value, VariantType type, Memory memory) {
+        if (!(value instanceof VariantValue)) {
+            throw new IllegalArgumentException(
+                    "Expected VariantValue, got " + value.getClass().getSimpleName());
+        }
+
+        VariantValue variant = (VariantValue) value;
+        java.util.List<Long> encoded = new java.util.ArrayList<>();
+
+        // Find the case index (discriminant)
+        int discriminant = -1;
+        java.util.List<VariantType.Case> cases = type.cases();
+        for (int i = 0; i < cases.size(); i++) {
+            if (cases.get(i).name.equals(variant.caseName())) {
+                discriminant = i;
+                break;
+            }
+        }
+
+        if (discriminant == -1) {
+            throw new IllegalArgumentException("Unknown variant case: " + variant.caseName());
+        }
+
+        // Add discriminant (u32)
+        encoded.add((long) (discriminant & 0xFFFFFFFFL));
+
+        // Add case data if present
+        if (!variant.isEmpty()) {
+            VariantType.Case caseInfo = cases.get(discriminant);
+            if (caseInfo.type.isPresent()) {
+                long[] caseEncoded = encode(variant.data(), caseInfo.type.get(), memory);
+                for (long val : caseEncoded) {
+                    encoded.add(val);
+                }
+            }
+        }
+
+        long[] result = new long[encoded.size()];
+        for (int i = 0; i < encoded.size(); i++) {
+            result[i] = encoded.get(i);
+        }
+        return result;
+    }
+
+    /**
+     * Decode a variant from WIT representation (discriminant + data).
+     */
+    /**
+     * Decode a variant from inline encoded values (not from memory).
+     * Used when variant data is passed directly as return values.
+     */
+    public static Object decodeVariantInline(long[] encoded, VariantType type, Memory memory) {
+        if (encoded.length == 0) {
+            throw new IllegalArgumentException("Variant encoding must have at least discriminant");
+        }
+
+        // Read discriminant (first value is u32)
+        int discriminant = (int) (encoded[0] & 0xFFFFFFFFL);
+        java.util.List<VariantType.Case> cases = type.cases();
+
+        if (discriminant < 0 || discriminant >= cases.size()) {
+            throw new IllegalArgumentException("Invalid variant discriminant: " + discriminant);
+        }
+
+        VariantType.Case caseInfo = cases.get(discriminant);
+
+        // Decode case data if present
+        Object caseData = null;
+        if (caseInfo.type.isPresent() && encoded.length > 1) {
+            // Remaining values are the case data
+            long[] caseEncoded = java.util.Arrays.copyOfRange(encoded, 1, encoded.length);
+            caseData = decode(caseEncoded, caseInfo.type.get(), memory);
+        }
+
+        return new VariantValue(caseInfo.name, caseData);
+    }
+
+    private static Object decodeVariant(long[] encoded, VariantType type, Memory memory) {
+        if (encoded.length == 0) {
+            throw new IllegalArgumentException("Variant encoding must have at least discriminant");
+        }
+
+        // Read discriminant (first value is u32)
+        int discriminant = (int) (encoded[0] & 0xFFFFFFFFL);
+        java.util.List<VariantType.Case> cases = type.cases();
+
+        if (discriminant < 0 || discriminant >= cases.size()) {
+            throw new IllegalArgumentException("Invalid variant discriminant: " + discriminant);
+        }
+
+        VariantType.Case caseInfo = cases.get(discriminant);
+
+        // Decode case data if present
+        Object caseData = null;
+        if (caseInfo.type.isPresent() && encoded.length > 1) {
+            // Remaining values are the case data
+            long[] caseEncoded = java.util.Arrays.copyOfRange(encoded, 1, encoded.length);
+            caseData = decode(caseEncoded, caseInfo.type.get(), memory);
+        }
+
+        return new VariantValue(caseInfo.name, caseData);
     }
 }
