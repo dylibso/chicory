@@ -264,17 +264,65 @@ public class CanonicalAbi {
             return new long[] {0};
         }
 
+        RecordLayout layout = new RecordLayout(type);
         ExportFunction realloc = REALLOC_CONTEXT.get();
 
         if (realloc != null) {
-            int recordSize = 256;
-
-            long[] result = realloc.apply(0, 0, 8, recordSize);
+            // Allocate memory for the record
+            long[] result = realloc.apply(0, 0, 8, layout.getRecordSize());
             long ptr = result[0];
+
+            // Marshal fields into memory
+            if (value instanceof java.util.Map) {
+                java.util.Map<?, ?> map = (java.util.Map<?, ?>) value;
+                for (RecordLayout.FieldLayout field : layout.getFieldLayouts()) {
+                    Object fieldValue = map.get(field.name);
+                    long[] encoded_field = encode(fieldValue, field.type, memory);
+
+                    // Write encoded field to record memory at offset
+                    writeFieldToMemory(memory, ptr + field.offset, field.type, encoded_field);
+                }
+            } else {
+                // Handle other object types (reflection-based marshalling)
+                // For now, assume Map<String, Object>
+                throw new IllegalArgumentException(
+                        "Record values must be Map<String, Object>: " + value.getClass());
+            }
 
             return new long[] {ptr};
         } else {
             return new long[] {0};
+        }
+    }
+
+    /**
+     * Write an encoded field value to record memory at the given offset.
+     */
+    private static void writeFieldToMemory(
+            Memory memory, long fieldAddr, WitType fieldType, long[] encoded) {
+        if (fieldType instanceof PrimitiveType) {
+            PrimitiveType prim = (PrimitiveType) fieldType;
+            switch (prim) {
+                case I32:
+                case F32:
+                    memory.writeI32((int) fieldAddr, (int) encoded[0]);
+                    break;
+                case I64:
+                case F64:
+                    memory.writeLong((int) fieldAddr, encoded[0]);
+                    break;
+                case STRING:
+                    // String is (ptr, len) pair
+                    memory.writeI32((int) fieldAddr, (int) encoded[0]); // ptr
+                    memory.writeI32((int) fieldAddr + 4, (int) encoded[1]); // len
+                    break;
+                case BOOL:
+                case CHAR:
+                    memory.writeByte((int) fieldAddr, (byte) encoded[0]);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -283,13 +331,46 @@ public class CanonicalAbi {
             return new java.util.HashMap<>();
         }
 
-        int ptr = (int) encoded[0];
-        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        RecordLayout layout = new RecordLayout(type);
+        long recordPtr = encoded[0];
+        java.util.Map<String, Object> record = new java.util.HashMap<>();
 
-        for (RecordType.Field field : type.fields()) {
-            result.put(field.name, null);
+        // Unmarshal each field from memory
+        for (RecordLayout.FieldLayout field : layout.getFieldLayouts()) {
+            long fieldAddr = recordPtr + field.offset;
+            long[] fieldEncoded = readFieldFromMemory(memory, fieldAddr, field.type);
+            Object fieldValue = decode(fieldEncoded, field.type, memory);
+            record.put(field.name, fieldValue);
         }
 
-        return result;
+        return record;
+    }
+
+    /**
+     * Read an encoded field value from record memory at the given offset.
+     */
+    private static long[] readFieldFromMemory(Memory memory, long fieldAddr, WitType fieldType) {
+        if (fieldType instanceof PrimitiveType) {
+            PrimitiveType prim = (PrimitiveType) fieldType;
+            switch (prim) {
+                case I32:
+                case F32:
+                    return new long[] {memory.readInt((int) fieldAddr)};
+                case I64:
+                case F64:
+                    return new long[] {memory.readLong((int) fieldAddr)};
+                case STRING:
+                    // String is (ptr, len) pair
+                    long ptr = memory.readInt((int) fieldAddr);
+                    long len = memory.readInt((int) fieldAddr + 4);
+                    return new long[] {ptr, len};
+                case BOOL:
+                case CHAR:
+                    return new long[] {memory.read((int) fieldAddr)};
+                default:
+                    return new long[] {0};
+            }
+        }
+        return new long[] {0};
     }
 }
