@@ -3,7 +3,7 @@ wit_bindgen::generate!({
     world: "example",
     exports: {
         world: Example,
-    }
+    },
 });
 
 pub struct Example;
