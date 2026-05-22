@@ -1,0 +1,7 @@
+package example:example;
+
+world example {
+  export add: func(a: s32, b: s32) -> s32;
+  export multiply: func(a: s64, b: s64) -> s64;
+  export is-positive: func(x: s32) -> bool;
+}
