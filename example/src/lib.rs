@@ -36,4 +36,16 @@ impl Guest for Example {
     fn test_host_call_get_input() -> String {
         host_get_input()
     }
+
+    fn describe_person(p: Person) -> String {
+        format!("{} is {} years old (active: {})", p.name, p.age, p.active)
+    }
+
+    fn create_person(name: String, age: i32) -> Person {
+        Person {
+            name,
+            age,
+            active: age >= 18,
+        }
+    }
 }

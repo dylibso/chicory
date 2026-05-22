@@ -172,16 +172,48 @@ public class ExampleWasmValidator {
 
             CanonicalAbi.clearContext();
 
+            // ===== RECORDS (Phase 10) =====
+            System.out.println("=== PHASE 10: RECORDS ===\n");
+
+            // Test 9: describe-person with record parameter
+            System.out.println("Test 9: describe-person(person)");
+            java.util.Map<String, Object> person1 = new java.util.HashMap<>();
+            person1.put("name", "Alice");
+            person1.put("age", 30);
+            person1.put("active", true);
+            Object result9 = component.callExport("describe-person", person1);
+            String expected9 = "Alice is 30 years old (active: true)";
+            assert result9.equals(expected9)
+                    : "Expected '" + expected9 + "', got '" + result9 + "'";
+            System.out.println("  Result: " + result9);
+            System.out.println("  ✅ [PASS] - Record parameter working\n");
+
+            // Test 10: create-person returning record
+            System.out.println("Test 10: create-person(\"Bob\", 25)");
+            Object result10 = component.callExport("create-person", "Bob", 25);
+            assert result10 instanceof java.util.Map : "Expected Map, got " + result10.getClass();
+            java.util.Map<String, Object> person2 = (java.util.Map<String, Object>) result10;
+            assert "Bob".equals(person2.get("name"))
+                    : "Expected name='Bob', got '" + person2.get("name") + "'";
+            assert 25 == (Integer) person2.get("age")
+                    : "Expected age=25, got " + person2.get("age");
+            assert true == (Boolean) person2.get("active")
+                    : "Expected active=true, got " + person2.get("active");
+            System.out.println("  Result: " + person2);
+            System.out.println("  ✅ [PASS] - Record return value working\n");
+
+            CanonicalAbi.clearContext();
+
             System.out.println("╔════════════════════════════════════════════════════════════╗");
-            System.out.println("║   ✅ BIDIRECTIONAL CALLS WORKING! PHASE 9 COMPLETE! ✅    ║");
+            System.out.println("║   ✅ PHASES 9-10 COMPLETE! RECORDS WORKING! ✅            ║");
             System.out.println("║                                                            ║");
             System.out.println("║  Summary:                                                  ║");
             System.out.println("║  - Guest → Host: ✅ WORKING                               ║");
             System.out.println("║  - Host → Guest: ✅ WORKING                               ║");
             System.out.println("║  - String parameters: ✅ WORKING                          ║");
-            System.out.println("║  - Memory coordination: ✅ WORKING                        ║");
+            System.out.println("║  - Records (parameters & returns): ✅ WORKING             ║");
             System.out.println("║                                                            ║");
-            System.out.println("║  8/8 Tests Passed                                          ║");
+            System.out.println("║  10/10 Tests Passed                                        ║");
             System.out.println("╚════════════════════════════════════════════════════════════╝");
 
         } catch (Exception e) {
