@@ -19,6 +19,11 @@ world example {
     blue,
   }
 
+  record user-status {
+    person: person,
+    status: operation-result,
+  }
+
   // Exports: Functions guest provides to host
   export add: func(a: s32, b: s32) -> s32;
   export multiply: func(a: s64, b: s64) -> s64;
@@ -42,6 +47,12 @@ world example {
   export repeat-string: func(text: string, count: s32) -> list<string>;
   export sum-numbers: func(numbers: list<s32>) -> s32;
   export get-names: func(people: list<person>) -> list<string>;
+  
+  // Phase 10.4: Complex nested types
+  export filter-high-value-people: func(people: list<person>, min-age: s32) -> list<person>;
+  export process-user-status: func(status: user-status) -> string;
+  export create-user-status: func(name: string, age: s32, message: string) -> user-status;
+  export validate-results: func(results: list<operation-result>) -> s32;
   
   // Imports: Functions guest needs from host
   import host-log: func(msg: string);

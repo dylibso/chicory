@@ -72,4 +72,32 @@ impl Guest for Example {
     fn get_names(people: Vec<Person>) -> Vec<String> {
         people.iter().map(|p| p.name.clone()).collect()
     }
+
+    // Phase 10.4: Complex nested types
+    fn filter_high_value_people(people: Vec<Person>, min_age: i32) -> Vec<Person> {
+        people.into_iter().filter(|p| p.age >= min_age).collect()
+    }
+
+    fn process_user_status(status: UserStatus) -> String {
+        let person_info = format!("{} ({})", status.person.name, status.person.age);
+        match status.status {
+            OperationResult::Ok(msg) => format!("{}: {}", person_info, msg),
+            OperationResult::Err(code) => format!("{}: Error code {}", person_info, code),
+        }
+    }
+
+    fn create_user_status(name: String, age: i32, message: String) -> UserStatus {
+        UserStatus {
+            person: Person {
+                name,
+                age,
+                active: age >= 18,
+            },
+            status: OperationResult::Ok(message),
+        }
+    }
+
+    fn validate_results(results: Vec<OperationResult>) -> i32 {
+        results.iter().filter(|r| matches!(r, OperationResult::Ok(_))).count() as i32
+    }
 }

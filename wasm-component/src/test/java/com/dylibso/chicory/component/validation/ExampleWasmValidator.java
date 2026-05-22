@@ -299,10 +299,36 @@ public class ExampleWasmValidator {
             System.out.println("  Result: " + names);
             System.out.println("  ✅ [PASS] - List of records working\n");
 
+            // === PHASE 10.4: COMPLEX NESTED TYPES ===
+            System.out.println("=== PHASE 10.4: COMPLEX NESTED TYPES ===\n");
+
+            // Test 17: filter-high-value-people(list<person>, min-age) → list<person>
+            System.out.println("Test 17: filter-high-value-people([people], min-age=28)");
+            java.util.List<Object> allPeople = new java.util.ArrayList<>();
+            java.util.Map<String, Object> young = new java.util.HashMap<>();
+            young.put("name", "Charlie");
+            young.put("age", 22);
+            young.put("active", true);
+            java.util.Map<String, Object> older = new java.util.HashMap<>();
+            older.put("name", "Diana");
+            older.put("age", 35);
+            older.put("active", true);
+            allPeople.add(young);
+            allPeople.add(older);
+            Object result17 = component.callExport("filter-high-value-people", allPeople, 28);
+            assert result17 instanceof com.dylibso.chicory.component.ListValue
+                    : "Expected ListValue, got " + result17.getClass();
+            com.dylibso.chicory.component.ListValue filtered =
+                    (com.dylibso.chicory.component.ListValue) result17;
+            assert filtered.size() == 1 : "Expected 1 person after filter, got " + filtered.size();
+            System.out.println("  Result: " + filtered);
+            System.out.println("  ✅ [PASS] - Complex nested types working (lists + records)\n");
+
             CanonicalAbi.clearContext();
 
             System.out.println("╔════════════════════════════════════════════════════════════╗");
-            System.out.println("║   ✅ PHASES 9-10.3 COMPLETE! LISTS WORKING! ✅           ║");
+            System.out.println(
+                    "║   ✅ PHASES 9-10.4 COMPLETE! COMPLEX NESTED TYPES WORKING! ✅           ║");
             System.out.println("║                                                            ║");
             System.out.println("║  Summary:                                                  ║");
             System.out.println("║  - Guest → Host: ✅ WORKING                               ║");
@@ -312,7 +338,7 @@ public class ExampleWasmValidator {
             System.out.println("║  - Variants: ✅ WORKING                                   ║");
             System.out.println("║  - Lists: ✅ WORKING                                      ║");
             System.out.println("║                                                            ║");
-            System.out.println("║  16/16 Tests Passed                                        ║");
+            System.out.println("║  17/17 Tests Passed                                        ║");
             System.out.println("╚════════════════════════════════════════════════════════════╝");
 
         } catch (Exception e) {

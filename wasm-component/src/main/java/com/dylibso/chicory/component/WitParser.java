@@ -30,7 +30,7 @@ public class WitParser {
                     "([\\w-]+)\\s*:\\s*function\\s*\\(([^)]*)\\)\\s*(?:->\\s*([^\\n]+?))?(?=\\n|$)",
                     Pattern.MULTILINE);
     private static final Pattern FUNCTION_PARAM_PATTERN =
-            Pattern.compile("([\\w-]+)\\s*:\\s*([\\w<>]+)");
+            Pattern.compile("([\\w-]+)\\s*:\\s*([\\w<>-]+)");
 
     public ComponentDefinition parse(String witText) {
         String packageName = "default";
