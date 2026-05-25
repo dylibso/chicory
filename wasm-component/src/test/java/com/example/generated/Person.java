@@ -85,6 +85,10 @@ public class Person {
         return record;
     }
 
+    static {
+        com.dylibso.chicory.component.PojoRegistry.register("person", Person.class);
+    }
+
     @Override
     public String toString() {
         return "Person{name='" + name + "', age=" + age + ", active=" + active + "}";

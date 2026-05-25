@@ -1,0 +1,12 @@
+// Common types used across the application
+record person {
+  name: string,
+  age: s32,
+  active: bool,
+}
+
+record user-config {
+  timeout: option<s32>,
+  api-key: option<string>,
+  enabled: bool,
+}

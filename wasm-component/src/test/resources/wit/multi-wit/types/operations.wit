@@ -1,0 +1,11 @@
+// Operation results and color variants
+variant operation-result {
+  ok(string),
+  err(s32),
+}
+
+variant color {
+  red,
+  green,
+  blue,
+}

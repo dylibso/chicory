@@ -1,0 +1,22 @@
+// Main world definition that imports types from modular files
+import types/common;
+import types/operations;
+import types/models;
+
+package example:example;
+
+world example {
+  // Exports using types from common.wit
+  export describe-person: func(p: person) -> string;
+  export get-config: func() -> user-config;
+  
+  // Exports using types from operations.wit
+  export process-result: func(op: operation-result) -> bool;
+  export pick-color: func(index: s32) -> color;
+  
+  // Exports using composite types from models.wit (transitive imports)
+  export batch-process: func(batch: user-batch) -> s32;
+  
+  // Imports
+  import host-log: func(msg: string);
+}

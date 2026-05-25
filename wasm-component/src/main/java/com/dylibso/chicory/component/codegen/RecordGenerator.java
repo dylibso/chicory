@@ -220,6 +220,16 @@ public class RecordGenerator {
             sb.append(");\n");
         }
         sb.append(CodeFormatter.indent(2)).append("return record;\n");
+        sb.append(CodeFormatter.indent(1)).append("}\n\n");
+
+        // Static initializer to register this POJO class
+        sb.append(CodeFormatter.indent(1)).append("static {\n");
+        sb.append(CodeFormatter.indent(2))
+                .append("com.dylibso.chicory.component.PojoRegistry.register(\"")
+                .append(recordType.displayName())
+                .append("\", ")
+                .append(className)
+                .append(".class);\n");
         sb.append(CodeFormatter.indent(1)).append("}\n");
 
         // Class closing brace

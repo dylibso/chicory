@@ -1,0 +1,8 @@
+// Complex model that reuses types from other modules
+import types/common;
+import types/operations;
+
+record user-batch {
+  people: list<person>,
+  metadata: operation-result,
+}

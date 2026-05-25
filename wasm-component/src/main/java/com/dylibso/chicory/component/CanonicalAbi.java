@@ -563,26 +563,54 @@ public class CanonicalAbi {
             long ptr = result[0];
 
             // Marshal fields into memory
+            java.util.Map<String, Object> fieldMap;
             if (value instanceof java.util.Map) {
-                java.util.Map<?, ?> map = (java.util.Map<?, ?>) value;
-                for (RecordLayout.FieldLayout field : layout.getFieldLayouts()) {
-                    Object fieldValue = map.get(field.name);
-                    long[] encoded_field = encode(fieldValue, field.type, memory);
-
-                    // Write encoded field to record memory at offset
-                    writeFieldToMemory(memory, ptr + field.offset, field.type, encoded_field);
-                }
+                fieldMap = (java.util.Map<String, Object>) value;
             } else {
-                // Handle other object types (reflection-based marshalling)
-                // For now, assume Map<String, Object>
-                throw new IllegalArgumentException(
-                        "Record values must be Map<String, Object>: " + value.getClass());
+                // Handle POJOs using reflection
+                fieldMap = pojoToMap(value);
+            }
+
+            for (RecordLayout.FieldLayout field : layout.getFieldLayouts()) {
+                Object fieldValue = fieldMap.get(field.name);
+                long[] encoded_field = encode(fieldValue, field.type, memory);
+
+                // Write encoded field to record memory at offset
+                writeFieldToMemory(memory, ptr + field.offset, field.type, encoded_field);
             }
 
             return new long[] {ptr};
         } else {
             return new long[] {0};
         }
+    }
+
+    /**
+     * Convert a POJO to a Map by extracting fields using reflection.
+     * Looks for public getters or fields with @WitField annotation.
+     */
+    private static java.util.Map<String, Object> pojoToMap(Object pojo) {
+        java.util.Map<String, Object> map = new java.util.HashMap<>();
+
+        if (pojo == null) {
+            return map;
+        }
+
+        Class<?> clazz = pojo.getClass();
+
+        // Try to get fields with @WitField annotation first
+        java.lang.reflect.Field[] fields = clazz.getDeclaredFields();
+        for (java.lang.reflect.Field field : fields) {
+            field.setAccessible(true);
+            try {
+                Object fieldValue = field.get(pojo);
+                map.put(field.getName(), fieldValue);
+            } catch (IllegalAccessException e) {
+                // Skip this field
+            }
+        }
+
+        return map;
     }
 
     /**

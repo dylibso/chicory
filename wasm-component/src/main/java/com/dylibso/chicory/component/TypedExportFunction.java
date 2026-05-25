@@ -67,10 +67,15 @@ public class TypedExportFunction {
             long[] encoded;
 
             // Special handling for records: flatten them into individual parameters
-            if (paramType instanceof RecordType && args[i] instanceof Map) {
-                encoded =
-                        RecordFlattener.flattenRecord(
-                                (Map<String, Object>) args[i], (RecordType) paramType, memory);
+            if (paramType instanceof RecordType) {
+                Map<String, Object> recordMap;
+                if (args[i] instanceof Map) {
+                    recordMap = (Map<String, Object>) args[i];
+                } else {
+                    // Convert POJO to Map
+                    recordMap = pojoToMap(args[i]);
+                }
+                encoded = RecordFlattener.flattenRecord(recordMap, (RecordType) paramType, memory);
             } else {
                 encoded = CanonicalAbi.encode(args[i], paramType, memory);
             }
@@ -101,7 +106,15 @@ public class TypedExportFunction {
         if (returnsRecord) {
             // For records, WASM returns a pointer to the record in memory
             if (results.length > 0 && results[0] != 0) {
-                return CanonicalAbi.decodeRecordFromMemory(results[0], returnRecordType, memory);
+                Object decoded =
+                        CanonicalAbi.decodeRecordFromMemory(results[0], returnRecordType, memory);
+                // Try to convert Map to POJO
+                if (decoded instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> map = (Map<String, Object>) decoded;
+                    return PojoRegistry.mapToPojo(returnRecordType.displayName(), map);
+                }
+                return decoded;
             }
             return new java.util.HashMap<>();
         }
@@ -164,5 +177,32 @@ public class TypedExportFunction {
      */
     public ComponentDefinition.FunctionSignature getSignature() {
         return signature;
+    }
+
+    /**
+     * Convert a POJO to a Map by extracting fields using reflection.
+     */
+    private static Map<String, Object> pojoToMap(Object pojo) {
+        Map<String, Object> map = new java.util.HashMap<>();
+
+        if (pojo == null) {
+            return map;
+        }
+
+        Class<?> clazz = pojo.getClass();
+
+        // Extract all fields using reflection
+        java.lang.reflect.Field[] fields = clazz.getDeclaredFields();
+        for (java.lang.reflect.Field field : fields) {
+            field.setAccessible(true);
+            try {
+                Object fieldValue = field.get(pojo);
+                map.put(field.getName(), fieldValue);
+            } catch (IllegalAccessException e) {
+                // Skip this field
+            }
+        }
+
+        return map;
     }
 }

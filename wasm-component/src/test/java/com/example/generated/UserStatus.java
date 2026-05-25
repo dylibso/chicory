@@ -80,6 +80,10 @@ public class UserStatus {
         return record;
     }
 
+    static {
+        com.dylibso.chicory.component.PojoRegistry.register("user-status", UserStatus.class);
+    }
+
     @Override
     public String toString() {
         return "UserStatus{person=" + person + ", status=" + status + "}";
