@@ -109,6 +109,78 @@ public class ComponentModel {
     }
 
     /**
+     * Load a component with embedded WIT metadata in the binary.
+     *
+     * <p>This approach requires the WASM binary to include Component Model metadata in a
+     * "component" custom section. If metadata is not found, use load(String witSource,
+     * WasmModule wasmModule) instead.
+     *
+     * @param wasmModule Compiled Wasm module with embedded component metadata
+     * @return Component model instance
+     * @throws ComponentModelException if no embedded metadata found
+     */
+    public static ComponentModel load(WasmModule wasmModule) {
+        return load(wasmModule, "component", new HostFunctionProvider());
+    }
+
+    /**
+     * Load a component with embedded WIT metadata and custom module name.
+     *
+     * @param wasmModule Compiled Wasm module with embedded component metadata
+     * @param moduleName Module name to use for host functions
+     * @return Component model instance
+     * @throws ComponentModelException if no embedded metadata found
+     */
+    public static ComponentModel load(WasmModule wasmModule, String moduleName) {
+        return load(wasmModule, moduleName, new HostFunctionProvider());
+    }
+
+    /**
+     * Load a component with embedded WIT metadata and host functions.
+     *
+     * @param wasmModule Compiled Wasm module with embedded component metadata
+     * @param hostFunctions Host function provider with implementations
+     * @return Component model instance
+     * @throws ComponentModelException if no embedded metadata found
+     */
+    public static ComponentModel load(WasmModule wasmModule, HostFunctionProvider hostFunctions) {
+        return load(wasmModule, "component", hostFunctions);
+    }
+
+    /**
+     * Load a component with embedded WIT metadata, module name, and host functions.
+     *
+     * <p>This is the main method for loading components with embedded WIT. It:
+     * <ol>
+     *   <li>Extracts component metadata from WASM binary
+     *   <li>Creates ComponentDefinition from binary format
+     *   <li>Sets up host function bindings
+     *   <li>Instantiates the module
+     *   <li>Returns ready-to-use ComponentModel
+     * </ol>
+     *
+     * @param wasmModule Compiled Wasm module with embedded component metadata
+     * @param moduleName Module name to use for host functions
+     * @param hostFunctions Host function provider with implementations
+     * @return Component model instance
+     * @throws ComponentModelException if no embedded metadata found or extraction fails
+     */
+    public static ComponentModel load(
+            WasmModule wasmModule, String moduleName, HostFunctionProvider hostFunctions) {
+        // Extract component definition from embedded metadata
+        ComponentDefinition definition = ComponentExtractor.extractComponentDefinition(wasmModule);
+
+        // Create Chicory store with host function bindings
+        Store store = new Store();
+        ImportBinder.bindHostFunctions(store, hostFunctions, definition, moduleName);
+
+        // Instantiate module
+        Instance instance = store.instantiate("component", wasmModule);
+
+        return new ComponentModel(definition, instance, moduleName, hostFunctions);
+    }
+
+    /**
      * Register a host function that can be called by the guest.
      *
      * @param functionName Name of the function in the WIT definition

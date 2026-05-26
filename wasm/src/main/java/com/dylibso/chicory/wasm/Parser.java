@@ -20,6 +20,7 @@ import com.dylibso.chicory.wasm.types.ArrayType;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CompType;
+import com.dylibso.chicory.wasm.types.ComponentCustomSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
 import com.dylibso.chicory.wasm.types.DataSection;
@@ -110,7 +111,9 @@ public final class Parser {
     private TypeSection typeSection;
 
     private static final Map<String, Function<byte[], CustomSection>> DEFAULT_CUSTOM_PARSERS =
-            Map.of("name", NameCustomSection::parse);
+            Map.of(
+                    "name", NameCustomSection::parse,
+                    "component", ComponentCustomSection::parse);
 
     private Parser() {
         this(null, DEFAULT_CUSTOM_PARSERS, true);

@@ -3,6 +3,7 @@ package com.dylibso.chicory.wasm;
 import static java.util.Objects.requireNonNull;
 
 import com.dylibso.chicory.wasm.types.CodeSection;
+import com.dylibso.chicory.wasm.types.ComponentCustomSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
 import com.dylibso.chicory.wasm.types.DataSection;
@@ -136,6 +137,10 @@ public final class WasmModule {
 
     public NameCustomSection nameSection() {
         return (NameCustomSection) customSections.get("name");
+    }
+
+    public ComponentCustomSection componentSection() {
+        return (ComponentCustomSection) customSections.get("component");
     }
 
     public ElementSection elementSection() {
