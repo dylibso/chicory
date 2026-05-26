@@ -1,7 +1,6 @@
 package example:example;
 
 world example {
-  // Type definitions
   record person {
     name: string,
     age: s32,
@@ -24,31 +23,31 @@ world example {
     status: operation-result,
   }
 
-  // Exports: Functions guest provides to host
+  // Exports: Functions basic operations
   export add: func(a: s32, b: s32) -> s32;
   export multiply: func(a: s64, b: s64) -> s64;
   export is-positive: func(x: s32) -> bool;
   export greet: func(name: string) -> string;
   export process-text: func(text: string) -> string;
   
-  // Exports that test calling imported functions
+  // Exports: Functions for testing calling imported functions
   export test-host-call-log: func(msg: string);
   export test-host-call-get-input: func() -> string;
   
-  // Exports that test record support
+  // Exports: Functions that test record support
   export describe-person: func(p: person) -> string;
   export create-person: func(name: string, age: s32) -> person;
 
-  // Exports that test variant support
+  // Exports: Functions that test variant support
   export get-result: func() -> operation-result;
   export pick-color: func(index: s32) -> color;
   
-  // Exports that test list support
+  // Exports: Functions that test list support
   export repeat-string: func(text: string, count: s32) -> list<string>;
   export sum-numbers: func(numbers: list<s32>) -> s32;
   export get-names: func(people: list<person>) -> list<string>;
   
-  // Phase 10.4: Complex nested types
+  // Exports: Function that test more complex nested types
   export filter-high-value-people: func(people: list<person>, min-age: s32) -> list<person>;
   export process-user-status: func(status: user-status) -> string;
   export create-user-status: func(name: string, age: s32, message: string) -> user-status;
