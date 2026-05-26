@@ -1,6 +1,7 @@
 package com.example.generated;
 
 import com.dylibso.chicory.component.CanonicalAbi;
+import com.dylibso.chicory.component.PojoRegistry;
 import com.dylibso.chicory.component.annotation.WitCase;
 import com.dylibso.chicory.component.annotation.WitVariant;
 import com.dylibso.chicory.component.types.VariantType;
@@ -87,5 +88,9 @@ public abstract class Color {
         variant.addCase("green", java.util.Optional.empty());
         variant.addCase("blue", java.util.Optional.empty());
         return variant;
+    }
+
+    static {
+        PojoRegistry.registerVariant("color", Color.class);
     }
 }

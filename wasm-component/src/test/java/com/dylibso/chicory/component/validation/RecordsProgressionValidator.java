@@ -29,6 +29,11 @@ public class RecordsProgressionValidator {
         byte[] wasmBytes = Files.readAllBytes(Paths.get(basePath + "example.wasm"));
 
         try {
+            // Force load generated classes to register with PojoRegistry
+            Class.forName("com.example.generated.Person");
+            Class.forName("com.example.generated.UserStatus");
+            Class.forName("com.example.generated.OperationResult");
+            Class.forName("com.example.generated.Color");
             WasmModule wasmModule = Parser.parse(wasmBytes);
             HostFunctionProvider hostFunctions = new HostFunctionProvider();
 

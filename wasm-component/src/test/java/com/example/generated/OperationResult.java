@@ -1,6 +1,7 @@
 package com.example.generated;
 
 import com.dylibso.chicory.component.CanonicalAbi;
+import com.dylibso.chicory.component.PojoRegistry;
 import com.dylibso.chicory.component.VariantValue;
 import com.dylibso.chicory.component.annotation.WitCase;
 import com.dylibso.chicory.component.annotation.WitVariant;
@@ -85,5 +86,9 @@ public abstract class OperationResult {
         variant.addCase("ok", Optional.of(PrimitiveType.STRING));
         variant.addCase("err", Optional.of(PrimitiveType.I32));
         return variant;
+    }
+
+    static {
+        PojoRegistry.registerVariant("operation-result", OperationResult.class);
     }
 }

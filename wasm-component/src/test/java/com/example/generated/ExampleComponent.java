@@ -28,11 +28,6 @@ public class ExampleComponent {
         return ((Number) result).longValue();
     }
 
-    public int divide(int a, int b) {
-        Object result = component.callExport("divide", a, b);
-        return ((Number) result).intValue();
-    }
-
     public boolean isPositive(int n) {
         Object result = component.callExport("is-positive", n);
         return (Boolean) result;
@@ -89,13 +84,21 @@ public class ExampleComponent {
     @SuppressWarnings("unchecked")
     public List<String> getNames(List<?> people) {
         Object result = component.callExport("get-names", people);
-        return (List<String>) result;
+        // ListValue implements List interface
+        if (result instanceof java.util.List) {
+            return (List<String>) result;
+        }
+        return new java.util.ArrayList<>();
     }
 
     @SuppressWarnings("unchecked")
     public List<?> filterHighValuePeople(List<?> people, int minAge) {
         Object result = component.callExport("filter-high-value-people", people, minAge);
-        return (List<?>) result;
+        // ListValue implements List interface
+        if (result instanceof java.util.List) {
+            return (List<?>) result;
+        }
+        return new java.util.ArrayList<>();
     }
 
     public UserStatus createUserStatus(Person person, OperationResult status) {

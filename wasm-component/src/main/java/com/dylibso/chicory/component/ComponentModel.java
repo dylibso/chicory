@@ -155,7 +155,8 @@ public class ComponentModel {
         }
 
         TypedExportFunction typedExport =
-                new TypedExportFunction(export, definition, sig.get(), guestInstance.memory());
+                new TypedExportFunction(
+                        export, definition, sig.get(), guestInstance.memory(), guestInstance);
         exports.put(functionName, typedExport);
         return typedExport;
     }

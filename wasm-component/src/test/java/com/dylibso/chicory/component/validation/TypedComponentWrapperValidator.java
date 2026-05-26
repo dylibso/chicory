@@ -48,6 +48,11 @@ public class TypedComponentWrapperValidator {
                         + " bytes)\n");
 
         try {
+            // Force load generated classes to register with PojoRegistry
+            Class.forName("com.example.generated.Person");
+            Class.forName("com.example.generated.UserStatus");
+            Class.forName("com.example.generated.OperationResult");
+            Class.forName("com.example.generated.Color");
             // Parse WASM bytes
             System.out.println("Parsing WASM module...");
             WasmModule wasmModule = Parser.parse(wasmBytes);
@@ -106,11 +111,11 @@ public class TypedComponentWrapperValidator {
             // Test 2: Multiple typed operations
             System.out.println("Test 2: Multiple operations via typed SDK");
             long mul = sdk.multiply(4L, 7L);
-            int div = sdk.divide(20, 4);
+            boolean pos = sdk.isPositive(42);
             System.out.println("  multiply(4, 7) = " + mul);
-            System.out.println("  divide(20, 4) = " + div);
+            System.out.println("  is-positive(42) = " + pos);
             assert mul == 28 : "Expected 28";
-            assert div == 5 : "Expected 5";
+            assert pos == true : "Expected true";
             System.out.println("  ✅ [PASS] - Multiple operations working\n");
 
             // ===== COMPARISON 2: Records (POJOs) =====

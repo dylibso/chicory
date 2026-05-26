@@ -172,6 +172,16 @@ public class VariantGenerator {
             sb.append(");\n");
         }
         sb.append(CodeFormatter.indent(2)).append("return variant;\n");
+        sb.append(CodeFormatter.indent(1)).append("}\n\n");
+
+        // Register with PojoRegistry
+        sb.append(CodeFormatter.indent(1)).append("static {\n");
+        sb.append(CodeFormatter.indent(2))
+                .append("PojoRegistry.registerVariant(\"")
+                .append(variantType.displayName())
+                .append("\", ")
+                .append(className)
+                .append(".class);\n");
         sb.append(CodeFormatter.indent(1)).append("}\n");
 
         // Class closing brace
