@@ -167,25 +167,23 @@ public class ComponentWrapperGenerator {
         } else if (export.returns().size() == 1) {
             WitType returnWitType = export.returns().get(0);
             if (isComplexType(returnWitType) && returnWitType instanceof RecordType) {
+                // TypedExportFunction already returns decoded POJO, just cast
                 RecordType recordType = (RecordType) returnWitType;
                 String recordClass =
                         CodeFormatter.capitalize(toCamelCase(recordType.displayName()));
                 sb.append(CodeFormatter.indent(2))
-                        .append("return ")
+                        .append("return (")
                         .append(recordClass)
-                        .append(
-                                ".decode((long[]) result,"
-                                        + " componentModel.getInstance().memory());\n");
+                        .append(") result;\n");
             } else if (isComplexType(returnWitType) && returnWitType instanceof VariantType) {
+                // TypedExportFunction already returns decoded POJO, just cast
                 VariantType variantType = (VariantType) returnWitType;
                 String variantClass =
                         CodeFormatter.capitalize(toCamelCase(variantType.displayName()));
                 sb.append(CodeFormatter.indent(2))
-                        .append("return ")
+                        .append("return (")
                         .append(variantClass)
-                        .append(
-                                ".decode((long[]) result,"
-                                        + " componentModel.getInstance().memory());\n");
+                        .append(") result;\n");
             } else if (returnWitType instanceof PrimitiveType) {
                 PrimitiveType prim = (PrimitiveType) returnWitType;
                 if (prim == PrimitiveType.STRING) {
@@ -208,11 +206,8 @@ public class ComponentWrapperGenerator {
                     sb.append(CodeFormatter.indent(2)).append("return result;\n");
                 }
             } else if (returnWitType instanceof ListType) {
-                String listReturnType = witTypeToJavaType(returnWitType);
-                sb.append(CodeFormatter.indent(2))
-                        .append("return (")
-                        .append(listReturnType)
-                        .append(") result;\n");
+                ListType listType = (ListType) returnWitType;
+                generateListReturnHandling(sb, listType);
             } else {
                 sb.append(CodeFormatter.indent(2)).append("return result;\n");
             }
@@ -221,6 +216,66 @@ public class ComponentWrapperGenerator {
         }
 
         sb.append(CodeFormatter.indent(1)).append("}\n\n");
+    }
+
+    private void generateListReturnHandling(StringBuilder sb, ListType listType) {
+        WitType elementType = listType.elementType();
+        String listReturnType = witTypeToJavaType(listType);
+
+        // TypedExportFunction returns ListValue, need to extract elements
+        sb.append(CodeFormatter.indent(2))
+                .append("if (result instanceof com.dylibso.chicory.component.ListValue) {\n");
+        sb.append(CodeFormatter.indent(3))
+                .append("java.util.List<Object> elements = ")
+                .append("((com.dylibso.chicory.component.ListValue) result).elements();\n");
+
+        if (elementType instanceof RecordType) {
+            // Convert Map elements to POJO records
+            RecordType recordType = (RecordType) elementType;
+            String recordName = recordType.displayName();
+            String recordClass = CodeFormatter.capitalize(toCamelCase(recordType.displayName()));
+            sb.append(CodeFormatter.indent(3)).append("return elements.stream()\n");
+            sb.append(CodeFormatter.indent(4)).append(".map(\n");
+            sb.append(CodeFormatter.indent(5))
+                    .append("e -> (")
+                    .append(recordClass)
+                    .append(") com.dylibso.chicory.component.PojoRegistry.mapToPojo(\n");
+            sb.append(CodeFormatter.indent(6))
+                    .append("\"")
+                    .append(recordName)
+                    .append("\", (java.util.Map<String, Object>) e))\n");
+            sb.append(CodeFormatter.indent(4))
+                    .append(".collect(java.util.stream.Collectors.toList());\n");
+        } else if (elementType instanceof VariantType) {
+            // Convert VariantValue elements to POJO variants
+            VariantType variantType = (VariantType) elementType;
+            String variantName = variantType.displayName();
+            String variantClass = CodeFormatter.capitalize(toCamelCase(variantType.displayName()));
+            sb.append(CodeFormatter.indent(3)).append("return elements.stream()\n");
+            sb.append(CodeFormatter.indent(4)).append(".map(\n");
+            sb.append(CodeFormatter.indent(5))
+                    .append("e -> (")
+                    .append(variantClass)
+                    .append(") com.dylibso.chicory.component.PojoRegistry.variantValueToPojo(\n");
+            sb.append(CodeFormatter.indent(6))
+                    .append("\"")
+                    .append(variantName)
+                    .append("\", (com.dylibso.chicory.component.VariantValue) e))\n");
+            sb.append(CodeFormatter.indent(4))
+                    .append(".collect(java.util.stream.Collectors.toList());\n");
+        } else {
+            // For primitive elements, just return the list
+            sb.append(CodeFormatter.indent(3))
+                    .append("return (")
+                    .append(listReturnType)
+                    .append(") (java.util.List<?>) elements;\n");
+        }
+
+        sb.append(CodeFormatter.indent(2)).append("}\n");
+        sb.append(CodeFormatter.indent(2))
+                .append("return (")
+                .append(listReturnType)
+                .append(") result;\n");
     }
 
     private boolean isComplexType(WitType type) {

@@ -231,7 +231,7 @@ class ExampleWasmValidatorTest {
 
             // Verify the return value
             assertEquals(
-                    "Input: Hello from host!",
+                    "Input received: Hello from host!",
                     result,
                     "Expected guest to receive 'Hello from host!' from host");
         }

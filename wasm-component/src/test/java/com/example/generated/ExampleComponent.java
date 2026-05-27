@@ -1,6 +1,8 @@
 package com.example.generated;
 
 import com.dylibso.chicory.component.ComponentModel;
+import com.dylibso.chicory.component.PojoRegistry;
+import com.dylibso.chicory.component.VariantValue;
 import com.dylibso.chicory.component.annotation.WitComponent;
 import java.util.List;
 
@@ -54,21 +56,39 @@ public class ExampleComponent {
 
     public Person createPerson(String name, int age) throws Exception {
         Object result = componentModel.callExport("create-person", name, age);
-        return Person.decode((long[]) result, componentModel.getInstance().memory());
+        if (result instanceof VariantValue) {
+            // Fallback: convert VariantValue to POJO
+            return (Person) PojoRegistry.variantValueToPojo("person", (VariantValue) result);
+        }
+        return (Person) result;
     }
 
     public OperationResult getResult() throws Exception {
         Object result = componentModel.callExport("get-result");
-        return OperationResult.decode((long[]) result, componentModel.getInstance().memory());
+        if (result instanceof VariantValue) {
+            // Fallback: convert VariantValue to POJO
+            return (OperationResult)
+                    PojoRegistry.variantValueToPojo("operation-result", (VariantValue) result);
+        }
+        return (OperationResult) result;
     }
 
     public Color pickColor(int index) throws Exception {
         Object result = componentModel.callExport("pick-color", index);
-        return Color.decode((long[]) result, componentModel.getInstance().memory());
+        if (result instanceof VariantValue) {
+            // Fallback: convert VariantValue to POJO
+            return (Color) PojoRegistry.variantValueToPojo("color", (VariantValue) result);
+        }
+        return (Color) result;
     }
 
     public List<String> repeatString(String text, int count) throws Exception {
         Object result = componentModel.callExport("repeat-string", text, count);
+        if (result instanceof com.dylibso.chicory.component.ListValue) {
+            java.util.List<Object> elements =
+                    ((com.dylibso.chicory.component.ListValue) result).elements();
+            return (List<String>) (java.util.List<?>) elements;
+        }
         return (List<String>) result;
     }
 
@@ -79,11 +99,27 @@ public class ExampleComponent {
 
     public List<String> getNames(List<Person> people) throws Exception {
         Object result = componentModel.callExport("get-names", people);
+        if (result instanceof com.dylibso.chicory.component.ListValue) {
+            java.util.List<Object> elements =
+                    ((com.dylibso.chicory.component.ListValue) result).elements();
+            return (List<String>) (java.util.List<?>) elements;
+        }
         return (List<String>) result;
     }
 
     public List<Person> filterHighValuePeople(List<Person> people, int minAge) throws Exception {
         Object result = componentModel.callExport("filter-high-value-people", people, minAge);
+        if (result instanceof com.dylibso.chicory.component.ListValue) {
+            java.util.List<Object> elements =
+                    ((com.dylibso.chicory.component.ListValue) result).elements();
+            return elements.stream()
+                    .map(
+                            e ->
+                                    (Person)
+                                            PojoRegistry.mapToPojo(
+                                                    "person", (java.util.Map<String, Object>) e))
+                    .collect(java.util.stream.Collectors.toList());
+        }
         return (List<Person>) result;
     }
 
@@ -95,7 +131,12 @@ public class ExampleComponent {
 
     public UserStatus createUserStatus(String name, int age, String message) throws Exception {
         Object result = componentModel.callExport("create-user-status", name, age, message);
-        return UserStatus.decode((long[]) result, componentModel.getInstance().memory());
+        if (result instanceof VariantValue) {
+            // Fallback: convert VariantValue to POJO
+            return (UserStatus)
+                    PojoRegistry.variantValueToPojo("user-status", (VariantValue) result);
+        }
+        return (UserStatus) result;
     }
 
     public int validateResults(List<OperationResult> results) throws Exception {
