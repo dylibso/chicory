@@ -77,6 +77,7 @@ public class VariantGenerator {
         sb.append("import com.dylibso.chicory.runtime.Memory;\n");
         sb.append("import com.dylibso.chicory.component.CanonicalAbi;\n");
         sb.append("import com.dylibso.chicory.component.types.VariantType;\n");
+        sb.append("import com.dylibso.chicory.component.PojoRegistry;\n");
         sb.append("import java.util.Optional;\n\n");
 
         // Abstract base class declaration

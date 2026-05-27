@@ -47,7 +47,7 @@ public class BinaryTypeParser {
      * 4. Type references (indices into type table)
      *
      * @param reader binary reader
-     * @param typeRegistry for looking up named types
+     * @param definition component definition for type registry
      * @return parsed WIT type
      */
     public static WitType parseType(BinaryComponentReader reader, ComponentDefinition definition)

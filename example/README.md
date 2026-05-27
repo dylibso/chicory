@@ -35,7 +35,15 @@ cp target/wasm32-unknown-unknown/release/example.wasm .
 
 ```bash
 cd example/
-wasm-tools validate example.wasm              # Ensure the WASM module is valid
-wasm-tools component wit example.wasm         # Validate against the expected WIT interface
-wasm-tools component wit example.wasm --json  # Optional: Get JSON output for debugging
+
+# Ensure the WASM module is valid
+wasm-tools validate example.wasm
+
+# Get the WIT interface from the WASM module
+wasm-tools component wit example.wasm
+# Get JSON output for debugging
+wasm-tools component wit example.wasm --json  
+
+# Inspect the WASM module's exports and imports (including lower-level functions introduced by wit-bindgen)
+wasm-objdump -x example.wasm
 ```

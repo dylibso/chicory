@@ -15,15 +15,6 @@ import com.dylibso.chicory.wasm.types.ComponentCustomSection;
  *   <li>Explicit WIT file (current): ComponentModel.load(witSource, wasmModule)
  *   <li>Embedded WIT in binary (new): ComponentModel.load(wasmModule)
  * </ul>
- *
- * <p>Phase implementation status:
- * <ul>
- *   <li>✅ Phase 1: ComponentCustomSection created
- *   <li>✅ Phase 2: Custom section registered in Parser
- *   <li>✅ Phase 3: Binary deserialization (implemented)
- *   <li>✅ Phase 4: ComponentModel API extensions
- *   <li>⏳ Phase 5: Full dual-mode support
- * </ul>
  */
 public class ComponentExtractor {
 

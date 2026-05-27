@@ -3,14 +3,14 @@ package com.dylibso.chicory.component.types;
 /**
  * Represents an optional (nullable) WIT type.
  *
- * <p>WIT `option<T>` represents a value that may or may not be present. Maps to Java
- * `Optional<T>` for type safety.
+ * <p>WIT `option&lt;T&gt;` represents a value that may or may not be present. Maps to Java
+ * `Optional&lt;T&gt;` for type safety.
  *
  * <p>Examples:
  * <ul>
- *   <li>WIT: `option<s32>` → Java: `Optional<Integer>`
- *   <li>WIT: `option<string>` → Java: `Optional<String>`
- *   <li>WIT: `option<person>` → Java: `Optional<Person>` (where Person is a POJO)
+ *   <li>WIT: `option&lt;s32&gt;` → Java: `Optional&lt;Integer&gt;`
+ *   <li>WIT: `option&lt;string&gt;` → Java: `Optional&lt;String&gt;`
+ *   <li>WIT: `option&lt;person&gt;` → Java: `Optional&lt;Person&gt;` (where Person is a POJO)
  * </ul>
  *
  * <p>Encoding/Decoding:

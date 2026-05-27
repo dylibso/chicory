@@ -123,7 +123,8 @@ public class ComponentWrapperGenerator {
             if (i > 0) sb.append(", ");
             ComponentDefinition.FunctionSignature.Parameter param = export.parameters().get(i);
             String javaType = witTypeToJavaType(param.type);
-            sb.append(javaType).append(" ").append(param.name);
+            String paramName = toCamelCase(param.name);
+            sb.append(javaType).append(" ").append(paramName);
         }
 
         sb.append(") throws Exception {\n");
@@ -133,11 +134,12 @@ public class ComponentWrapperGenerator {
             if (isComplexType(param.type)) {
                 // Complex types need encoding
                 if (param.type instanceof RecordType) {
+                    String paramName = toCamelCase(param.name);
                     sb.append(CodeFormatter.indent(2))
                             .append("long[] __")
-                            .append(param.name)
+                            .append(paramName)
                             .append("_encoded = ")
-                            .append(param.name)
+                            .append(paramName)
                             .append(".encode(componentModel.getMemory());\n");
                 }
             }
@@ -150,10 +152,11 @@ public class ComponentWrapperGenerator {
                 .append("\"");
         for (ComponentDefinition.FunctionSignature.Parameter param : export.parameters()) {
             sb.append(", ");
+            String paramName = toCamelCase(param.name);
             if (isComplexType(param.type) && param.type instanceof RecordType) {
-                sb.append("__").append(param.name).append("_encoded");
+                sb.append("__").append(paramName).append("_encoded");
             } else {
-                sb.append(param.name);
+                sb.append(paramName);
             }
         }
         sb.append(");\n");
