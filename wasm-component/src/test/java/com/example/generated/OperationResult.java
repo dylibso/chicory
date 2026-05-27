@@ -1,14 +1,14 @@
 package com.example.generated;
 
-import com.dylibso.chicory.component.CanonicalAbi;
-import com.dylibso.chicory.component.PojoRegistry;
-import com.dylibso.chicory.component.VariantValue;
-import com.dylibso.chicory.component.annotation.WitCase;
 import com.dylibso.chicory.component.annotation.WitVariant;
-import com.dylibso.chicory.component.types.PrimitiveType;
-import com.dylibso.chicory.component.types.VariantType;
+import com.dylibso.chicory.component.annotation.WitCase;
+import com.dylibso.chicory.component.VariantValue;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.component.CanonicalAbi;
+import com.dylibso.chicory.component.types.VariantType;
+import com.dylibso.chicory.component.PojoRegistry;
 import java.util.Optional;
+import com.dylibso.chicory.component.types.PrimitiveType;
 
 @WitVariant("operation-result")
 public abstract class OperationResult {
@@ -33,6 +33,7 @@ public abstract class OperationResult {
         return CanonicalAbi.encode(variant, createVariantType(), memory);
     }
 
+
     @WitCase(0)
     public static class Ok extends OperationResult {
         public final String value;
@@ -52,7 +53,6 @@ public abstract class OperationResult {
             this.value = value;
         }
     }
-
     public static OperationResult decode(long[] encoded, Memory memory) throws Exception {
         Object obj = CanonicalAbi.decode(encoded, createVariantType(), memory);
         if (obj instanceof VariantValue) {
@@ -63,8 +63,7 @@ public abstract class OperationResult {
                 case "err":
                     return new Err((int) variant.data());
                 default:
-                    throw new IllegalArgumentException(
-                            "Unknown variant case: " + variant.caseName());
+                    throw new IllegalArgumentException("Unknown variant case: " + variant.caseName());
             }
         }
         throw new IllegalArgumentException("Invalid decode result type");

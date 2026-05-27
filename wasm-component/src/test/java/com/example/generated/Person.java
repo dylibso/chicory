@@ -1,13 +1,14 @@
 package com.example.generated;
 
-import com.dylibso.chicory.component.CanonicalAbi;
-import com.dylibso.chicory.component.annotation.WitField;
 import com.dylibso.chicory.component.annotation.WitRecord;
-import com.dylibso.chicory.component.types.PrimitiveType;
-import com.dylibso.chicory.component.types.RecordType;
-import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.component.annotation.WitField;
 import java.util.HashMap;
 import java.util.Map;
+import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.component.CanonicalAbi;
+import com.dylibso.chicory.component.RecordLayout;
+import com.dylibso.chicory.component.types.RecordType;
+import com.dylibso.chicory.component.types.PrimitiveType;
 
 @WitRecord("person")
 public class Person {

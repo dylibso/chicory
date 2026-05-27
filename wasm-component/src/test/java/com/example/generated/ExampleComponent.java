@@ -1,7 +1,9 @@
 package com.example.generated;
 
-import com.dylibso.chicory.component.ComponentModel;
 import com.dylibso.chicory.component.annotation.WitComponent;
+import com.dylibso.chicory.component.ComponentModel;
+import com.dylibso.chicory.runtime.Memory;
+import java.util.ArrayList;
 import java.util.List;
 
 @WitComponent("example")
@@ -102,4 +104,5 @@ public class ExampleComponent {
         Object result = componentModel.callExport("validate-results", results);
         return ((Number) result).intValue();
     }
+
 }
