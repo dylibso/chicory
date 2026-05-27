@@ -1,8 +1,15 @@
 package com.dylibso.chicory.component.validation;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.dylibso.chicory.component.CanonicalAbi;
 import com.dylibso.chicory.component.ComponentModel;
@@ -21,13 +28,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * JUnit 5 test suite for WASM Component Model validation.
  * Tests include: Primitives, Strings, Imports, Records, Variants, Lists, and Complex Nested Types.
  */
 @DisplayName("WASM Component Example Tests")
+@ExtendWith(MockitoExtension.class)
 class ExampleWasmValidatorTest {
     private static ExampleComponent component;
 
@@ -45,7 +55,8 @@ class ExampleWasmValidatorTest {
         try (var input = classLoader.getResourceAsStream("example.wit")) {
             if (input == null) {
                 throw new IllegalStateException(
-                        "Could not find example.wit in test resources. Place it in src/test/resources/");
+                        "Could not find example.wit in test resources. Place it in"
+                                + " src/test/resources/");
             }
             witSource = new String(input.readAllBytes());
         }
@@ -55,7 +66,8 @@ class ExampleWasmValidatorTest {
         try (var input = classLoader.getResourceAsStream("example.wasm")) {
             if (input == null) {
                 throw new IllegalStateException(
-                        "Could not find example.wasm in test resources. Place it in src/test/resources/");
+                        "Could not find example.wasm in test resources. Place it in"
+                                + " src/test/resources/");
             }
             wasmBytes = input.readAllBytes();
         }
@@ -77,30 +89,36 @@ class ExampleWasmValidatorTest {
         hostGetInputMock = mock(Function.class);
 
         // Configure default behavior for host-log
-        when(hostLogMock.apply(any())).thenAnswer(invocation -> {
-            Object[] args = invocation.getArgument(0);
-            String msg = args.length > 0 ? (String) args[0] : "null";
-            System.out.println("  [✅ HOST CALLED] host-log(\"" + msg + "\")");
-            return null;
-        });
+        when(hostLogMock.apply(any()))
+                .thenAnswer(
+                        invocation -> {
+                            Object[] args = invocation.getArgument(0);
+                            String msg = args.length > 0 ? (String) args[0] : "null";
+                            System.out.println("  [✅ HOST CALLED] host-log(\"" + msg + "\")");
+                            return null;
+                        });
 
         // Configure default behavior for host-get-input
-        when(hostGetInputMock.apply(any())).thenAnswer(invocation -> {
-            System.out.println("  [✅ HOST CALLED] host-get-input() → \"Hello from host!\"");
-            return "Hello from host!";
-        });
+        when(hostGetInputMock.apply(any()))
+                .thenAnswer(
+                        invocation -> {
+                            System.out.println(
+                                    "  [✅ HOST CALLED] host-get-input() → \"Hello from host!\"");
+                            return "Hello from host!";
+                        });
 
         // Register mocked host functions
         hostFunctions.register("host-log", hostLogMock::apply);
-        hostFunctions.register("host-get-input",
+        hostFunctions.register(
+                "host-get-input",
                 hostArgs -> {
-            System.out.println(
-                    "  [✅ HOST CALLED] host-get-input() → \"Hello from host!\"");
-            return "Hello from host!";
-        });
+                    System.out.println("  [✅ HOST CALLED] host-get-input() → \"Hello from host!\"");
+                    return "Hello from host!";
+                });
 
         // Load component using ComponentModel
-        ComponentModel componentModel = ComponentModel.load(witSource, wasmModule, "$root", hostFunctions);
+        ComponentModel componentModel =
+                ComponentModel.load(witSource, wasmModule, "$root", hostFunctions);
 
         // Wrap in ExampleComponent utility class
         component = new ExampleComponent(componentModel);
@@ -117,17 +135,22 @@ class ExampleWasmValidatorTest {
         reset(hostLogMock, hostGetInputMock);
 
         // Reconfigure default behavior after reset
-        when(hostLogMock.apply(any())).thenAnswer(invocation -> {
-            Object[] args = invocation.getArgument(0);
-            String msg = args.length > 0 ? (String) args[0] : "null";
-            System.out.println("  [✅ HOST CALLED] host-log(\"" + msg + "\")");
-            return null;
-        });
+        when(hostLogMock.apply(any()))
+                .thenAnswer(
+                        invocation -> {
+                            Object[] args = invocation.getArgument(0);
+                            String msg = args.length > 0 ? (String) args[0] : "null";
+                            System.out.println("  [✅ HOST CALLED] host-log(\"" + msg + "\")");
+                            return null;
+                        });
 
-        when(hostGetInputMock.apply(any())).thenAnswer(invocation -> {
-            System.out.println("  [✅ HOST CALLED] host-get-input() → \"Hello from host!\"");
-            return "Hello from host!";
-        });
+        when(hostGetInputMock.apply(any()))
+                .thenAnswer(
+                        invocation -> {
+                            System.out.println(
+                                    "  [✅ HOST CALLED] host-get-input() → \"Hello from host!\"");
+                            return "Hello from host!";
+                        });
     }
 
     @Nested
@@ -195,7 +218,10 @@ class ExampleWasmValidatorTest {
             ArgumentCaptor<Object[]> captor = ArgumentCaptor.forClass(Object[].class);
             verify(hostLogMock).apply(captor.capture());
             Object[] args = captor.getValue();
-            assertEquals("Message from guest", args[0], "Expected host-log to be called with 'Message from guest'");
+            assertEquals(
+                    "Message from guest",
+                    args[0],
+                    "Expected host-log to be called with 'Message from guest'");
         }
 
         @Test
@@ -204,7 +230,10 @@ class ExampleWasmValidatorTest {
             String result = component.testHostCallGetInput();
 
             // Verify the return value
-            assertEquals("Hello from host!", result, "Expected guest to receive 'Hello from host!' from host");
+            assertEquals(
+                    "Input: Hello from host!",
+                    result,
+                    "Expected guest to receive 'Hello from host!' from host");
         }
     }
 

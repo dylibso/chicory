@@ -215,8 +215,11 @@ public class ImportBinder {
                         long outPtr = args[args.length - 1]; // last parameter is output pointer
                         if (result instanceof String) {
                             String str = (String) result;
-                            // TODO: Implement string encoding and write to outPtr
-                            // For now, return empty to indicate success
+                            // Use CanonicalAbi to encode string (unified encoding logic)
+                            long[] encoded = CanonicalAbi.encode(str, PrimitiveType.STRING, memory);
+                            // Write (ptr, len) pair to output pointer
+                            memory.writeI32((int) outPtr, (int) encoded[0]);
+                            memory.writeI32((int) outPtr + 4, (int) encoded[1]);
                         }
                         return new long[] {};
                     }

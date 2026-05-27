@@ -34,7 +34,7 @@ impl Guest for Example {
     }
 
     fn test_host_call_get_input() -> String {
-        host_get_input()
+        format!{"Input received: {}", host_get_input()}
     }
 
     fn describe_person(p: Person) -> String {

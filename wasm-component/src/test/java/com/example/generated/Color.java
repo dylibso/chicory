@@ -1,14 +1,13 @@
 package com.example.generated;
 
-import com.dylibso.chicory.component.annotation.WitVariant;
-import com.dylibso.chicory.component.annotation.WitCase;
-import com.dylibso.chicory.component.VariantValue;
-import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.component.CanonicalAbi;
-import com.dylibso.chicory.component.types.VariantType;
 import com.dylibso.chicory.component.PojoRegistry;
+import com.dylibso.chicory.component.VariantValue;
+import com.dylibso.chicory.component.annotation.WitCase;
+import com.dylibso.chicory.component.annotation.WitVariant;
+import com.dylibso.chicory.component.types.VariantType;
+import com.dylibso.chicory.runtime.Memory;
 import java.util.Optional;
-import com.dylibso.chicory.component.types.PrimitiveType;
 
 @WitVariant("color")
 public abstract class Color {
@@ -33,7 +32,6 @@ public abstract class Color {
         return CanonicalAbi.encode(variant, createVariantType(), memory);
     }
 
-
     @WitCase(0)
     public static class Red extends Color {
         public Red() {
@@ -54,6 +52,7 @@ public abstract class Color {
             super("blue", null);
         }
     }
+
     public static Color decode(long[] encoded, Memory memory) throws Exception {
         Object obj = CanonicalAbi.decode(encoded, createVariantType(), memory);
         if (obj instanceof VariantValue) {
@@ -66,7 +65,8 @@ public abstract class Color {
                 case "blue":
                     return new Blue();
                 default:
-                    throw new IllegalArgumentException("Unknown variant case: " + variant.caseName());
+                    throw new IllegalArgumentException(
+                            "Unknown variant case: " + variant.caseName());
             }
         }
         throw new IllegalArgumentException("Invalid decode result type");
