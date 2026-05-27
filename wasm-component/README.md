@@ -56,6 +56,7 @@ The WebAssembly Component Model defines:
 - **Component Binary**: WASM module with component metadata embedded in custom sections
 
 ### Supported WIT Features
+
 ✅ Primitive types: `i32`, `i64`, `f32`, `f64`, `bool`, `char`, `string`
 ✅ Records (mapped to Java POJOs)
 ✅ Variants/Enums (mapped to sealed classes)
@@ -64,8 +65,9 @@ The WebAssembly Component Model defines:
 ✅ Bidirectional host ↔ guest calls
 
 ### Known Limitations
+
 ⚠️ Variants with complex data return values (workaround: use explicit WIT)
-⚠️ Multi-file WIT support not yet implemented
+⚠️ Multi-file WIT support: Works with embedded WASM component metadata, limited when passing explicit WIT files
 ⚠️ Some advanced type compositions untested
 
 ## 📁 Project Structure
@@ -111,7 +113,7 @@ wasm-component/
 
 ### Overview
 
-From WIT file(s) like:
+From a WIT file like:
 ```wit
 record person {
     name: string,
@@ -146,7 +148,9 @@ The script:
 - Generates Java classes in `src/test/java/com/example/generated/`
 - Reports success/failure for each WIT file processed
 
-**Note on Multi-WIT Support**: The infrastructure supports multiple WIT files, but comprehensive testing and validation of complex multi-WIT scenarios is planned for future work to ensure correct handling of type resolution and name conflicts.
+**Note on Multi-WIT Support**: 
+- ✅ Multiple WIT files work automatically with **embedded component metadata** (WASM binary)
+- ⚠️ When using **explicit WIT files**, validation and testing of multi-file type resolution is planned for future work to ensure correct handling of name conflicts and type dependencies.
 
 ### Generated Files Example
 
@@ -477,8 +481,9 @@ src/test/java/com/dylibso/chicory/component/validation/
 - Priority: Medium - affects ~5% of variant use cases
 
 **Multi-File WIT Support**
-- Not yet implemented - single WIT file only
-- Future: Parse and merge multiple WIT files
+- ✅ **Works with embedded WIT**: Component metadata in WASM binary supports complex multi-file scenarios
+- ⚠️ **Limited with explicit WIT**: When passing WIT files manually, comprehensive testing and validation of multi-file type resolution and name conflict handling is needed
+- Future: Enhanced testing and validation for explicit multi-WIT workflows
 
 **Type Table Resolution**
 - Binary component metadata parsing exists but type references not fully resolved
@@ -503,32 +508,3 @@ src/test/java/com/dylibso/chicory/component/validation/
 - [Canonical ABI Spec](https://github.com/WebAssembly/component-model/blob/main/design/mvp/CanonicalABI.md)
 - [wit-bindgen Project](https://github.com/bytecodealliance/wit-bindgen) - Reference implementation
 - [Chicory Project](https://github.com/dylibso/chicory) - Main WebAssembly runtime
-
-## 🏗️ Building & Development
-
-### Build
-```bash
-mvn clean install
-```
-
-### Run Tests
-```bash
-mvn test
-```
-
-### Code Style
-```bash
-mvn spotless:apply
-```
-
-### Regenerate Java Wrappers
-```bash
-java -cp "target/classes:$(mvn dependency:build-classpath -q -Dmdep.outputFile=/dev/stdout)" \
-    com.dylibso.chicory.component.codegen.RegenerateWitWrappers
-```
-
----
-
-**Status**: PoC/SPIKE for innovation project exploring Component Model integration  
-**Last Updated**: May 2026  
-**Maintainers**: Chicory Team
