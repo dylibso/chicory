@@ -1,4 +1,4 @@
-package com.dylibso.chicory.component.validation;
+package com.dylibso.chicory.component.scripts;
 
 import com.dylibso.chicory.component.ComponentDefinition;
 import com.dylibso.chicory.component.WitParser;
@@ -19,7 +19,7 @@ import java.util.stream.Stream;
  *
  * <p>
  * Usage:
- *   mvn exec:java -Dexec.mainClass="com.dylibso.chicory.component.validation.RegenerateWitWrappers"
+ *   mvn exec:java -Dexec.mainClass="com.dylibso.chicory.component.scripts.RegenerateWitWrappers"
  * <p>
  * Or run directly from IDE (right-click → Run main() on this class).
  * <p>

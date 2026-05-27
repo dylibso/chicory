@@ -23,7 +23,7 @@ Regenerate the wrapper classes whenever you:
 
 ```bash
 # Regenerate from project root
-mvn exec:java -Dexec.mainClass="com.dylibso.chicory.component.validation.RegenerateWitWrappers" -pl wasm-component
+mvn exec:java -Dexec.mainClass="com.dylibso.chicory.component.scripts.RegenerateWitWrappers" -pl wasm-component
 ```
 
 ### Option 3: Bash Script
@@ -33,7 +33,7 @@ Create an executable shell script (e.g., `regen-wrappers.sh`):
 ```bash
 #!/bin/bash
 cd "$(dirname "$0")"
-mvn exec:java -Dexec.mainClass="com.dylibso.chicory.component.validation.RegenerateWitWrappers" -pl wasm-component
+mvn exec:java -Dexec.mainClass="com.dylibso.chicory.component.scripts.RegenerateWitWrappers" -pl wasm-component
 ```
 
 Then run: `./regen-wrappers.sh`
