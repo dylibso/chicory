@@ -111,7 +111,7 @@ wasm-component/
 
 ### Overview
 
-From a WIT file like:
+From WIT file(s) like:
 ```wit
 record person {
     name: string,
@@ -129,15 +129,24 @@ The code generator creates:
 
 ### Using the Generation Script
 
-We provide `RegenerateWitWrappers.java` to regenerate all wrapper classes:
+We provide `RegenerateWitWrappers.java` utility to regenerate all wrapper classes from WIT definitions:
 
 ```bash
-# Run from wasm-component directory
-java -cp "target/classes:$(mvn dependency:build-classpath -q -Dmdep.outputFile=/dev/stdout)" \
-    com.dylibso.chicory.component.codegen.RegenerateWitWrappers
+# Option 1: Using Maven (from wasm-component directory)
+mvn exec:java -Dexec.mainClass="com.dylibso.chicory.component.scripts.RegenerateWitWrappers"
+
+# Option 2: Run directly from IDE
+# Right-click on src/test/java/com/dylibso/chicory/component/scripts/RegenerateWitWrappers.java
+# → Run main()
 ```
 
-This reads `src/test/resources/example.wit` and generates Java classes in `src/test/java/com/example/generated/`
+The script:
+- Scans for `.wit` files in the `example/` directory (recursively)
+- Supports **multiple WIT definitions** (processes each found .wit file)
+- Generates Java classes in `src/test/java/com/example/generated/`
+- Reports success/failure for each WIT file processed
+
+**Note on Multi-WIT Support**: The infrastructure supports multiple WIT files, but comprehensive testing and validation of complex multi-WIT scenarios is planned for future work to ensure correct handling of type resolution and name conflicts.
 
 ### Generated Files Example
 
