@@ -148,7 +148,7 @@ The script:
 - Generates Java classes in `src/test/java/com/example/generated/`
 - Reports success/failure for each WIT file processed
 
-**Note on Multi-WIT Support**: 
+**Note on Multi-WIT Support**:
 - ✅ Multiple WIT files work automatically with **embedded component metadata** (WASM binary)
 - ⚠️ When using **explicit WIT files**, validation and testing of multi-file type resolution is planned for future work to ensure correct handling of name conflicts and type dependencies.
 
@@ -161,14 +161,14 @@ public class Person {
     private final String name;
     private final int age;
     private final boolean active;
-    
+
     public Person(String name, int age, boolean active) { ... }
-    
+
     // Standard getters
     public String getName() { return name; }
     public int getAge() { return age; }
     public boolean getActive() { return active; }
-    
+
     // Encoding/decoding for WASM marshalling
     public long[] encode(Memory memory) throws Exception { ... }
     public static Person decode(long[] encoded, Memory memory) throws Exception { ... }
@@ -179,16 +179,16 @@ public class Person {
 ```java
 public class ExampleComponent {
     private final ComponentModel componentModel;
-    
+
     public ExampleComponent(ComponentModel componentModel) {
         this.componentModel = componentModel;
     }
-    
+
     // Type-safe wrapper for add(i32, i32) -> i32
     public int add(int a, int b) throws Exception {
         return (int) componentModel.callExport("add", a, b);
     }
-    
+
     // Type-safe wrapper for create-person(string, i32) -> person
     public Person createPerson(String name, int age) throws Exception {
         return (Person) componentModel.callExport("create-person", name, age);
@@ -286,7 +286,7 @@ Java: 8
 
 public Object[] call(Object... args) throws Exception {
     List<Long> wasmArgs = new ArrayList<>();
-    
+
     // Encode parameters according to Canonical ABI
     for (int i = 0; i < args.length; i++) {
         WitType paramType = params.get(i).type;  // e.g., PrimitiveType.I32
@@ -295,10 +295,10 @@ public Object[] call(Object... args) throws Exception {
             wasmArgs.add(value);
         }
     }
-    
+
     // Call WASM function with encoded parameters
     long[] result = instance.invoke(exportName, wasmArgs.toLongArray());
-    
+
     // Decode return value from WASM memory
     return CanonicalAbi.decode(result, returnType, memory);
 }
@@ -313,14 +313,14 @@ public Object[] call(Object... args) throws Exception {
 private static long[] encodeString(String value, Memory memory) {
     ExportFunction realloc = REALLOC_CONTEXT.get();
     byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-    
+
     // Allocate memory for string data
     long[] allocResult = realloc.apply(0, 0, 1, bytes.length);
     long ptr = allocResult[0];
-    
+
     // Write string bytes to WASM memory
     memory.writeBytes((int) ptr, bytes);
-    
+
     // Return (pointer, length) pair
     return new long[] { ptr, bytes.length };
 }
@@ -334,7 +334,7 @@ private static long[] encodeString(String value, Memory memory) {
 
 private static void encodeRecordToMemory(Object record, RecordType type, long offset, Memory memory) {
     Map<String, Object> recordMap;
-    
+
     // Handle both Map and generated POJO classes
     if (record instanceof Map) {
         recordMap = (Map<String, Object>) record;
@@ -342,7 +342,7 @@ private static void encodeRecordToMemory(Object record, RecordType type, long of
         // Convert POJO to Map using reflection
         recordMap = pojoToMap(record);
     }
-    
+
     // Encode each field at appropriate memory offset
     for (RecordType.Field field : type.fields()) {
         Object value = recordMap.get(field.name);
@@ -368,7 +368,7 @@ hostFunctions.register("host-log", args -> {
 private static void encodeStringForHostImport(String value, long offset, Memory memory) {
     // String encoding: allocate buffer, write bytes, return (ptr, len)
     long[] encoded = CanonicalAbi.encode(value, PrimitiveType.STRING, memory);
-    
+
     // Write (ptr, len) pair to guest's output buffer
     memory.writeI32((int) offset, (int) encoded[0]);
     memory.writeI32((int) offset + 4, (int) encoded[1]);
@@ -410,7 +410,7 @@ All tests follow JUnit 5 with `@DisplayName` and `@Nested` grouping for clarity:
 ```java
 @DisplayName("WASM Component Example Tests")
 class ExampleWasmValidatorTest {
-    
+
     @Nested
     @DisplayName("Integer Operations")
     class IntegerTests {
@@ -418,7 +418,7 @@ class ExampleWasmValidatorTest {
         @DisplayName("add(5, 3) returns 8")
         void testAdd() { ... }
     }
-    
+
     @Nested
     @DisplayName("String Operations")
     class StringTests {
