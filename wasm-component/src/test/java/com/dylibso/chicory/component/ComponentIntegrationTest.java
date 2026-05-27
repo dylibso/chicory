@@ -4,53 +4,53 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.dylibso.chicory.component.types.PrimitiveType;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-/**
- * Integration tests for the Component Model.
- * Tests end-to-end functionality with actual Wasm modules.
- */
-public class ComponentIntegrationTest {
+@DisplayName("Component Integration")
+class ComponentIntegrationTest {
 
-    @Test
-    void testComponentModelBasics() {
-        // Simple WIT definition
-        String wit = "export add: function(a: i32, b: i32) -> i32\n";
+    @Nested
+    @DisplayName("WIT Parsing")
+    class WitParsingTests {
+        @Test
+        @DisplayName("parses basic component exports")
+        void parsesBasicComponentExports() {
+            ComponentDefinition definition =
+                    new WitParser().parse("export add: function(a: i32, b: i32) -> i32\n");
 
-        // Parse the WIT
-        WitParser parser = new WitParser();
-        ComponentDefinition definition = parser.parse(wit);
+            assertNotNull(definition);
+            assertEquals(1, definition.exports().size());
+            assertEquals("add", definition.exports().get(0).name());
+            assertEquals(2, definition.exports().get(0).parameters().size());
+            assertEquals(1, definition.exports().get(0).returns().size());
+        }
 
-        // Verify it was parsed
-        assertNotNull(definition);
-        assertEquals(1, definition.exports().size());
+        @Test
+        @DisplayName("parses list parameters")
+        void parsesListParameters() {
+            ComponentDefinition definition =
+                    new WitParser().parse("export process: function(items: list<i32>) -> i32\n");
 
-        ComponentDefinition.FunctionSignature sig = definition.exports().get(0);
-        assertEquals("add", sig.name());
-        assertEquals(2, sig.parameters().size());
-        assertEquals(1, sig.returns().size());
+            assertNotNull(definition);
+            assertEquals(1, definition.exports().size());
+            assertEquals(
+                    "list<i32>",
+                    definition.exports().get(0).parameters().get(0).type.displayName());
+        }
     }
 
-    @Test
-    void testCanonicalAbiEncodingDecoding() {
-        // Test all primitive types round-trip through ABI
-        CanonicalAbi.encode(42, PrimitiveType.I32, null);
-        CanonicalAbi.encode(123456789L, PrimitiveType.I64, null);
-        CanonicalAbi.encode(3.14f, PrimitiveType.F32, null);
-        CanonicalAbi.encode(2.718, PrimitiveType.F64, null);
-        CanonicalAbi.encode(true, PrimitiveType.BOOL, null);
-        CanonicalAbi.encode("hello", PrimitiveType.STRING, null);
-    }
-
-    @Test
-    void testParseListType() {
-        // Test parsing of list types
-        String wit = "export process: function(items: list<i32>) -> i32\n";
-
-        WitParser parser = new WitParser();
-        ComponentDefinition definition = parser.parse(wit);
-
-        assertNotNull(definition);
-        assertEquals(1, definition.exports().size());
+    @Nested
+    @DisplayName("Canonical ABI")
+    class CanonicalAbiTests {
+        @Test
+        @DisplayName("encodes primitive values without errors")
+        void encodesPrimitiveValuesWithoutErrors() {
+            assertEquals(42, CanonicalAbi.encode(42, PrimitiveType.I32, null)[0]);
+            assertEquals(123456789L, CanonicalAbi.encode(123456789L, PrimitiveType.I64, null)[0]);
+            assertEquals(1, CanonicalAbi.encode(true, PrimitiveType.BOOL, null)[0]);
+            assertEquals(5, CanonicalAbi.encode("hello", PrimitiveType.STRING, null)[1]);
+        }
     }
 }

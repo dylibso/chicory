@@ -1,157 +1,151 @@
 package com.dylibso.chicory.component.codegen;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.component.ComponentDefinition;
 import com.dylibso.chicory.component.types.PrimitiveType;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+@DisplayName("Component Wrapper Generator")
 class ComponentWrapperGeneratorTest {
 
-    @Test
-    void testGenerateSimpleComponentWrapper(@TempDir Path tempDir) throws IOException {
-        // Create component definition with simple export functions
-        ComponentDefinition componentDef = new ComponentDefinition("com.example", "example");
+    @Nested
+    @DisplayName("Wrapper Generation")
+    class WrapperGenerationTests {
+        @Test
+        @DisplayName("generates a wrapper for simple exports")
+        void generatesAWrapperForSimpleExports(@TempDir Path tempDir) throws IOException {
+            ComponentDefinition componentDefinition =
+                    new ComponentDefinition("com.example", "example");
 
-        // Add simple function: add(s32, s32) -> s32
-        ComponentDefinition.FunctionSignature addFunc =
-                new ComponentDefinition.FunctionSignature("add");
-        addFunc.addParameter("a", PrimitiveType.I32);
-        addFunc.addParameter("b", PrimitiveType.I32);
-        addFunc.addReturnType(PrimitiveType.I32);
-        componentDef.addExport(addFunc);
+            ComponentDefinition.FunctionSignature add =
+                    new ComponentDefinition.FunctionSignature("add");
+            add.addParameter("a", PrimitiveType.I32);
+            add.addParameter("b", PrimitiveType.I32);
+            add.addReturnType(PrimitiveType.I32);
+            componentDefinition.addExport(add);
 
-        // Add string function: greet(string) -> string
-        ComponentDefinition.FunctionSignature greetFunc =
-                new ComponentDefinition.FunctionSignature("greet");
-        greetFunc.addParameter("name", PrimitiveType.STRING);
-        greetFunc.addReturnType(PrimitiveType.STRING);
-        componentDef.addExport(greetFunc);
+            ComponentDefinition.FunctionSignature greet =
+                    new ComponentDefinition.FunctionSignature("greet");
+            greet.addParameter("name", PrimitiveType.STRING);
+            greet.addReturnType(PrimitiveType.STRING);
+            componentDefinition.addExport(greet);
 
-        // Generate component wrapper
-        ComponentWrapperGenerator generator =
-                new ComponentWrapperGenerator(componentDef, "com.example.generated");
-        generator.generate(tempDir);
+            new ComponentWrapperGenerator(componentDefinition, "com.example.generated")
+                    .generate(tempDir);
 
-        // Verify generated file exists
-        Path packageDir = tempDir.resolve("com").resolve("example").resolve("generated");
-        Path classFile = packageDir.resolve("ExampleComponent.java");
-        assert Files.exists(classFile) : "Generated ExampleComponent.java file should exist";
+            Path classFile =
+                    tempDir.resolve("com")
+                            .resolve("example")
+                            .resolve("generated")
+                            .resolve("ExampleComponent.java");
+            String generatedCode = Files.readString(classFile);
 
-        // Read and verify generated code
-        String generatedCode = Files.readString(classFile);
-        assertNotNull(generatedCode);
-        assert generatedCode.contains("public class ExampleComponent")
-                : "Should contain ExampleComponent class";
-        assert generatedCode.contains("private final ComponentModel componentModel")
-                : "Should have ComponentModel field";
-        assert generatedCode.contains("public ExampleComponent(ComponentModel componentModel)")
-                : "Should have constructor";
-        assert generatedCode.contains("public int add(int a, int b)")
-                : "Should have typed add method";
-        assert generatedCode.contains("public String greet(String name)")
-                : "Should have typed greet method";
-        assert generatedCode.contains("componentModel.callExport(\"add\"")
-                : "Should call add export";
-        assert generatedCode.contains("componentModel.callExport(\"greet\"")
-                : "Should call greet export";
-        assert generatedCode.contains("return ((Number) result).intValue();")
-                : "Should cast int return values";
-        assert generatedCode.contains("return (String) result;")
-                : "Should cast string return values";
+            assertTrue(Files.exists(classFile));
+            assertNotNull(generatedCode);
+            assertTrue(generatedCode.contains("public class ExampleComponent"));
+            assertTrue(generatedCode.contains("private final ComponentModel componentModel"));
+            assertTrue(
+                    generatedCode.contains(
+                            "public ExampleComponent(ComponentModel componentModel)"));
+            assertTrue(generatedCode.contains("public int add(int a, int b)"));
+            assertTrue(generatedCode.contains("public String greet(String name)"));
+            assertTrue(generatedCode.contains("componentModel.callExport(\"add\""));
+            assertTrue(generatedCode.contains("componentModel.callExport(\"greet\""));
+            assertTrue(generatedCode.contains("return ((Number) result).intValue();"));
+            assertTrue(generatedCode.contains("return (String) result;"));
+        }
+
+        @Test
+        @DisplayName("generates wrappers for void exports")
+        void generatesWrappersForVoidExports(@TempDir Path tempDir) throws IOException {
+            ComponentDefinition componentDefinition =
+                    new ComponentDefinition("com.example", "example");
+            ComponentDefinition.FunctionSignature log =
+                    new ComponentDefinition.FunctionSignature("log");
+            log.addParameter("msg", PrimitiveType.STRING);
+            componentDefinition.addExport(log);
+
+            new ComponentWrapperGenerator(componentDefinition, "com.example.generated")
+                    .generate(tempDir);
+
+            String code =
+                    Files.readString(
+                            tempDir.resolve("com")
+                                    .resolve("example")
+                                    .resolve("generated")
+                                    .resolve("ExampleComponent.java"));
+
+            assertTrue(code.contains("public void log(String msg)"));
+            assertTrue(code.contains("componentModel.callExport(\"log\", msg);"));
+        }
     }
 
-    @Test
-    void testGenerateComponentWithVoidFunction(@TempDir Path tempDir) throws IOException {
-        ComponentDefinition componentDef = new ComponentDefinition("com.example", "example");
+    @Nested
+    @DisplayName("Generated Structure")
+    class GeneratedStructureTests {
+        @Test
+        @DisplayName("includes package imports and annotations")
+        void includesPackageImportsAndAnnotations(@TempDir Path tempDir) throws IOException {
+            ComponentDefinition componentDefinition =
+                    new ComponentDefinition("com.example", "example");
+            ComponentDefinition.FunctionSignature function =
+                    new ComponentDefinition.FunctionSignature("test");
+            function.addParameter("x", PrimitiveType.I32);
+            function.addReturnType(PrimitiveType.I32);
+            componentDefinition.addExport(function);
 
-        // Add void function: log(string)
-        ComponentDefinition.FunctionSignature logFunc =
-                new ComponentDefinition.FunctionSignature("log");
-        logFunc.addParameter("msg", PrimitiveType.STRING);
-        componentDef.addExport(logFunc);
+            new ComponentWrapperGenerator(componentDefinition, "com.example.generated")
+                    .generate(tempDir);
 
-        ComponentWrapperGenerator generator =
-                new ComponentWrapperGenerator(componentDef, "com.example.generated");
-        generator.generate(tempDir);
+            String code =
+                    Files.readString(
+                            tempDir.resolve("com")
+                                    .resolve("example")
+                                    .resolve("generated")
+                                    .resolve("ExampleComponent.java"));
 
-        Path classFile =
-                tempDir.resolve("com")
-                        .resolve("example")
-                        .resolve("generated")
-                        .resolve("ExampleComponent.java");
-        String code = Files.readString(classFile);
+            assertTrue(code.contains("package com.example.generated;"));
+            assertTrue(code.contains("import com.dylibso.chicory.component.ComponentModel;"));
+            assertTrue(
+                    code.contains("import com.dylibso.chicory.component.annotation.WitComponent;"));
+            assertTrue(code.contains("@WitComponent(\"example\")"));
+            assertTrue(code.contains("throws Exception"));
+        }
 
-        assert code.contains("public void log(String msg)") : "Should have void method";
-        assert code.contains("componentModel.callExport(\"log\", msg);")
-                : "Should call function without return casting";
-    }
+        @Test
+        @DisplayName("marshals multiple parameters in order")
+        void marshalsMultipleParametersInOrder(@TempDir Path tempDir) throws IOException {
+            ComponentDefinition componentDefinition =
+                    new ComponentDefinition("com.example", "example");
+            ComponentDefinition.FunctionSignature process =
+                    new ComponentDefinition.FunctionSignature("process");
+            process.addParameter("a", PrimitiveType.I32);
+            process.addParameter("b", PrimitiveType.I64);
+            process.addParameter("c", PrimitiveType.STRING);
+            process.addReturnType(PrimitiveType.BOOL);
+            componentDefinition.addExport(process);
 
-    @Test
-    void testGeneratedComponentStructure(@TempDir Path tempDir) throws IOException {
-        ComponentDefinition componentDef = new ComponentDefinition("com.example", "example");
+            new ComponentWrapperGenerator(componentDefinition, "com.example.generated")
+                    .generate(tempDir);
 
-        ComponentDefinition.FunctionSignature func =
-                new ComponentDefinition.FunctionSignature("test");
-        func.addParameter("x", PrimitiveType.I32);
-        func.addReturnType(PrimitiveType.I32);
-        componentDef.addExport(func);
+            String code =
+                    Files.readString(
+                            tempDir.resolve("com")
+                                    .resolve("example")
+                                    .resolve("generated")
+                                    .resolve("ExampleComponent.java"));
 
-        ComponentWrapperGenerator generator =
-                new ComponentWrapperGenerator(componentDef, "com.example.generated");
-        generator.generate(tempDir);
-
-        Path classFile =
-                tempDir.resolve("com")
-                        .resolve("example")
-                        .resolve("generated")
-                        .resolve("ExampleComponent.java");
-        String code = Files.readString(classFile);
-
-        // Verify package and imports
-        assert code.contains("package com.example.generated;") : "Should have correct package";
-        assert code.contains("import com.dylibso.chicory.component.ComponentModel;")
-                : "Should import ComponentModel";
-        assert code.contains("import com.dylibso.chicory.component.annotation.WitComponent;")
-                : "Should import WitComponent";
-        assert code.contains("@WitComponent(\"example\")") : "Should have @WitComponent annotation";
-
-        // Verify method structure
-        assert code.contains("throws Exception") : "Methods should declare throws Exception";
-    }
-
-    @Test
-    void testMultipleParameterMarshalling(@TempDir Path tempDir) throws IOException {
-        ComponentDefinition componentDef = new ComponentDefinition("com.example", "example");
-
-        // Function with multiple parameters
-        ComponentDefinition.FunctionSignature func =
-                new ComponentDefinition.FunctionSignature("process");
-        func.addParameter("a", PrimitiveType.I32);
-        func.addParameter("b", PrimitiveType.I64);
-        func.addParameter("c", PrimitiveType.STRING);
-        func.addReturnType(PrimitiveType.BOOL);
-        componentDef.addExport(func);
-
-        ComponentWrapperGenerator generator =
-                new ComponentWrapperGenerator(componentDef, "com.example.generated");
-        generator.generate(tempDir);
-
-        Path classFile =
-                tempDir.resolve("com")
-                        .resolve("example")
-                        .resolve("generated")
-                        .resolve("ExampleComponent.java");
-        String code = Files.readString(classFile);
-
-        assert code.contains("public boolean process(int a, long b, String c)")
-                : "Should have correct parameter types";
-        assert code.contains("componentModel.callExport(\"process\", a, b, c)")
-                : "Should pass all parameters";
-        assert code.contains("return (Boolean) result;") : "Should cast boolean return";
+            assertTrue(code.contains("public boolean process(int a, long b, String c)"));
+            assertTrue(code.contains("componentModel.callExport(\"process\", a, b, c)"));
+            assertTrue(code.contains("return (Boolean) result;"));
+        }
     }
 }

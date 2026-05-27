@@ -1,94 +1,99 @@
 package com.dylibso.chicory.component.validation;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.dylibso.chicory.component.ComponentModel;
 import com.dylibso.chicory.component.HostFunctionProvider;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.example.generated.ExampleComponent;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-/**
- * Phase 12.4: Basic Exports Test
- *
- * <p>Tests simple primitive type exports:
- * <ul>
- *   <li>add(s32, s32) -> s32
- *   <li>multiply(s64, s64) -> s64
- *   <li>divide(s32, s32) -> s32
- *   <li>is-positive(s32) -> bool
- *   <li>greet(string) -> string
- *   <li>process-text(string) -> string
- * </ul>
- *
- * <p>This is the baseline for testing - validates core WASM execution.
- */
-public class BasicExportsValidator {
-    public static void main(String[] mainArgs) throws Exception {
-        System.out.println("=== Phase 12.4: Basic Exports Test ===\n");
+@DisplayName("Basic Exports")
+class BasicExportsValidator {
+    private static ExampleComponent component;
 
-        String basePath = "example/";
-        String witSource = Files.readString(Paths.get(basePath + "example.wit"));
-        byte[] wasmBytes = Files.readAllBytes(Paths.get(basePath + "example.wasm"));
+    @BeforeAll
+    static void setupComponent() throws Exception {
+        String witSource = readTextResource("example.wit");
+        byte[] wasmBytes = readBinaryResource("example.wasm");
 
-        try {
-            // Force load generated classes to register with PojoRegistry
-            Class.forName("com.example.generated.Person");
-            Class.forName("com.example.generated.UserStatus");
-            Class.forName("com.example.generated.OperationResult");
-            Class.forName("com.example.generated.Color");
-            WasmModule wasmModule = Parser.parse(wasmBytes);
-            HostFunctionProvider hostFunctions = new HostFunctionProvider();
+        Class.forName("com.example.generated.Person");
+        Class.forName("com.example.generated.UserStatus");
+        Class.forName("com.example.generated.OperationResult");
+        Class.forName("com.example.generated.Color");
 
-            // Register host functions
-            hostFunctions.register(
-                    "host-log",
-                    hostArgs -> {
-                        String msg = hostArgs.length > 0 ? (String) hostArgs[0] : "null";
-                        System.out.println("  [HOST] log: " + msg);
-                        return null;
-                    });
+        WasmModule wasmModule = Parser.parse(wasmBytes);
+        HostFunctionProvider hostFunctions = new HostFunctionProvider();
+        hostFunctions.register("host-log", hostArgs -> null);
+        hostFunctions.register("host-get-input", hostArgs -> "test input");
 
-            hostFunctions.register(
-                    "host-get-input",
-                    hostArgs -> {
-                        return "test input";
-                    });
+        ComponentModel componentModel =
+                ComponentModel.load(witSource, wasmModule, "$root", hostFunctions);
+        component = new ExampleComponent(componentModel);
+    }
 
-            ComponentModel component =
-                    ComponentModel.load(witSource, wasmModule, "$root", hostFunctions);
-            ExampleComponent sdk = new ExampleComponent(component);
+    @Nested
+    @DisplayName("Integer Operations")
+    class IntegerOperationsTests {
+        @Test
+        @DisplayName("add(5, 3) returns 8")
+        void addReturnsExpectedSum() throws Exception {
+            assertEquals(8, component.add(5, 3));
+        }
 
-            System.out.println("Test 1: add(5, 3)");
-            int result = sdk.add(5, 3);
-            assert result == 8 : "Expected 8, got " + result;
-            System.out.println("  Result: " + result + " ✅\n");
+        @Test
+        @DisplayName("multiply(4, 7) returns 28")
+        void multiplyReturnsExpectedProduct() throws Exception {
+            assertEquals(28L, component.multiply(4L, 7L));
+        }
 
-            System.out.println("Test 2: multiply(4, 7)");
-            long mulResult = sdk.multiply(4L, 7L);
-            assert mulResult == 28 : "Expected 28, got " + mulResult;
-            System.out.println("  Result: " + mulResult + " ✅\n");
+        @Test
+        @DisplayName("is-positive(42) returns true")
+        void isPositiveReturnsTrueForPositiveNumbers() throws Exception {
+            assertTrue(component.isPositive(42));
+        }
 
-            System.out.println("Test 3: greet(\"World\")");
-            String greetResult = sdk.greet("World");
-            assert greetResult != null : "Expected non-null result";
-            System.out.println("  Result: " + greetResult + " ✅\n");
+        @Test
+        @DisplayName("is-positive(-5) returns false")
+        void isPositiveReturnsFalseForNegativeNumbers() throws Exception {
+            assertFalse(component.isPositive(-5));
+        }
+    }
 
-            System.out.println("Test 4: is-positive(42)");
-            boolean isPosResult = sdk.isPositive(42);
-            assert isPosResult : "Expected true";
-            System.out.println("  Result: " + isPosResult + " ✅\n");
+    @Nested
+    @DisplayName("String Operations")
+    class StringOperationsTests {
+        @Test
+        @DisplayName("greet(\"World\") returns greeting")
+        void greetReturnsGreeting() throws Exception {
+            String result = component.greet("World");
+            assertNotNull(result);
+            assertEquals("Hello, World!", result);
+        }
+    }
 
-            System.out.println("Test 5: is-positive(-5)");
-            boolean isNegResult = sdk.isPositive(-5);
-            assert !isNegResult : "Expected false";
-            System.out.println("  Result: " + isNegResult + " ✅\n");
+    private static String readTextResource(String resourceName) throws IOException {
+        try (var input =
+                BasicExportsValidator.class.getClassLoader().getResourceAsStream(resourceName)) {
+            assertNotNull(input, () -> "Missing test resource: " + resourceName);
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
 
-            System.out.println("✅ All 7 basic export tests PASSED\n");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
+    private static byte[] readBinaryResource(String resourceName) throws IOException {
+        try (var input =
+                BasicExportsValidator.class.getClassLoader().getResourceAsStream(resourceName)) {
+            assertNotNull(input, () -> "Missing test resource: " + resourceName);
+            return input.readAllBytes();
         }
     }
 }

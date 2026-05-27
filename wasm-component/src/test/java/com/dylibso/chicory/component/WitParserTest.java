@@ -5,136 +5,133 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.component.types.PrimitiveType;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-/**
- * Tests for WIT parser.
- */
-public class WitParserTest {
+@DisplayName("WIT Parser")
+class WitParserTest {
 
-    @Test
-    public void testParseSimpleFunction() {
-        String wit = "add: function(a: i32, b: i32) -> i32";
-        WitParser parser = new WitParser();
-        ComponentDefinition definition = parser.parse(wit);
+    @Nested
+    @DisplayName("Function Signatures")
+    class FunctionSignatureTests {
+        @Test
+        @DisplayName("parses simple functions")
+        void parsesSimpleFunctions() {
+            ComponentDefinition definition =
+                    new WitParser().parse("add: function(a: i32, b: i32) -> i32");
+            ComponentDefinition.FunctionSignature function = definition.exports().get(0);
 
-        assertNotNull(definition);
-        assertEquals(1, definition.exports().size());
+            assertNotNull(definition);
+            assertEquals(1, definition.exports().size());
+            assertEquals("add", function.name());
+            assertEquals(2, function.parameters().size());
+            assertEquals(1, function.returns().size());
+            assertEquals("a", function.parameters().get(0).name);
+            assertEquals(
+                    PrimitiveType.I32.displayName(),
+                    function.parameters().get(0).type.displayName());
+            assertEquals("b", function.parameters().get(1).name);
+            assertEquals(
+                    PrimitiveType.I32.displayName(),
+                    function.parameters().get(1).type.displayName());
+            assertEquals(PrimitiveType.I32.displayName(), function.returns().get(0).displayName());
+        }
 
-        ComponentDefinition.FunctionSignature func = definition.exports().get(0);
-        assertEquals("add", func.name());
-        assertEquals(2, func.parameters().size());
-        assertEquals(1, func.returns().size());
+        @Test
+        @DisplayName("parses string functions")
+        void parsesStringFunctions() {
+            ComponentDefinition.FunctionSignature function =
+                    new WitParser()
+                            .parse("greet: function(name: string) -> string")
+                            .exports()
+                            .get(0);
 
-        assertEquals("a", func.parameters().get(0).name);
-        assertEquals(PrimitiveType.I32.displayName(), func.parameters().get(0).type.displayName());
+            assertEquals("greet", function.name());
+            assertEquals(1, function.parameters().size());
+            assertEquals(
+                    PrimitiveType.STRING.displayName(),
+                    function.parameters().get(0).type.displayName());
+            assertEquals(
+                    PrimitiveType.STRING.displayName(), function.returns().get(0).displayName());
+        }
 
-        assertEquals("b", func.parameters().get(1).name);
-        assertEquals(PrimitiveType.I32.displayName(), func.parameters().get(1).type.displayName());
+        @Test
+        @DisplayName("parses functions without parameters")
+        void parsesFunctionsWithoutParameters() {
+            ComponentDefinition.FunctionSignature function =
+                    new WitParser().parse("get-count: function() -> i32").exports().get(0);
 
-        assertEquals(PrimitiveType.I32.displayName(), func.returns().get(0).displayName());
+            assertEquals(0, function.parameters().size());
+            assertEquals(1, function.returns().size());
+        }
+
+        @Test
+        @DisplayName("parses functions without returns")
+        void parsesFunctionsWithoutReturns() {
+            ComponentDefinition.FunctionSignature function =
+                    new WitParser().parse("print-message: function(msg: string)").exports().get(0);
+
+            assertEquals(1, function.parameters().size());
+            assertEquals(0, function.returns().size());
+        }
+
+        @Test
+        @DisplayName("parses list parameter types")
+        void parsesListParameterTypes() {
+            ComponentDefinition.FunctionSignature function =
+                    new WitParser()
+                            .parse("process-items: function(items: list<i32>) -> i32")
+                            .exports()
+                            .get(0);
+
+            assertTrue(function.parameters().get(0).type.displayName().startsWith("list<"));
+        }
     }
 
-    @Test
-    public void testParseStringFunction() {
-        String wit = "greet: function(name: string) -> string";
-        WitParser parser = new WitParser();
-        ComponentDefinition definition = parser.parse(wit);
+    @Nested
+    @DisplayName("World Syntax")
+    class WorldSyntaxTests {
+        @Test
+        @DisplayName("parses exported world functions")
+        void parsesExportedWorldFunctions() {
+            String wit =
+                    "package example:example;\n\n"
+                            + "world example {\n"
+                            + "  export add: func(a: s32, b: s32) -> s32;\n"
+                            + "  export multiply: func(a: s64, b: s64) -> s64;\n"
+                            + "  export is-positive: func(x: s32) -> bool;\n"
+                            + "}";
 
-        assertEquals(1, definition.exports().size());
-        ComponentDefinition.FunctionSignature func = definition.exports().get(0);
+            ComponentDefinition definition = new WitParser().parse(wit);
 
-        assertEquals("greet", func.name());
-        assertEquals(1, func.parameters().size());
-        assertEquals(
-                PrimitiveType.STRING.displayName(), func.parameters().get(0).type.displayName());
-        assertEquals(PrimitiveType.STRING.displayName(), func.returns().get(0).displayName());
-    }
+            assertNotNull(definition);
+            assertEquals("example:example", definition.packageName());
+            assertEquals("example", definition.interfaceName());
+            assertEquals(3, definition.exports().size());
+            assertEquals("add", definition.exports().get(0).name());
+            assertEquals("multiply", definition.exports().get(1).name());
+            assertEquals("is-positive", definition.exports().get(2).name());
+            assertEquals(2, definition.exports().get(0).parameters().size());
+            assertEquals(1, definition.exports().get(2).returns().size());
+        }
 
-    @Test
-    public void testParseNoParameters() {
-        String wit = "get-count: function() -> i32";
-        WitParser parser = new WitParser();
-        ComponentDefinition definition = parser.parse(wit);
+        @Test
+        @DisplayName("parses worlds with imports")
+        void parsesWorldsWithImports() {
+            String wit =
+                    "package example:api;\n\n"
+                            + "world example {\n"
+                            + "  export process: func(data: i32) -> i32;\n"
+                            + "  import log: func(msg: string);\n"
+                            + "}";
 
-        ComponentDefinition.FunctionSignature func = definition.exports().get(0);
-        assertEquals(0, func.parameters().size());
-        assertEquals(1, func.returns().size());
-    }
+            ComponentDefinition definition = new WitParser().parse(wit);
 
-    @Test
-    public void testParseNoReturn() {
-        String wit = "print-message: function(msg: string)";
-        WitParser parser = new WitParser();
-        ComponentDefinition definition = parser.parse(wit);
-
-        ComponentDefinition.FunctionSignature func = definition.exports().get(0);
-        assertEquals(1, func.parameters().size());
-        assertEquals(0, func.returns().size());
-    }
-
-    @Test
-    public void testParseListType() {
-        String wit = "process-items: function(items: list<i32>) -> i32";
-        WitParser parser = new WitParser();
-        ComponentDefinition definition = parser.parse(wit);
-
-        ComponentDefinition.FunctionSignature func = definition.exports().get(0);
-        assertTrue(func.parameters().get(0).type.displayName().startsWith("list<"));
-    }
-
-    @Test
-    public void testParseWorldSyntax() {
-        String wit =
-                "package example:example;\n\n"
-                        + "world example {\n"
-                        + "  export add: func(a: s32, b: s32) -> s32;\n"
-                        + "  export multiply: func(a: s64, b: s64) -> s64;\n"
-                        + "  export is-positive: func(x: s32) -> bool;\n"
-                        + "}";
-
-        WitParser parser = new WitParser();
-        ComponentDefinition definition = parser.parse(wit);
-
-        assertNotNull(definition);
-        assertEquals("example:example", definition.packageName());
-        assertEquals("example", definition.interfaceName());
-        assertEquals(3, definition.exports().size());
-
-        // Check add function
-        ComponentDefinition.FunctionSignature add = definition.exports().get(0);
-        assertEquals("add", add.name());
-        assertEquals(2, add.parameters().size());
-        assertEquals(1, add.returns().size());
-
-        // Check multiply function
-        ComponentDefinition.FunctionSignature multiply = definition.exports().get(1);
-        assertEquals("multiply", multiply.name());
-        assertEquals(2, multiply.parameters().size());
-        assertEquals(1, multiply.returns().size());
-
-        // Check is-positive function (with hyphen)
-        ComponentDefinition.FunctionSignature isPositive = definition.exports().get(2);
-        assertEquals("is-positive", isPositive.name());
-        assertEquals(1, isPositive.parameters().size());
-        assertEquals(1, isPositive.returns().size());
-    }
-
-    @Test
-    public void testParseWorldWithImports() {
-        String wit =
-                "package example:api;\n\n"
-                        + "world example {\n"
-                        + "  export process: func(data: i32) -> i32;\n"
-                        + "  import log: func(msg: string);\n"
-                        + "}";
-
-        WitParser parser = new WitParser();
-        ComponentDefinition definition = parser.parse(wit);
-
-        assertEquals(1, definition.exports().size());
-        assertEquals(1, definition.imports().size());
-        assertEquals("process", definition.exports().get(0).name());
-        assertEquals("log", definition.imports().get(0).name());
+            assertEquals(1, definition.exports().size());
+            assertEquals(1, definition.imports().size());
+            assertEquals("process", definition.exports().get(0).name());
+            assertEquals("log", definition.imports().get(0).name());
+        }
     }
 }
