@@ -10,7 +10,6 @@ import com.dylibso.chicory.component.types.VariantType;
 import com.dylibso.chicory.runtime.Memory;
 import java.util.Optional;
 
-/** Generated sealed variant class for WIT variant: operation-result { ok(string), err(s32) } */
 @WitVariant("operation-result")
 public abstract class OperationResult {
     protected final String caseName;
@@ -42,11 +41,6 @@ public abstract class OperationResult {
             super("ok", value);
             this.value = value;
         }
-
-        @Override
-        public String toString() {
-            return "Ok(" + value + ")";
-        }
     }
 
     @WitCase(1)
@@ -56,11 +50,6 @@ public abstract class OperationResult {
         public Err(int value) {
             super("err", value);
             this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return "Err(" + value + ")";
         }
     }
 
@@ -72,7 +61,7 @@ public abstract class OperationResult {
                 case "ok":
                     return new Ok((String) variant.data());
                 case "err":
-                    return new Err(((Number) variant.data()).intValue());
+                    return new Err((int) variant.data());
                 default:
                     throw new IllegalArgumentException(
                             "Unknown variant case: " + variant.caseName());

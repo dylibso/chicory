@@ -144,7 +144,7 @@ public class TypedComponentWrapperValidator {
             // Test 4: POJO input to SDK
             System.out.println("Test 4: POJO input via typed SDK");
             Person input = new Person("Charlie", 35, true);
-            String description = sdk.describePerson("Charlie", 35, true);
+            String description = sdk.describePerson(input);
             System.out.println("  Input POJO: " + input);
             System.out.println(
                     "  SDK method: sdk.describePerson("
@@ -202,47 +202,30 @@ public class TypedComponentWrapperValidator {
             // ===== COMPARISON 4: Complex Lists =====
             System.out.println("=== COMPARISON 4: List Types ===\n");
 
-            // Test 7a: Untyped list handling
-            System.out.println("Test 7a: get-names - UNTYPED");
-            List<Object> peopleMapList = new ArrayList<>();
-            Map<String, Object> p1 = new HashMap<>();
-            p1.put("name", "Diana");
-            p1.put("age", 32);
-            p1.put("active", true);
-            Map<String, Object> p2 = new HashMap<>();
-            p2.put("name", "Eve");
-            p2.put("age", 28);
-            p2.put("active", true);
-            peopleMapList.add(p1);
-            peopleMapList.add(p2);
+            // Test 7a & 7b: Typed list handling with SDK
+            System.out.println("Test 7a/7b: getNames - TYPED SDK");
+            List<Person> peopleList = new ArrayList<>();
+            peopleList.add(new Person("Diana", 32, true));
+            peopleList.add(new Person("Eve", 28, true));
 
-            Object namesUntyped = component.callExport("get-names", peopleMapList);
-            System.out.println(
-                    "  Untyped: Object result = component.callExport(\"get-names\", ...)");
-            System.out.println("  Result type: " + namesUntyped.getClass().getSimpleName());
-            System.out.println("  ⚠️  Type safety: None - Object requires casting to List\n");
-
-            // Test 7b: Typed SDK list handling
-            System.out.println("Test 7b: getNames - TYPED SDK");
-            List<?> namesTyped = sdk.getNames(peopleMapList);
-            System.out.println("  Typed: List<?> result = sdk.getNames(...)");
+            List<String> namesTyped = sdk.getNames(peopleList);
             System.out.println("  Result type: " + namesTyped.getClass().getSimpleName());
             System.out.println("  Result: " + namesTyped);
-            System.out.println("  ✅ Type safety: Partial - List generic provides some safety\n");
+            System.out.println("  ✅ Type safety: Full - List<String> is type-safe\n");
 
             // ===== FULL WORKFLOW: End-to-End with SDK =====
             System.out.println("=== FULL WORKFLOW: End-to-End Typed SDK Usage ===\n");
 
             System.out.println("Scenario: Process a group of people and filter high-value ones");
-            List<Object> people = new ArrayList<>();
-            people.add(createPersonMap("Frank", 29, true));
-            people.add(createPersonMap("Grace", 26, false));
-            people.add(createPersonMap("Henry", 31, true));
+            List<Person> people = new ArrayList<>();
+            people.add(new Person("Frank", 29, true));
+            people.add(new Person("Grace", 26, false));
+            people.add(new Person("Henry", 31, true));
 
             System.out.println("  Input: 3 people (ages: 29, 26, 31)");
             System.out.println("  Filtering: age >= 28");
 
-            List<?> filtered = sdk.filterHighValuePeople(people, 28);
+            List<Person> filtered = sdk.filterHighValuePeople(people, 28);
             System.out.println("  Output: " + filtered.size() + " people matched");
             System.out.println("  Expected: 2 people (Frank: 29, Henry: 31)");
             assert filtered.size() == 2 : "Expected 2 filtered results";

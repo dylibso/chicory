@@ -52,16 +52,18 @@ public class RecordsProgressionValidator {
 
             System.out.println("=== PROGRESSION STAGE 1: String Parameters ===\n");
 
-            System.out.println("Test 1: describe-person with primitives");
-            String desc1 = sdk.describePerson("Alice", 30, true);
+            System.out.println("Test 1: describe-person with POJO");
+            Person alice = new Person("Alice", 30, true);
+            String desc1 = sdk.describePerson(alice);
             assert desc1 != null && desc1.length() > 0 : "Expected description";
-            System.out.println("  Input: name=Alice, age=30, active=true");
+            System.out.println("  Input: " + alice);
             System.out.println("  Result: " + desc1 + " ✅\n");
 
-            System.out.println("Test 2: describe-person with different data");
-            String desc2 = sdk.describePerson("Bob", 25, false);
+            System.out.println("Test 2: describe-person with different POJO");
+            Person bob = new Person("Bob", 25, false);
+            String desc2 = sdk.describePerson(bob);
             assert desc2 != null && desc2.length() > 0 : "Expected description";
-            System.out.println("  Input: name=Bob, age=25, active=false");
+            System.out.println("  Input: " + bob);
             System.out.println("  Result: " + desc2 + " ✅\n");
 
             System.out.println("=== PROGRESSION STAGE 2: POJO Output ===\n");
@@ -117,8 +119,7 @@ public class RecordsProgressionValidator {
 
             System.out.println("Test 6: Create POJO and verify all fields");
             Person person4 = sdk.createPerson("Frank", 32);
-            String desc4 =
-                    sdk.describePerson(person4.getName(), person4.getAge(), person4.getActive());
+            String desc4 = sdk.describePerson(person4);
             System.out.println("  Created POJO: " + person4);
             System.out.println("  Extracted fields and passed to describe:");
             System.out.println("    name=" + person4.getName());

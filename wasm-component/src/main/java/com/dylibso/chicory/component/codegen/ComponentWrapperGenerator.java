@@ -140,7 +140,7 @@ public class ComponentWrapperGenerator {
                             .append(paramName)
                             .append("_encoded = ")
                             .append(paramName)
-                            .append(".encode(componentModel.getMemory());\n");
+                            .append(".encode(componentModel.getInstance().memory());\n");
                 }
             }
         }
@@ -173,7 +173,9 @@ public class ComponentWrapperGenerator {
                 sb.append(CodeFormatter.indent(2))
                         .append("return ")
                         .append(recordClass)
-                        .append(".decode((long[]) result, componentModel.getMemory());\n");
+                        .append(
+                                ".decode((long[]) result,"
+                                        + " componentModel.getInstance().memory());\n");
             } else if (isComplexType(returnWitType) && returnWitType instanceof VariantType) {
                 VariantType variantType = (VariantType) returnWitType;
                 String variantClass =
@@ -181,7 +183,9 @@ public class ComponentWrapperGenerator {
                 sb.append(CodeFormatter.indent(2))
                         .append("return ")
                         .append(variantClass)
-                        .append(".decode((long[]) result, componentModel.getMemory());\n");
+                        .append(
+                                ".decode((long[]) result,"
+                                        + " componentModel.getInstance().memory());\n");
             } else if (returnWitType instanceof PrimitiveType) {
                 PrimitiveType prim = (PrimitiveType) returnWitType;
                 if (prim == PrimitiveType.STRING) {
@@ -204,7 +208,11 @@ public class ComponentWrapperGenerator {
                     sb.append(CodeFormatter.indent(2)).append("return result;\n");
                 }
             } else if (returnWitType instanceof ListType) {
-                sb.append(CodeFormatter.indent(2)).append("return (List<?>) result;\n");
+                String listReturnType = witTypeToJavaType(returnWitType);
+                sb.append(CodeFormatter.indent(2))
+                        .append("return (")
+                        .append(listReturnType)
+                        .append(") result;\n");
             } else {
                 sb.append(CodeFormatter.indent(2)).append("return result;\n");
             }
@@ -251,7 +259,31 @@ public class ComponentWrapperGenerator {
         }
         if (type instanceof ListType) {
             ListType listType = (ListType) type;
-            return "List<" + witTypeToJavaType(listType.elementType()) + ">";
+            WitType elementType = listType.elementType();
+            String elementJavaType = witTypeToJavaType(elementType);
+
+            // Box primitives for generic use
+            if (elementType instanceof PrimitiveType) {
+                PrimitiveType prim = (PrimitiveType) elementType;
+                switch (prim) {
+                    case I32:
+                        elementJavaType = "Integer";
+                        break;
+                    case I64:
+                        elementJavaType = "Long";
+                        break;
+                    case F32:
+                        elementJavaType = "Float";
+                        break;
+                    case F64:
+                        elementJavaType = "Double";
+                        break;
+                    case BOOL:
+                        elementJavaType = "Boolean";
+                        break;
+                }
+            }
+            return "List<" + elementJavaType + ">";
         }
         return "Object";
     }

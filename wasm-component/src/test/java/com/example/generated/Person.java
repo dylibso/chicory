@@ -9,9 +9,6 @@ import com.dylibso.chicory.runtime.Memory;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Generated POJO for WIT record: person { name: string, age: s32, active: bool }
- */
 @WitRecord("person")
 public class Person {
     @WitField(order = 0)
@@ -70,8 +67,8 @@ public class Person {
             Map<String, Object> map = (Map<String, Object>) obj;
             Person result = new Person();
             result.name = (String) map.get("name");
-            result.age = ((Number) map.get("age")).intValue();
-            result.active = (Boolean) map.get("active");
+            result.age = (int) map.get("age");
+            result.active = (boolean) map.get("active");
             return result;
         }
         throw new IllegalArgumentException("Invalid decode result type");
@@ -87,10 +84,5 @@ public class Person {
 
     static {
         com.dylibso.chicory.component.PojoRegistry.register("person", Person.class);
-    }
-
-    @Override
-    public String toString() {
-        return "Person{name='" + name + "', age=" + age + ", active=" + active + "}";
     }
 }

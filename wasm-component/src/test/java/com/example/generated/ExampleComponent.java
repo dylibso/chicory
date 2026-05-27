@@ -1,113 +1,105 @@
 package com.example.generated;
 
 import com.dylibso.chicory.component.ComponentModel;
+import com.dylibso.chicory.component.annotation.WitComponent;
 import java.util.List;
 
-/**
- * Generated SDK wrapper for the example component.
- * Provides typed methods for calling WASM exports.
- *
- * Supports both:
- * - POJO-based calls: describePerson(Person)
- * - Flexible calls for progressive testing: describePerson(String, int, boolean)
- */
+@WitComponent("example")
 public class ExampleComponent {
-    private final ComponentModel component;
+    private final ComponentModel componentModel;
 
-    public ExampleComponent(ComponentModel component) {
-        this.component = component;
+    public ExampleComponent(ComponentModel componentModel) {
+        this.componentModel = componentModel;
     }
 
-    public int add(int a, int b) {
-        Object result = component.callExport("add", a, b);
+    public int add(int a, int b) throws Exception {
+        Object result = componentModel.callExport("add", a, b);
         return ((Number) result).intValue();
     }
 
-    public long multiply(long a, long b) {
-        Object result = component.callExport("multiply", a, b);
+    public long multiply(long a, long b) throws Exception {
+        Object result = componentModel.callExport("multiply", a, b);
         return ((Number) result).longValue();
     }
 
-    public boolean isPositive(int n) {
-        Object result = component.callExport("is-positive", n);
+    public boolean isPositive(int x) throws Exception {
+        Object result = componentModel.callExport("is-positive", x);
         return (Boolean) result;
     }
 
-    public String greet(String name) {
-        Object result = component.callExport("greet", name);
+    public String greet(String name) throws Exception {
+        Object result = componentModel.callExport("greet", name);
         return (String) result;
     }
 
-    public String processText(String text) {
-        Object result = component.callExport("process-text", text);
+    public String processText(String text) throws Exception {
+        Object result = componentModel.callExport("process-text", text);
         return (String) result;
     }
 
-    // POJO-based call
-    public String describePerson(Person person) {
-        Object result = component.callExport("describe-person", person);
+    public void testHostCallLog(String msg) throws Exception {
+        Object result = componentModel.callExport("test-host-call-log", msg);
+    }
+
+    public String testHostCallGetInput() throws Exception {
+        Object result = componentModel.callExport("test-host-call-get-input");
         return (String) result;
     }
 
-    // Flexible call for progressive testing - accepts individual fields
-    public String describePerson(String name, int age, boolean active) {
-        Person person = new Person(name, age, active);
-        Object result = component.callExport("describe-person", person);
+    public String describePerson(Person p) throws Exception {
+        long[] __p_encoded = p.encode(componentModel.getInstance().memory());
+        Object result = componentModel.callExport("describe-person", __p_encoded);
         return (String) result;
     }
 
-    public Person createPerson(String name, int age) {
-        Object result = component.callExport("create-person", name, age);
-        return (Person) result;
+    public Person createPerson(String name, int age) throws Exception {
+        Object result = componentModel.callExport("create-person", name, age);
+        return Person.decode((long[]) result, componentModel.getInstance().memory());
     }
 
-    public Color pickColor(int index) {
-        Object result = component.callExport("pick-color", index);
-        return (Color) result;
+    public OperationResult getResult() throws Exception {
+        Object result = componentModel.callExport("get-result");
+        return OperationResult.decode((long[]) result, componentModel.getInstance().memory());
     }
 
-    public OperationResult getResult() {
-        Object result = component.callExport("get-result");
-        return (OperationResult) result;
+    public Color pickColor(int index) throws Exception {
+        Object result = componentModel.callExport("pick-color", index);
+        return Color.decode((long[]) result, componentModel.getInstance().memory());
     }
 
-    public String repeatString(String s, int count) {
-        Object result = component.callExport("repeat-string", s, count);
+    public List<String> repeatString(String text, int count) throws Exception {
+        Object result = componentModel.callExport("repeat-string", text, count);
+        return (List<String>) result;
+    }
+
+    public int sumNumbers(List<Integer> numbers) throws Exception {
+        Object result = componentModel.callExport("sum-numbers", numbers);
+        return ((Number) result).intValue();
+    }
+
+    public List<String> getNames(List<Person> people) throws Exception {
+        Object result = componentModel.callExport("get-names", people);
+        return (List<String>) result;
+    }
+
+    public List<Person> filterHighValuePeople(List<Person> people, int minAge) throws Exception {
+        Object result = componentModel.callExport("filter-high-value-people", people, minAge);
+        return (List<Person>) result;
+    }
+
+    public String processUserStatus(UserStatus status) throws Exception {
+        long[] __status_encoded = status.encode(componentModel.getInstance().memory());
+        Object result = componentModel.callExport("process-user-status", __status_encoded);
         return (String) result;
     }
 
-    public long sumNumbers(List<Integer> numbers) {
-        Object result = component.callExport("sum-numbers", numbers);
-        return ((Number) result).longValue();
+    public UserStatus createUserStatus(String name, int age, String message) throws Exception {
+        Object result = componentModel.callExport("create-user-status", name, age, message);
+        return UserStatus.decode((long[]) result, componentModel.getInstance().memory());
     }
 
-    @SuppressWarnings("unchecked")
-    public List<String> getNames(List<?> people) {
-        Object result = component.callExport("get-names", people);
-        // ListValue implements List interface
-        if (result instanceof java.util.List) {
-            return (List<String>) result;
-        }
-        return new java.util.ArrayList<>();
-    }
-
-    @SuppressWarnings("unchecked")
-    public List<?> filterHighValuePeople(List<?> people, int minAge) {
-        Object result = component.callExport("filter-high-value-people", people, minAge);
-        // ListValue implements List interface
-        if (result instanceof java.util.List) {
-            return (List<?>) result;
-        }
-        return new java.util.ArrayList<>();
-    }
-
-    public UserStatus createUserStatus(Person person, OperationResult status) {
-        Object result = component.callExport("create-user-status", person, status);
-        return (UserStatus) result;
-    }
-
-    public String processUserStatus(UserStatus status) {
-        Object result = component.callExport("process-user-status", status);
-        return (String) result;
+    public int validateResults(List<OperationResult> results) throws Exception {
+        Object result = componentModel.callExport("validate-results", results);
+        return ((Number) result).intValue();
     }
 }

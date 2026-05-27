@@ -78,7 +78,8 @@ public class RecordGenerator {
         sb.append("import com.dylibso.chicory.runtime.Memory;\n");
         sb.append("import com.dylibso.chicory.component.CanonicalAbi;\n");
         sb.append("import com.dylibso.chicory.component.RecordLayout;\n");
-        sb.append("import com.dylibso.chicory.component.types.RecordType;\n\n");
+        sb.append("import com.dylibso.chicory.component.types.RecordType;\n");
+        sb.append("import com.dylibso.chicory.component.types.PrimitiveType;\n\n");
 
         // Class declaration
         sb.append("@WitRecord(\"").append(recordType.displayName()).append("\")\n");

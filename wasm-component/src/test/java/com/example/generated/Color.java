@@ -2,71 +2,61 @@ package com.example.generated;
 
 import com.dylibso.chicory.component.CanonicalAbi;
 import com.dylibso.chicory.component.PojoRegistry;
+import com.dylibso.chicory.component.VariantValue;
 import com.dylibso.chicory.component.annotation.WitCase;
 import com.dylibso.chicory.component.annotation.WitVariant;
 import com.dylibso.chicory.component.types.VariantType;
 import com.dylibso.chicory.runtime.Memory;
+import java.util.Optional;
 
-/** Generated sealed variant class for WIT variant: color { red, green, blue } */
 @WitVariant("color")
 public abstract class Color {
     protected final String caseName;
+    protected final Object data;
 
-    protected Color(String caseName) {
+    protected Color(String caseName, Object data) {
         this.caseName = caseName;
+        this.data = data;
     }
 
     public String getCaseName() {
         return caseName;
     }
 
+    public Object getData() {
+        return data;
+    }
+
     public long[] encode(Memory memory) throws Exception {
-        com.dylibso.chicory.component.VariantValue variant =
-                new com.dylibso.chicory.component.VariantValue(caseName, null);
+        VariantValue variant = new VariantValue(caseName, data);
         return CanonicalAbi.encode(variant, createVariantType(), memory);
     }
 
     @WitCase(0)
     public static class Red extends Color {
         public Red() {
-            super("red");
-        }
-
-        @Override
-        public String toString() {
-            return "Red";
+            super("red", null);
         }
     }
 
     @WitCase(1)
     public static class Green extends Color {
         public Green() {
-            super("green");
-        }
-
-        @Override
-        public String toString() {
-            return "Green";
+            super("green", null);
         }
     }
 
     @WitCase(2)
     public static class Blue extends Color {
         public Blue() {
-            super("blue");
-        }
-
-        @Override
-        public String toString() {
-            return "Blue";
+            super("blue", null);
         }
     }
 
     public static Color decode(long[] encoded, Memory memory) throws Exception {
         Object obj = CanonicalAbi.decode(encoded, createVariantType(), memory);
-        if (obj instanceof com.dylibso.chicory.component.VariantValue) {
-            com.dylibso.chicory.component.VariantValue variant =
-                    (com.dylibso.chicory.component.VariantValue) obj;
+        if (obj instanceof VariantValue) {
+            VariantValue variant = (VariantValue) obj;
             switch (variant.caseName()) {
                 case "red":
                     return new Red();
@@ -84,9 +74,9 @@ public abstract class Color {
 
     private static VariantType createVariantType() {
         VariantType variant = new VariantType("color");
-        variant.addCase("red", java.util.Optional.empty());
-        variant.addCase("green", java.util.Optional.empty());
-        variant.addCase("blue", java.util.Optional.empty());
+        variant.addCase("red", Optional.empty());
+        variant.addCase("green", Optional.empty());
+        variant.addCase("blue", Optional.empty());
         return variant;
     }
 

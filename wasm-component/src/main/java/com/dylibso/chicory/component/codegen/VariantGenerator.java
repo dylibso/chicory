@@ -78,7 +78,8 @@ public class VariantGenerator {
         sb.append("import com.dylibso.chicory.component.CanonicalAbi;\n");
         sb.append("import com.dylibso.chicory.component.types.VariantType;\n");
         sb.append("import com.dylibso.chicory.component.PojoRegistry;\n");
-        sb.append("import java.util.Optional;\n\n");
+        sb.append("import java.util.Optional;\n");
+        sb.append("import com.dylibso.chicory.component.types.PrimitiveType;\n\n");
 
         // Abstract base class declaration
         sb.append("@WitVariant(\"").append(variantType.displayName()).append("\")\n");
@@ -139,7 +140,14 @@ public class VariantGenerator {
             sb.append(CodeFormatter.indent(5))
                     .append("return new ")
                     .append(caseClassName)
-                    .append("(variant.data());\n");
+                    .append("(");
+            if (caseInfo.type.isPresent()) {
+                // Case with data - cast to proper type
+                String javaType = witTypeToJavaType(caseInfo.type.get());
+                sb.append("(").append(javaType).append(") variant.data()");
+            }
+            // Cases without data - pass no arguments
+            sb.append(");\n");
         }
 
         sb.append(CodeFormatter.indent(4)).append("default:\n");
@@ -200,9 +208,9 @@ public class VariantGenerator {
 
         sb.append("\n")
                 .append(CodeFormatter.indent(1))
-                .append("@WitCase(\"")
-                .append(caseName)
-                .append("\")\n");
+                .append("@WitCase(")
+                .append(caseIndex)
+                .append(")\n");
         sb.append(CodeFormatter.indent(1))
                 .append("public static class ")
                 .append(caseClassName)
