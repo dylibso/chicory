@@ -63,19 +63,9 @@ public class ExampleComponent {
 
     public OperationResult getResult() throws Exception {
         Object result = componentModel.callExport("get-result");
-        // Debug: print what we got
-        System.out.println("[DEBUG getResult] Result type: " + result.getClass().getSimpleName());
         if (result instanceof VariantValue) {
-            VariantValue vv = (VariantValue) result;
-            System.out.println(
-                    "[DEBUG getResult] VariantValue - caseName: '"
-                            + vv.caseName()
-                            + "', data: "
-                            + vv.data());
-            Object converted = PojoRegistry.variantValueToPojo("operation-result", vv);
-            System.out.println(
-                    "[DEBUG getResult] After conversion: " + converted.getClass().getSimpleName());
-            return (OperationResult) converted;
+            return (OperationResult)
+                    PojoRegistry.variantValueToPojo("operation-result", (VariantValue) result);
         }
         return (OperationResult) result;
     }

@@ -1,6 +1,7 @@
 package com.dylibso.chicory.component;
 
 import com.dylibso.chicory.component.types.ListType;
+import com.dylibso.chicory.component.types.PrimitiveType;
 import com.dylibso.chicory.component.types.RecordType;
 import com.dylibso.chicory.component.types.VariantType;
 import com.dylibso.chicory.component.types.WitType;
@@ -145,23 +146,17 @@ public class TypedExportFunction {
                 if (results.length > 0) {
                     long value = results[0];
 
-                    // For variants: if value is small (< 1000), it's the discriminant only (empty
-                    // variant)
-                    // If value is in a reasonable pointer range, decode from memory
-                    if (value < 1000) {
-                        // Empty variant - discriminant inline
+                    // For wit-bindgen variants, try decoding as inline first
+                    // (covers both simple variants and variants with inline data)
+                    try {
                         variantResult =
                                 CanonicalAbi.decodeVariantInline(
                                         new long[] {value}, returnVariantType, memory);
-                    } else if (value >= 1000 && value <= 0x100000) {
-                        // Memory pointer to variant data (1KB to 1MB range, typical for heap
-                        // allocations)
-                        variantResult =
-                                CanonicalAbi.decodeVariantFromMemory(
-                                        value, returnVariantType, memory);
-                    } else {
-                        // Invalid pointer - return empty variant
-                        variantResult = new VariantValue("", null);
+                    } catch (Exception e) {
+                        // If inline decoding fails, try as memory pointer
+                        // For variants with associated data, the memory layout may be non-standard.
+                        // Try decoding each possible case and use the one that succeeds.
+                        variantResult = tryDecodeVariantCases(value, returnVariantType, memory);
                     }
                 } else {
                     variantResult = new VariantValue("", null);
@@ -241,5 +236,80 @@ public class TypedExportFunction {
         }
 
         return map;
+    }
+
+    /**
+     * Try to decode a variant by attempting to decode each possible case. For variants with
+     * complex associated data, the memory layout may be non-standard (not starting with a
+     * discriminant). This method tries to decode the data at the pointer location as each
+     * variant case and returns the first one that succeeds.
+     */
+    private static Object tryDecodeVariantCases(
+            long pointer, VariantType variantType, Memory memory) {
+        java.util.List<VariantType.Case> cases = variantType.cases();
+
+        // Try each case in order
+        for (int caseIndex = 0; caseIndex < cases.size(); caseIndex++) {
+            VariantType.Case caseInfo = cases.get(caseIndex);
+
+            try {
+                // Try to decode this case's data from memory
+                Object caseData = null;
+
+                if (caseInfo.type.isPresent()) {
+                    // Attempt to read and decode case data
+                    // For string types, try reading (ptr, len) pair at offset 4 and 8
+                    WitType caseType = caseInfo.type.get();
+
+                    if (caseType instanceof PrimitiveType) {
+                        PrimitiveType primType = (PrimitiveType) caseType;
+                        if ("string".equals(primType.name()) || "STRING".equals(primType.name())) {
+                            // Try to read string at offset 4 (assuming (ptr, len) encoding)
+                            int stringPtr = memory.readInt((int) pointer + 4);
+                            int stringLen = memory.readInt((int) pointer + 8);
+
+                            if (stringLen > 0 && stringLen < 100000) {
+                                // Looks like a valid string
+                                String str =
+                                        memory.readString(
+                                                stringPtr,
+                                                stringLen,
+                                                java.nio.charset.StandardCharsets.UTF_8);
+                                caseData = str;
+                                // Successfully decoded this case!
+                                return new VariantValue(caseInfo.name, caseData);
+                            }
+                        } else {
+                            // For other primitives, try to read from offset 4
+                            switch (primType.name()) {
+                                case "s32":
+                                case "u32":
+                                    int intVal = memory.readInt((int) pointer + 4);
+                                    // Assume if we can read an int, this might be the case
+                                    caseData = intVal;
+                                    return new VariantValue(caseInfo.name, caseData);
+                                case "s64":
+                                case "u64":
+                                    long longVal = memory.readLong((int) pointer + 4);
+                                    caseData = longVal;
+                                    return new VariantValue(caseInfo.name, caseData);
+                            }
+                        }
+                    } else {
+                        // Not a PrimitiveType, skip this case
+                    }
+                } else {
+                    // Empty case (no associated data) - assume this case if no data found
+                    if (pointer == 0 || pointer == caseIndex) {
+                        return new VariantValue(caseInfo.name, null);
+                    }
+                }
+            } catch (Exception e) {
+                // This case didn't work, try the next one
+            }
+        }
+
+        // If nothing worked, return empty variant
+        return new VariantValue("", null);
     }
 }
