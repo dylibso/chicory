@@ -57,18 +57,18 @@ The WebAssembly Component Model defines:
 
 ### Supported WIT Features
 
-✅ Primitive types: `i32`, `i64`, `f32`, `f64`, `bool`, `char`, `string`
-✅ Records (mapped to Java POJOs)
-✅ Variants/Enums (mapped to sealed classes)
-✅ Lists and collections
-✅ Function imports/exports
-✅ Bidirectional host ↔ guest calls
+- ✅ Primitive types: `i32`, `i64`, `f32`, `f64`, `bool`, `char`, `string`
+- ✅ Records (mapped to Java POJOs)
+- ✅ Variants/Enums (mapped to sealed classes)
+- ✅ Lists and collections
+- ✅ Function imports/exports
+- ✅ Bidirectional host ↔ guest calls
 
 ### Known Limitations
 
-⚠️ Variants with complex data return values (workaround: use explicit WIT)
-⚠️ Multi-file WIT support: Works with embedded WASM component metadata, limited when passing explicit WIT files
-⚠️ Some advanced type compositions untested
+- ⚠️ Variants with complex data return values (workaround: use explicit WIT)
+- ⚠️ Multi-file WIT support: Works with embedded WASM component metadata, limited when passing explicit WIT files
+- ⚠️ Some advanced type compositions untested
 
 ## 📁 Project Structure
 
