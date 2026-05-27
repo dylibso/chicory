@@ -48,7 +48,6 @@ public class ExampleComponent {
         return (String) result;
     }
 
-    // TypedExportFunction handles record encoding, so pass POJO directly
     public String describePerson(Person p) throws Exception {
         Object result = componentModel.callExport("describe-person", p);
         return (String) result;
@@ -64,9 +63,19 @@ public class ExampleComponent {
 
     public OperationResult getResult() throws Exception {
         Object result = componentModel.callExport("get-result");
+        // Debug: print what we got
+        System.out.println("[DEBUG getResult] Result type: " + result.getClass().getSimpleName());
         if (result instanceof VariantValue) {
-            return (OperationResult)
-                    PojoRegistry.variantValueToPojo("operation-result", (VariantValue) result);
+            VariantValue vv = (VariantValue) result;
+            System.out.println(
+                    "[DEBUG getResult] VariantValue - caseName: '"
+                            + vv.caseName()
+                            + "', data: "
+                            + vv.data());
+            Object converted = PojoRegistry.variantValueToPojo("operation-result", vv);
+            System.out.println(
+                    "[DEBUG getResult] After conversion: " + converted.getClass().getSimpleName());
+            return (OperationResult) converted;
         }
         return (OperationResult) result;
     }
@@ -120,7 +129,6 @@ public class ExampleComponent {
         return (List<Person>) result;
     }
 
-    // TypedExportFunction handles record encoding, so pass POJO directly
     public String processUserStatus(UserStatus status) throws Exception {
         Object result = componentModel.callExport("process-user-status", status);
         return (String) result;
