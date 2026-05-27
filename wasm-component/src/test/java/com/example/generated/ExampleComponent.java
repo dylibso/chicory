@@ -48,16 +48,15 @@ public class ExampleComponent {
         return (String) result;
     }
 
+    // TypedExportFunction handles record encoding, so pass POJO directly
     public String describePerson(Person p) throws Exception {
-        long[] __p_encoded = p.encode(componentModel.getInstance().memory());
-        Object result = componentModel.callExport("describe-person", __p_encoded);
+        Object result = componentModel.callExport("describe-person", p);
         return (String) result;
     }
 
     public Person createPerson(String name, int age) throws Exception {
         Object result = componentModel.callExport("create-person", name, age);
         if (result instanceof VariantValue) {
-            // Fallback: convert VariantValue to POJO
             return (Person) PojoRegistry.variantValueToPojo("person", (VariantValue) result);
         }
         return (Person) result;
@@ -66,7 +65,6 @@ public class ExampleComponent {
     public OperationResult getResult() throws Exception {
         Object result = componentModel.callExport("get-result");
         if (result instanceof VariantValue) {
-            // Fallback: convert VariantValue to POJO
             return (OperationResult)
                     PojoRegistry.variantValueToPojo("operation-result", (VariantValue) result);
         }
@@ -76,7 +74,6 @@ public class ExampleComponent {
     public Color pickColor(int index) throws Exception {
         Object result = componentModel.callExport("pick-color", index);
         if (result instanceof VariantValue) {
-            // Fallback: convert VariantValue to POJO
             return (Color) PojoRegistry.variantValueToPojo("color", (VariantValue) result);
         }
         return (Color) result;
@@ -123,16 +120,15 @@ public class ExampleComponent {
         return (List<Person>) result;
     }
 
+    // TypedExportFunction handles record encoding, so pass POJO directly
     public String processUserStatus(UserStatus status) throws Exception {
-        long[] __status_encoded = status.encode(componentModel.getInstance().memory());
-        Object result = componentModel.callExport("process-user-status", __status_encoded);
+        Object result = componentModel.callExport("process-user-status", status);
         return (String) result;
     }
 
     public UserStatus createUserStatus(String name, int age, String message) throws Exception {
         Object result = componentModel.callExport("create-user-status", name, age, message);
         if (result instanceof VariantValue) {
-            // Fallback: convert VariantValue to POJO
             return (UserStatus)
                     PojoRegistry.variantValueToPojo("user-status", (VariantValue) result);
         }
