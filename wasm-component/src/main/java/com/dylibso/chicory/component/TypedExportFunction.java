@@ -76,8 +76,32 @@ public class TypedExportFunction {
                     returnsVariant ? (VariantType) returnTypes.get(0) : null;
             ListType returnListType = returnsList ? (ListType) returnTypes.get(0) : null;
 
+            // Check if function takes lists as parameters
+            boolean takesListParam = false;
+            for (ComponentDefinition.FunctionSignature.Parameter param : params) {
+                if (param.type instanceof ListType) {
+                    takesListParam = true;
+                    break;
+                }
+            }
+
+            // Use fixed sret buffer for list-returning functions that take lists
+            // Use a high memory address that should be safe (1 MB offset)
+            // DISABLED: sret seems to cause unreachable instructions
+            long sretPtr = 0;
+            // if (returnsList && takesListParam) {
+            //     sretPtr = 0x100000; // 1 MB - safe fixed buffer location
+            //     System.out.println(
+            //             "[DEBUG] Using fixed sret buffer at 0x" + Long.toHexString(sretPtr));
+            // }
+
             // Encode arguments according to Canonical ABI
             List<Long> wasmArgsList = new ArrayList<>();
+
+            // Add sret pointer as first parameter if needed
+            if (sretPtr > 0) {
+                wasmArgsList.add(sretPtr);
+            }
 
             // Add regular parameters (no sret for records - WASM allocates and returns pointer)
             for (int i = 0; i < args.length; i++) {
@@ -174,13 +198,18 @@ public class TypedExportFunction {
 
             // Special handling for lists
             if (returnsList) {
-                if (results.length >= 1 && results[0] != 0) {
-                    long value = results[0];
-
-                    // Lists are returned as pointer-to-(ptr, count) pair (sret convention)
-                    if (value > 1000) {
-                        int listPtr = memory.readInt((int) value);
-                        int listCount = memory.readInt((int) value + 4);
+                long sourcePtr = sretPtr > 0 ? sretPtr : (results.length >= 1 ? results[0] : 0);
+                if (sourcePtr > 0) {
+                    int listPtr = memory.readInt((int) sourcePtr);
+                    int listCount = memory.readInt((int) sourcePtr + 4);
+                    System.out.println(
+                            "[DEBUG list] Read from 0x"
+                                    + Long.toHexString(sourcePtr)
+                                    + ": ptr=0x"
+                                    + Integer.toHexString(listPtr)
+                                    + ", count="
+                                    + listCount);
+                    if (listCount >= 0 && listPtr > 0) {
                         return CanonicalAbi.decode(
                                 new long[] {listPtr, listCount}, returnListType, memory);
                     }
