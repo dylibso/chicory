@@ -1,6 +1,7 @@
 package com.example.generated;
 
 import com.dylibso.chicory.component.ComponentModel;
+import com.dylibso.chicory.component.ListValue;
 import com.dylibso.chicory.component.PojoRegistry;
 import com.dylibso.chicory.component.VariantValue;
 import com.dylibso.chicory.component.annotation.WitComponent;
@@ -80,9 +81,8 @@ public class ExampleComponent {
 
     public List<String> repeatString(String text, int count) throws Exception {
         Object result = componentModel.callExport("repeat-string", text, count);
-        if (result instanceof com.dylibso.chicory.component.ListValue) {
-            java.util.List<Object> elements =
-                    ((com.dylibso.chicory.component.ListValue) result).elements();
+        if (result instanceof ListValue) {
+            java.util.List<Object> elements = ((ListValue) result).elements();
             return (List<String>) (java.util.List<?>) elements;
         }
         return (List<String>) result;
@@ -95,9 +95,8 @@ public class ExampleComponent {
 
     public List<String> getNames(List<Person> people) throws Exception {
         Object result = componentModel.callExport("get-names", people);
-        if (result instanceof com.dylibso.chicory.component.ListValue) {
-            java.util.List<Object> elements =
-                    ((com.dylibso.chicory.component.ListValue) result).elements();
+        if (result instanceof ListValue) {
+            java.util.List<Object> elements = ((ListValue) result).elements();
             return (List<String>) (java.util.List<?>) elements;
         }
         return (List<String>) result;
@@ -105,9 +104,8 @@ public class ExampleComponent {
 
     public List<Person> filterHighValuePeople(List<Person> people, int minAge) throws Exception {
         Object result = componentModel.callExport("filter-high-value-people", people, minAge);
-        if (result instanceof com.dylibso.chicory.component.ListValue) {
-            java.util.List<Object> elements =
-                    ((com.dylibso.chicory.component.ListValue) result).elements();
+        if (result instanceof ListValue) {
+            java.util.List<Object> elements = ((ListValue) result).elements();
             return elements.stream()
                     .map(
                             e ->

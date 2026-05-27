@@ -481,7 +481,16 @@ public class CanonicalAbi {
             case STRING:
                 int ptr = memory.readInt(offset);
                 int len = memory.readInt(offset + 4);
-                return memory.readString(ptr, len);
+                System.out.println(
+                        "[DEBUG string] Reading string at offset 0x"
+                                + Integer.toHexString(offset)
+                                + ": ptr=0x"
+                                + Integer.toHexString(ptr)
+                                + ", len="
+                                + len);
+                String str = memory.readString(ptr, len);
+                System.out.println("[DEBUG string] Result: '" + str + "'");
+                return str;
             default:
                 return null;
         }
