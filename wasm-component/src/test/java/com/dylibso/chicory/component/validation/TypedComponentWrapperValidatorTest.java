@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("Typed Component Wrapper")
-class TypedComponentWrapperValidator {
+class TypedComponentWrapperValidatorTest {
     private static ComponentModel componentModel;
     private static ExampleComponent component;
 
@@ -153,7 +153,7 @@ class TypedComponentWrapperValidator {
 
     private static String readTextResource(String resourceName) throws IOException {
         try (var input =
-                TypedComponentWrapperValidator.class
+                TypedComponentWrapperValidatorTest.class
                         .getClassLoader()
                         .getResourceAsStream(resourceName)) {
             assertTrue(input != null, () -> "Missing test resource: " + resourceName);
@@ -163,7 +163,7 @@ class TypedComponentWrapperValidator {
 
     private static byte[] readBinaryResource(String resourceName) throws IOException {
         try (var input =
-                TypedComponentWrapperValidator.class
+                TypedComponentWrapperValidatorTest.class
                         .getClassLoader()
                         .getResourceAsStream(resourceName)) {
             assertTrue(input != null, () -> "Missing test resource: " + resourceName);

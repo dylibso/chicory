@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("Bidirectional POJO Usage")
-class BidirectionalPojoValidator {
+class BidirectionalPojoValidatorTest {
     private static ComponentModel componentModel;
     private static ExampleComponent component;
 
@@ -188,7 +188,7 @@ class BidirectionalPojoValidator {
 
     private static String readTextResource(String resourceName) throws IOException {
         try (var input =
-                BidirectionalPojoValidator.class
+                BidirectionalPojoValidatorTest.class
                         .getClassLoader()
                         .getResourceAsStream(resourceName)) {
             assertNotNull(input, () -> "Missing test resource: " + resourceName);
@@ -198,7 +198,7 @@ class BidirectionalPojoValidator {
 
     private static byte[] readBinaryResource(String resourceName) throws IOException {
         try (var input =
-                BidirectionalPojoValidator.class
+                BidirectionalPojoValidatorTest.class
                         .getClassLoader()
                         .getResourceAsStream(resourceName)) {
             assertNotNull(input, () -> "Missing test resource: " + resourceName);

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("Records")
-class RecordsValidator {
+class RecordsValidatorTest {
     private static ExampleComponent component;
 
     @BeforeAll
@@ -102,7 +102,7 @@ class RecordsValidator {
 
     private static String readTextResource(String resourceName) throws IOException {
         try (var input =
-                RecordsValidator.class.getClassLoader().getResourceAsStream(resourceName)) {
+                RecordsValidatorTest.class.getClassLoader().getResourceAsStream(resourceName)) {
             assertNotNull(input, () -> "Missing test resource: " + resourceName);
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
@@ -110,7 +110,7 @@ class RecordsValidator {
 
     private static byte[] readBinaryResource(String resourceName) throws IOException {
         try (var input =
-                RecordsValidator.class.getClassLoader().getResourceAsStream(resourceName)) {
+                RecordsValidatorTest.class.getClassLoader().getResourceAsStream(resourceName)) {
             assertNotNull(input, () -> "Missing test resource: " + resourceName);
             return input.readAllBytes();
         }

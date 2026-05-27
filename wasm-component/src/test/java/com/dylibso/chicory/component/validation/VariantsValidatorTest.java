@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("Variants")
-class VariantsValidator {
+class VariantsValidatorTest {
     private static ExampleComponent component;
 
     @BeforeAll
@@ -115,7 +115,7 @@ class VariantsValidator {
 
     private static String readTextResource(String resourceName) throws IOException {
         try (var input =
-                VariantsValidator.class.getClassLoader().getResourceAsStream(resourceName)) {
+                VariantsValidatorTest.class.getClassLoader().getResourceAsStream(resourceName)) {
             assertNotNull(input, () -> "Missing test resource: " + resourceName);
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
@@ -123,7 +123,7 @@ class VariantsValidator {
 
     private static byte[] readBinaryResource(String resourceName) throws IOException {
         try (var input =
-                VariantsValidator.class.getClassLoader().getResourceAsStream(resourceName)) {
+                VariantsValidatorTest.class.getClassLoader().getResourceAsStream(resourceName)) {
             assertNotNull(input, () -> "Missing test resource: " + resourceName);
             return input.readAllBytes();
         }
