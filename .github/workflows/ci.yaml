@@ -131,7 +131,7 @@ jobs:
               ;;
           esac
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040
+        uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3
         id: test-results
         with:
           check_name: ${{ env.NAME }} Tests Results
