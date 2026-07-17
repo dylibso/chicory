@@ -114,6 +114,14 @@ public final class ByteArrayMemory implements Memory {
         int waiterCount;
         // The number of waiting threads that have been scheduled to wake up
         int pendingWakeups;
+        // Bumped by every notify that issues wakeups. A waiter may only consume
+        // a pending wakeup minted while it was waiting (generation moved since
+        // it registered). Without this, a newly-arrived waiter could steal a
+        // wakeup meant for an already-parked thread. That thread would then
+        // re-check, find none, and sleep forever (lost wakeup).
+        // Only ever compared with ==/!=, never ordered, so wraparound is not
+        // a practical concern.
+        long generation;
     }
 
     private final Map<Integer, WaitState> waitStates;
@@ -146,9 +154,10 @@ public final class ByteArrayMemory implements Memory {
             }
 
             state.waiterCount++;
+            final long arrivalGeneration = state.generation;
             try {
 
-                while (state.pendingWakeups == 0) {
+                while (state.pendingWakeups == 0 || state.generation == arrivalGeneration) {
                     long remaining = deadline - System.nanoTime();
                     if (remaining <= 0) {
                         return 2; // timeout
@@ -165,11 +174,12 @@ public final class ByteArrayMemory implements Memory {
                 return 0; // woken
             } finally {
 
-                if (state.pendingWakeups > 0) {
-                    // any thread leaving the try block is correct to consume
-                    // a pending wakeup IF available:
+                if (state.pendingWakeups > 0 && state.generation != arrivalGeneration) {
+                    // any thread leaving the try block is correct to consume a
+                    // pending wakeup IF one was minted while it was waiting:
                     // ret 0 - woken thread correctly consumes a wakeup
-                    // ret 2 - timeout can only occur with pendingWakeups == 0 so will not consume
+                    // ret 2 - timeout cannot coincide with a consumable wakeup
+                    //         (the while loop would have exited instead)
                     // throw - isn't part of the wasm runtime but is semantically correct to consume
                     state.pendingWakeups--;
                 }
@@ -220,8 +230,11 @@ public final class ByteArrayMemory implements Memory {
                 toWake = Math.min(actualWaiters, maxThreads);
             }
 
-            // Add pending wakeups - waiters will consume these
+            // Add pending wakeups - waiters will consume these. The generation
+            // bump marks every currently-registered waiter as eligible; threads
+            // arriving later must wait for the next notify.
             state.pendingWakeups += toWake;
+            state.generation++;
             assert (state.pendingWakeups <= state.waiterCount);
 
             // It's always safe to notify all. In the wait routine we consume pendingWakeups
