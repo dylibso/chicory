@@ -1,9 +1,11 @@
 package com.dylibso.chicory.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -164,5 +166,54 @@ public class MemoryTest {
         assertArrayEquals(data, memory.readBytes(dest, data.length));
         // Source should be unchanged
         assertArrayEquals(data, memory.readBytes(100, data.length));
+    }
+
+    /**
+     * This test verifies a permit stealing bug that existed in the memory implementations.
+     * An atomicWait could avoid waiting if it found a "notify permit". This is wrong by definition
+     * since atomicNotify can only wake threads in a waiting state.
+     *
+     * The test creates a thread that calls (A) atomicWait, while the main thread calls atomicNotify and
+     * then (B) atomicWait. If the notify call returns one, it means it should have woken (A) since
+     * (B) has not yet happened. This means that (B) must timeout since there are no other notify calls
+     * involved.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("growableMemoryImplementations")
+    public void notifyWakesParkedThreadNotLateArrival(String name, Supplier<Memory> memorySupplier)
+            throws Exception {
+        final int addr = 0;
+        final int sentinel = 42;
+        var memory = memorySupplier.get();
+
+        for (int round = 0; round < 200; round++) {
+            memory.atomicWriteInt(addr, sentinel);
+
+            var parkedReady = new CountDownLatch(1);
+
+            var parked =
+                    new Thread(
+                            () -> {
+                                parkedReady.countDown();
+                                memory.atomicWait(addr, sentinel, 100_000_000L);
+                            });
+            parked.setDaemon(true);
+            parked.start();
+            parkedReady.await();
+            // This sleep gives the other thread a higher chance of reaching the atomicWait,
+            // but setting it too high makes a passing test slow (200 x sleep)
+            Thread.sleep(1);
+
+            int woken = memory.atomicNotify(addr, 1);
+            if (woken == 0) {
+                // we didn't wake up the other thread. This case is not interesting, retry
+                continue;
+            }
+
+            // Late arrival: this wait MUST timeout as we have only woken ONE thread.
+            final int result = memory.atomicWait(addr, sentinel, 0L);
+
+            assertEquals(2, result, "round " + round + ": main thread should have timed out (2)");
+        }
     }
 }
