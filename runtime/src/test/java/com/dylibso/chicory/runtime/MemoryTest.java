@@ -1,12 +1,15 @@
 package com.dylibso.chicory.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,6 +24,44 @@ public class MemoryTest {
                 Arguments.of(
                         "ByteBufferMemory",
                         (Supplier<Memory>) () -> new ByteBufferMemory(new MemoryLimits(2, 2))));
+    }
+
+    /**
+     * Cross-page read traps describe the original access, not the individual byte that failed.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("memoryImplementations")
+    public void crossPageReadTrapDescribesWholeAccess(
+            String name, Supplier<Memory> memorySupplier) {
+        var memory = memorySupplier.get();
+        for (int address : new int[] {2 * 65536 - 1, Integer.MAX_VALUE, -1}) {
+            assertReadTrap(address, 2, () -> memory.readShort(address));
+            assertReadTrap(address, 4, () -> memory.readInt(address));
+            assertReadTrap(address, 8, () -> memory.readLong(address));
+            assertReadTrap(address, 4, () -> memory.readFloat(address));
+            assertReadTrap(address, 8, () -> memory.readDouble(address));
+        }
+    }
+
+    private static void assertReadTrap(int address, int width, Executable read) {
+        var exception = assertThrows(WasmRuntimeException.class, read);
+        assertEquals(
+                "out of bounds memory access: attempted to access address: "
+                        + address
+                        + " but limit is: 131072 and size: "
+                        + width,
+                exception.getMessage());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("memoryImplementations")
+    public void validCrossPageScalarReads(String name, Supplier<Memory> memorySupplier) {
+        var memory = memorySupplier.get();
+        int address = 65535;
+        memory.writeLong(address, 0x0102030405060708L);
+        assertEquals(0x0102030405060708L, memory.readLong(address));
+        assertEquals(0x05060708, memory.readInt(address));
+        assertEquals((short) 0x0708, memory.readShort(address));
     }
 
     private static Stream<Arguments> growableMemoryImplementations() {
