@@ -416,6 +416,7 @@ public final class ByteBufferMemory implements Memory {
     }
 
     private int readIntSlow(int addr) {
+        checkBounds(addr, 4, sizeInBytes(), WasmRuntimeException::new);
         return (read(addr) & 0xFF)
                 | ((read(addr + 1) & 0xFF) << 8)
                 | ((read(addr + 2) & 0xFF) << 16)
@@ -463,6 +464,7 @@ public final class ByteBufferMemory implements Memory {
     }
 
     private long readLongSlow(int addr) {
+        checkBounds(addr, 8, sizeInBytes(), WasmRuntimeException::new);
         return (read(addr) & 0xFFL)
                 | ((read(addr + 1) & 0xFFL) << 8)
                 | ((read(addr + 2) & 0xFFL) << 16)
@@ -508,6 +510,7 @@ public final class ByteBufferMemory implements Memory {
     }
 
     private short readShortSlow(int addr) {
+        checkBounds(addr, 2, sizeInBytes(), WasmRuntimeException::new);
         return (short) ((read(addr) & 0xFF) | ((read(addr + 1) & 0xFF) << 8));
     }
 
